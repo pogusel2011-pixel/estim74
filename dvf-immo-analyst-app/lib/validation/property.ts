@@ -9,7 +9,7 @@ const optionalPostalCode = z
 export const propertySchema = z.object({
   address: optionalString,
   postalCode: optionalPostalCode,
-  city: optionalString,
+  city: z.string().min(1, "La ville est requise"),
   lat: z.number().optional(),
   lng: z.number().optional(),
   irisCode: z.string().optional(),

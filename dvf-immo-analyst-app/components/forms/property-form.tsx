@@ -51,10 +51,9 @@ export function PropertyForm({ onSubmit, loading, defaultValues }: PropertyFormP
             {errors.postalCode && <p className="text-xs text-destructive">{errors.postalCode.message}</p>}
           </div>
           <div className="space-y-1">
-            <Label htmlFor="city" className="flex items-center gap-1">
-              Ville <span className="text-xs font-normal text-muted-foreground">(optionnel)</span>
-            </Label>
+            <Label htmlFor="city">Ville</Label>
             <Input id="city" placeholder="Annecy" {...register("city")} />
+            {errors.city && <p className="text-xs text-destructive">{errors.city.message}</p>}
           </div>
         </CardContent>
       </Card>
