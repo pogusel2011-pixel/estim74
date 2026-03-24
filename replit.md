@@ -1,7 +1,7 @@
-# DVF Analyst — Haute-Savoie (74)
+# ESTIM'74 — Haute-Savoie (74)
 
 ## Overview
-Next.js 14 real estate analysis app for the French alpine property market (Haute-Savoie, département 74). Uses Prisma + PostgreSQL, local DVF CSV (353k rows), OpenAI GPT with rule-based fallback, recharts, and shadcn/ui.
+ESTIM'74 is a Next.js 14 real estate analysis app for the French alpine property market (Haute-Savoie, département 74). Uses Prisma + PostgreSQL, local DVF CSV (353k rows), OpenAI GPT with rule-based fallback, recharts, and shadcn/ui.
 
 ## Stack
 - **Framework**: Next.js 14 (App Router) with TypeScript

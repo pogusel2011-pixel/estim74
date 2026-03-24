@@ -3,6 +3,7 @@ import Link from "next/link";
 import { FileDown, ArrowLeft } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
+import { ResimulateButton } from "@/components/analysis/resimulate-button";
 import { AnalysisSummaryPanel } from "@/components/analysis/analysis-summary";
 import { ValuationCards } from "@/components/analysis/valuation-cards";
 import { DVFComparablesTable } from "@/components/dvf/dvf-comparables-table";
@@ -81,16 +82,19 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
       </div>
 
       {/* En-tête */}
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex items-start justify-between gap-4 flex-wrap">
         <div className="flex-1 min-w-0">
           <AnalysisSummaryPanel analysis={serialized} />
         </div>
-        <Button asChild variant="outline" size="sm" className="shrink-0 gap-1.5">
-          <Link href={`/analyses/${serialized.id}/print`} target="_blank" rel="noopener noreferrer">
-            <FileDown className="h-4 w-4" />
-            Exporter PDF
-          </Link>
-        </Button>
+        <div className="flex items-start gap-2 shrink-0 flex-wrap justify-end">
+          <ResimulateButton analysisId={serialized.id} />
+          <Button asChild variant="outline" size="sm" className="gap-1.5">
+            <Link href={`/analyses/${serialized.id}/print`} target="_blank" rel="noopener noreferrer">
+              <FileDown className="h-4 w-4" />
+              Exporter PDF
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {/* Valorisation */}

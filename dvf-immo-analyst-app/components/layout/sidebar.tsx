@@ -20,7 +20,7 @@ export function Sidebar({ open, onToggle }: SidebarProps) {
       {/* Logo */}
       <div className="flex items-center h-14 px-3 border-b border-border shrink-0">
         <BarChart3 className="h-5 w-5 text-primary shrink-0" />
-        {open && <span className="ml-2 font-bold text-sm tracking-tight text-foreground truncate">DVF Analyst</span>}
+        {open && <span className="ml-2 font-bold text-sm tracking-tight text-foreground truncate">ESTIM&#39;74</span>}
       </div>
 
       {/* Nav */}

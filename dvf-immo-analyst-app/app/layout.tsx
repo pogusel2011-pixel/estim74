@@ -6,8 +6,8 @@ import { AppShell } from "@/components/layout/app-shell";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "DVF Immo Analyst",
-  description: "Outil d'estimation immobilière basé sur les données DVF",
+  title: "ESTIM'74",
+  description: "Outil d'estimation immobilière terrain — Haute-Savoie (74)",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

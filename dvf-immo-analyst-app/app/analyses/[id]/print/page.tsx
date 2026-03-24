@@ -220,7 +220,7 @@ export default async function PrintPage({ params }: { params: { id: string } }) 
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 }}>
             <div>
               <div style={{ fontSize: "8pt", color: "#3b82f6", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 2 }}>
-                DVF Analyst — Haute-Savoie (74)
+                ESTIM&apos;74 — Haute-Savoie (74)
               </div>
               <div style={{ fontSize: "7.5pt", color: "#94a3b8" }}>Rapport d'estimation immobilière</div>
             </div>
@@ -463,7 +463,7 @@ export default async function PrintPage({ params }: { params: { id: string } }) 
 
           {/* ── FOOTER ── */}
           <div className="footer">
-            <span>Généré par DVF Analyst · Données DVF officielles DGFiP 2014–2024</span>
+            <span>Généré par ESTIM&apos;74 · Données DVF officielles DGFiP 2014–2024</span>
             <span>Réf. {params.id.slice(0, 8).toUpperCase()} · {today}</span>
           </div>
 

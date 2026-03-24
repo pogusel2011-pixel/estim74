@@ -186,11 +186,10 @@ export default function HomePage() {
       {/* Hero */}
       <section className="text-center space-y-4">
         <h1 className="text-4xl font-bold tracking-tight text-foreground">
-          DVF Analyst — <span className="text-primary">Haute-Savoie</span>
+          ESTIM&apos;74 — <span className="text-primary">Haute-Savoie</span>
         </h1>
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-          Estimez vos biens immobiliers alpins avec les données DVF officielles 2014–2024,
-          les transactions réelles du département 74, et une IA d'analyse basée sur les faits.
+          Outil d&apos;estimation immobilière terrain — Haute-Savoie (74)
         </p>
         <div className="flex gap-3 justify-center pt-2">
           <Button asChild size="lg">
