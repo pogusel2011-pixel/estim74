@@ -9,6 +9,12 @@ import { MarketReading } from "@/components/analysis/market-reading";
 import { PerimeterPanel } from "@/components/analysis/perimeter-panel";
 import { GPTActionsPanel } from "@/components/gpt/gpt-actions-panel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { getDVFMutations } from "@/lib/dvf/client";
+import { computePrixM2, removeOutliers } from "@/lib/dvf/outliers";
+import { computeDVFStats } from "@/lib/dvf/stats";
+import { toComparables } from "@/lib/dvf/comparables";
+import { propertyTypeToDvfTypes } from "@/lib/mapping/property-type";
+import { DVFStats, DVFComparable } from "@/types/dvf";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +23,32 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
   if (!analysis) notFound();
 
   const serialized = JSON.parse(JSON.stringify(analysis));
+
+  // If the analysis has no dvfStats saved (e.g. seeded records), fetch live
+  let dvfStats: DVFStats | null = serialized.dvfStats ?? null;
+  let dvfComparables: DVFComparable[] = serialized.dvfComparables ?? [];
+
+  if (!dvfStats && serialized.lat && serialized.lng) {
+    try {
+      const dvfTypes = propertyTypeToDvfTypes(serialized.propertyType);
+      const radiusKm = serialized.perimeterKm ?? 0.5;
+      const monthsBack = serialized.dvfPeriodMonths ?? 24;
+      const { mutations, source } = await getDVFMutations(
+        serialized.lat,
+        serialized.lng,
+        radiusKm,
+        monthsBack,
+        dvfTypes
+      );
+      let enriched = computePrixM2(mutations);
+      enriched = removeOutliers(enriched);
+      dvfStats = computeDVFStats(enriched);
+      if (dvfStats) dvfStats.source = source;
+      dvfComparables = toComparables(enriched, serialized.surface);
+    } catch (err) {
+      console.error("[AnalysisPage] DVF live fetch error:", err);
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -45,12 +77,16 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
 
         <TabsContent value="dvf" className="space-y-4 mt-4">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            <DVFStatsPanel stats={serialized.dvfStats} sampleSize={serialized.dvfSampleSize} perimeterKm={serialized.perimeterKm} />
+            <DVFStatsPanel
+              stats={dvfStats}
+              sampleSize={serialized.dvfSampleSize}
+              perimeterKm={serialized.perimeterKm}
+            />
             <div className="lg:col-span-2">
               <PerimeterPanel lat={serialized.lat} lng={serialized.lng} perimeterKm={serialized.perimeterKm} />
             </div>
           </div>
-          <DVFComparablesTable comparables={serialized.dvfComparables ?? []} />
+          <DVFComparablesTable comparables={dvfComparables} />
         </TabsContent>
 
         <TabsContent value="listings" className="mt-4">

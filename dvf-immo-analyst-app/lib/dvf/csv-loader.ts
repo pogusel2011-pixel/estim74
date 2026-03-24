@@ -4,9 +4,18 @@ import { parse } from "csv-parse/sync";
 import { DVFMutation } from "@/types/dvf";
 import { haversineDistance } from "@/lib/utils";
 
-let csvCache: DVFMutation[] | null = null;
-let csvLoadedAt: number | null = null;
-const CACHE_TTL_MS = 10 * 60 * 1000; // 10 min
+// Use a global singleton so the cache survives Next.js hot-module reloads in dev
+declare global {
+  // eslint-disable-next-line no-var
+  var __dvfCsvCache: DVFMutation[] | null;
+  // eslint-disable-next-line no-var
+  var __dvfCsvLoadedAt: number | null;
+}
+
+global.__dvfCsvCache = global.__dvfCsvCache ?? null;
+global.__dvfCsvLoadedAt = global.__dvfCsvLoadedAt ?? null;
+
+const CACHE_TTL_MS = 30 * 60 * 1000; // 30 min
 
 function parseNumber(val: unknown): number {
   if (val === null || val === undefined || val === "") return 0;
@@ -23,11 +32,18 @@ function parseOptionalNumber(val: unknown): number | undefined {
 
 export async function loadAllCsvMutations(): Promise<DVFMutation[]> {
   const now = Date.now();
-  if (csvCache && csvLoadedAt && now - csvLoadedAt < CACHE_TTL_MS) {
-    return csvCache;
+  if (
+    global.__dvfCsvCache &&
+    global.__dvfCsvLoadedAt &&
+    now - global.__dvfCsvLoadedAt < CACHE_TTL_MS
+  ) {
+    return global.__dvfCsvCache;
   }
 
-  const csvPath = path.join(process.cwd(), process.env.DVF_CSV_PATH ?? "data/dvf/2014-2024_mutations_d74.csv");
+  const csvPath = path.join(
+    process.cwd(),
+    process.env.DVF_CSV_PATH ?? "data/dvf/2014-2024_mutations_d74.csv"
+  );
 
   if (!fs.existsSync(csvPath)) {
     console.warn("[DVF CSV] Fichier introuvable:", csvPath);
@@ -43,14 +59,16 @@ export async function loadAllCsvMutations(): Promise<DVFMutation[]> {
       cast: false,
     }) as Record<string, unknown>[];
 
-    csvCache = rows.map((row) => ({
+    global.__dvfCsvCache = rows.map((row) => ({
       id_mutation: String(row.id_mutation ?? ""),
       date_mutation: String(row.date_mutation ?? ""),
       nature_mutation: String(row.nature_mutation ?? ""),
       valeur_fonciere: parseNumber(row.valeur_fonciere),
       adresse_numero: row.adresse_numero ? String(row.adresse_numero) : undefined,
       adresse_nom_voie: row.adresse_nom_voie ? String(row.adresse_nom_voie) : undefined,
-      code_postal: row.code_postal ? String(row.code_postal).padStart(5, "0") : undefined,
+      code_postal: row.code_postal
+        ? String(row.code_postal).padStart(5, "0")
+        : undefined,
       nom_commune: String(row.nom_commune ?? ""),
       code_commune: String(row.code_commune ?? ""),
       code_departement: String(row.code_departement ?? ""),
@@ -64,9 +82,9 @@ export async function loadAllCsvMutations(): Promise<DVFMutation[]> {
       lon: row.longitude ? parseNumber(row.longitude) || undefined : undefined,
     }));
 
-    csvLoadedAt = now;
-    console.log(`[DVF CSV] ${csvCache.length} mutations chargées`);
-    return csvCache;
+    global.__dvfCsvLoadedAt = now;
+    console.log(`[DVF CSV] ${global.__dvfCsvCache.length} mutations chargées`);
+    return global.__dvfCsvCache;
   } catch (err) {
     console.error("[DVF CSV] Erreur parsing:", err);
     return [];
