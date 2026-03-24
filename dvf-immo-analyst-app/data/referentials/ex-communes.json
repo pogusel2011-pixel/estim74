@@ -1,0 +1,32 @@
+[
+  {
+    "codeInsee": "74012",
+    "nom": "Annecy-le-Vieux",
+    "communeFusionnee": "Annecy",
+    "codeInseeActuel": "74010"
+  },
+  {
+    "codeInsee": "74059",
+    "nom": "Cran-Gevrier",
+    "communeFusionnee": "Annecy",
+    "codeInseeActuel": "74010"
+  },
+  {
+    "codeInsee": "74065",
+    "nom": "Meythet",
+    "communeFusionnee": "Annecy",
+    "codeInseeActuel": "74010"
+  },
+  {
+    "codeInsee": "74228",
+    "nom": "Seynod",
+    "communeFusionnee": "Annecy",
+    "codeInseeActuel": "74010"
+  },
+  {
+    "codeInsee": "74162",
+    "nom": "Pringy",
+    "communeFusionnee": "Annecy",
+    "codeInseeActuel": "74010"
+  }
+]

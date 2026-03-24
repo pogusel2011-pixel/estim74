@@ -1,0 +1,96 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Analysis {
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Propriété analysée
+  address     String
+  postalCode  String
+  city        String
+  lat         Float?
+  lng         Float?
+  irisCode    String?
+
+  propertyType PropertyType
+  surface      Float
+  rooms        Int?
+  bedrooms     Int?
+  floor        Int?
+  totalFloors  Int?
+  landSurface  Float?
+  yearBuilt    Int?
+  condition    Condition   @default(AVERAGE)
+
+  // Energie
+  dpeLetter    String?
+  gheGrade     String?
+
+  // Options
+  hasParking   Boolean @default(false)
+  hasGarage    Boolean @default(false)
+  hasBalcony   Boolean @default(false)
+  hasTerrace   Boolean @default(false)
+  hasCellar    Boolean @default(false)
+  hasPool      Boolean @default(false)
+  hasElevator  Boolean @default(false)
+  orientation  String?
+  view         String?
+
+  // Valuation result
+  valuationLow    Float?
+  valuationMid    Float?
+  valuationHigh   Float?
+  valuationPsm    Float?
+  confidence      Float?
+  confidenceLabel String?
+
+  // Contexte marché
+  dvfSampleSize   Int?
+  dvfMedianPsm    Float?
+  dvfPeriodMonths Int?
+  perimeterKm     Float?
+
+  // Données JSON sérialisées
+  dvfComparables  Json?
+  dvfStats        Json?
+  listings        Json?
+  gptOutputs      Json?
+  adjustments     Json?
+  marketReading   Json?
+
+  status      AnalysisStatus @default(DRAFT)
+  notes       String?
+
+  @@index([postalCode])
+  @@index([propertyType])
+  @@index([createdAt])
+}
+
+enum PropertyType {
+  APARTMENT
+  HOUSE
+  LAND
+  COMMERCIAL
+}
+
+enum Condition {
+  TO_RENOVATE
+  AVERAGE
+  GOOD
+  EXCELLENT
+}
+
+enum AnalysisStatus {
+  DRAFT
+  COMPLETE
+  ARCHIVED
+}
