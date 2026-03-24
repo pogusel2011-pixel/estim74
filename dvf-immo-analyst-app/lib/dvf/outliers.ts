@@ -20,7 +20,16 @@ export function removeOutliers(mutations: DVFMutation[]): DVFMutation[] {
 
 export function computePrixM2(mutations: DVFMutation[]): DVFMutation[] {
   return mutations.map((m) => {
-    const surface = m.surface_reelle_bati ?? m.surface_terrain;
+    let surface: number | undefined;
+
+    if (m.type_local) {
+      // Building: prefer surface_reelle_bati, fall back to lot1_surface_carrez (Loi Carrez)
+      surface = m.surface_reelle_bati ?? m.lot1_surface_carrez;
+    } else {
+      // Land-only plot: use terrain surface
+      surface = m.surface_terrain;
+    }
+
     if (surface && surface > 0 && m.valeur_fonciere > 0) {
       return { ...m, prix_m2: Math.round(m.valeur_fonciere / surface) };
     }

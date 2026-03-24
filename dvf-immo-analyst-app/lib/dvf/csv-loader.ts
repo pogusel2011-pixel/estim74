@@ -8,6 +8,19 @@ let csvCache: DVFMutation[] | null = null;
 let csvLoadedAt: number | null = null;
 const CACHE_TTL_MS = 10 * 60 * 1000; // 10 min
 
+function parseNumber(val: unknown): number {
+  if (val === null || val === undefined || val === "") return 0;
+  const str = String(val).trim().replace(",", ".");
+  const n = parseFloat(str);
+  return isNaN(n) ? 0 : n;
+}
+
+function parseOptionalNumber(val: unknown): number | undefined {
+  if (val === null || val === undefined || val === "") return undefined;
+  const n = parseNumber(val);
+  return n > 0 ? n : undefined;
+}
+
 export async function loadAllCsvMutations(): Promise<DVFMutation[]> {
   const now = Date.now();
   if (csvCache && csvLoadedAt && now - csvLoadedAt < CACHE_TTL_MS) {
@@ -27,14 +40,14 @@ export async function loadAllCsvMutations(): Promise<DVFMutation[]> {
       columns: true,
       skip_empty_lines: true,
       delimiter: ",",
-      cast: true,
+      cast: false,
     }) as Record<string, unknown>[];
 
     csvCache = rows.map((row) => ({
       id_mutation: String(row.id_mutation ?? ""),
       date_mutation: String(row.date_mutation ?? ""),
       nature_mutation: String(row.nature_mutation ?? ""),
-      valeur_fonciere: Number(row.valeur_fonciere ?? 0),
+      valeur_fonciere: parseNumber(row.valeur_fonciere),
       adresse_numero: row.adresse_numero ? String(row.adresse_numero) : undefined,
       adresse_nom_voie: row.adresse_nom_voie ? String(row.adresse_nom_voie) : undefined,
       code_postal: row.code_postal ? String(row.code_postal).padStart(5, "0") : undefined,
@@ -43,11 +56,12 @@ export async function loadAllCsvMutations(): Promise<DVFMutation[]> {
       code_departement: String(row.code_departement ?? ""),
       id_parcelle: row.id_parcelle ? String(row.id_parcelle) : undefined,
       type_local: row.type_local ? String(row.type_local) : undefined,
-      surface_reelle_bati: row.surface_reelle_bati ? Number(row.surface_reelle_bati) : undefined,
-      nombre_pieces_principales: row.nombre_pieces_principales ? Number(row.nombre_pieces_principales) : undefined,
-      surface_terrain: row.surface_terrain ? Number(row.surface_terrain) : undefined,
-      lat: row.latitude ? Number(row.latitude) : undefined,
-      lon: row.longitude ? Number(row.longitude) : undefined,
+      surface_reelle_bati: parseOptionalNumber(row.surface_reelle_bati),
+      lot1_surface_carrez: parseOptionalNumber(row.lot1_surface_carrez),
+      nombre_pieces_principales: parseOptionalNumber(row.nombre_pieces_principales),
+      surface_terrain: parseOptionalNumber(row.surface_terrain),
+      lat: row.latitude ? parseNumber(row.latitude) || undefined : undefined,
+      lon: row.longitude ? parseNumber(row.longitude) || undefined : undefined,
     }));
 
     csvLoadedAt = now;
@@ -76,7 +90,11 @@ export async function loadCsvMutations(
       if (!m.lat || !m.lon) return false;
       if (m.nature_mutation !== "Vente") return false;
       if (!m.valeur_fonciere || m.valeur_fonciere <= 0) return false;
-      if (propertyTypes && m.type_local && !propertyTypes.includes(m.type_local)) return false;
+
+      if (propertyTypes) {
+        if (!m.type_local) return false;
+        if (!propertyTypes.includes(m.type_local)) return false;
+      }
 
       const mDate = new Date(m.date_mutation);
       if (mDate < dateMin) return false;

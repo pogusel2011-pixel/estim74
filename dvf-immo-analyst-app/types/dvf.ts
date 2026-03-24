@@ -12,6 +12,7 @@ export interface DVFMutation {
   id_parcelle?: string;
   type_local?: string;
   surface_reelle_bati?: number;
+  lot1_surface_carrez?: number;
   nombre_pieces_principales?: number;
   surface_terrain?: number;
   lat?: number;
