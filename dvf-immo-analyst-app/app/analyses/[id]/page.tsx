@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { FileDown } from "lucide-react";
+import { FileDown, ArrowLeft } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
 import { AnalysisSummaryPanel } from "@/components/analysis/analysis-summary";
@@ -70,6 +70,16 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
 
   return (
     <div className="space-y-6">
+      {/* Breadcrumb / retour */}
+      <div className="flex items-center gap-2">
+        <Button asChild variant="ghost" size="sm" className="gap-1.5 text-muted-foreground hover:text-foreground -ml-2">
+          <Link href="/analyses">
+            <ArrowLeft className="h-4 w-4" />
+            Retour aux analyses
+          </Link>
+        </Button>
+      </div>
+
       {/* En-tête */}
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1 min-w-0">

@@ -33,6 +33,16 @@ export async function GET() {
   }
 }
 
+export async function DELETE() {
+  try {
+    await prisma.analysis.deleteMany({});
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    console.error("[DELETE /api/analyses]", err);
+    return NextResponse.json({ error: "Erreur suppression" }, { status: 500 });
+  }
+}
+
 export async function POST(req: Request) {
   try {
     const body = await req.json();

@@ -46,4 +46,5 @@ export interface AnalysisSummary {
   confidence?: number;
   confidenceLabel?: string;
   status: AnalysisStatus;
+  notes?: string;
 }

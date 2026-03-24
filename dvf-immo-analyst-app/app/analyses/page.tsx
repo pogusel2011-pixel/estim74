@@ -12,7 +12,7 @@ export default async function AnalysesPage() {
     select: {
       id: true, createdAt: true, address: true, city: true,
       propertyType: true, surface: true, valuationMid: true,
-      confidence: true, confidenceLabel: true, status: true,
+      confidence: true, confidenceLabel: true, status: true, notes: true,
     },
   });
 
@@ -29,7 +29,7 @@ export default async function AnalysesPage() {
           </Link>
         </Button>
       </div>
-      <AnalysisHistoryList analyses={analyses.map(a => ({ ...a, createdAt: a.createdAt.toISOString(), valuationMid: a.valuationMid ?? undefined, confidence: a.confidence ?? undefined, confidenceLabel: a.confidenceLabel ?? undefined, status: a.status as never, propertyType: a.propertyType as never }))} />
+      <AnalysisHistoryList analyses={analyses.map(a => ({ ...a, createdAt: a.createdAt.toISOString(), valuationMid: a.valuationMid ?? undefined, confidence: a.confidence ?? undefined, confidenceLabel: a.confidenceLabel ?? undefined, notes: a.notes ?? undefined, status: a.status as never, propertyType: a.propertyType as never }))} />
     </div>
   );
 }
