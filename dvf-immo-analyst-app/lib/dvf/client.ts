@@ -2,6 +2,10 @@ import { DVFMutation } from "@/types/dvf";
 import { getBoundingBox } from "@/lib/geo/perimeter";
 import { loadCsvMutations } from "./csv-loader";
 
+const MIN_SAMPLES = 5;
+const EXPANSION_STEP_KM = 0.5;
+const MAX_RADIUS_KM = 5;
+
 /**
  * Récupère les mutations DVF depuis l'API data.gouv.fr (cquest)
  */
@@ -40,29 +44,62 @@ export async function fetchDVFFromAPI(
 }
 
 /**
- * Point d'entrée principal : CSV local en priorité, fallback API
+ * Point d'entrée principal : CSV local en priorité, fallback API.
+ * Auto-expand le rayon par pas de 0.5 km (jusqu'à 5 km) si < 5 transactions.
+ * Retourne le rayon final effectivement utilisé.
  */
 export async function getDVFMutations(
   lat: number,
   lng: number,
-  radiusKm: number,
+  initialRadiusKm: number,
   monthsBack = 24,
   propertyTypes?: string[]
+): Promise<{ mutations: DVFMutation[]; source: "csv" | "api" | "mixed"; radiusKm: number }> {
+  let radiusKm = initialRadiusKm;
+
+  while (true) {
+    const result = await _fetchAtRadius(lat, lng, radiusKm, monthsBack, propertyTypes);
+
+    if (result.mutations.length >= MIN_SAMPLES) {
+      if (radiusKm !== initialRadiusKm) {
+        console.log(
+          `[DVF] Rayon élargi de ${initialRadiusKm} km à ${radiusKm} km (${result.mutations.length} transactions)`
+        );
+      }
+      return { ...result, radiusKm };
+    }
+
+    const nextRadius = Math.round((radiusKm + EXPANSION_STEP_KM) * 10) / 10;
+    if (nextRadius > MAX_RADIUS_KM) {
+      // Rayon max atteint, on retourne ce qu'on a
+      console.warn(
+        `[DVF] Rayon max (${MAX_RADIUS_KM} km) atteint avec seulement ${result.mutations.length} transactions`
+      );
+      return { ...result, radiusKm };
+    }
+
+    radiusKm = nextRadius;
+  }
+}
+
+async function _fetchAtRadius(
+  lat: number,
+  lng: number,
+  radiusKm: number,
+  monthsBack: number,
+  propertyTypes?: string[]
 ): Promise<{ mutations: DVFMutation[]; source: "csv" | "api" | "mixed" }> {
-  // Tente d'abord le CSV local
   const csvMutations = await loadCsvMutations(lat, lng, radiusKm, monthsBack, propertyTypes);
-  if (csvMutations.length >= 5) {
+  if (csvMutations.length >= MIN_SAMPLES) {
     return { mutations: csvMutations, source: "csv" };
   }
 
-  // Fallback API
   const apiMutations = await fetchDVFFromAPI(lat, lng, radiusKm, monthsBack);
 
   if (csvMutations.length === 0 && apiMutations.length === 0) {
     return { mutations: [], source: "api" };
   }
 
-  // Merge si les deux sources ont des données
   if (csvMutations.length > 0 && apiMutations.length > 0) {
     const merged = deduplicateMutations([...csvMutations, ...apiMutations]);
     return { mutations: merged, source: "mixed" };

@@ -27,19 +27,23 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
   // If the analysis has no dvfStats saved (e.g. seeded records), fetch live
   let dvfStats: DVFStats | null = serialized.dvfStats ?? null;
   let dvfComparables: DVFComparable[] = serialized.dvfComparables ?? [];
+  let liveFinalRadiusKm: number | null = null;
+  let liveRequestedRadiusKm: number | null = null;
 
   if (!dvfStats && serialized.lat && serialized.lng) {
     try {
       const dvfTypes = propertyTypeToDvfTypes(serialized.propertyType);
-      const radiusKm = serialized.perimeterKm ?? 0.5;
+      const requestedRadius = serialized.perimeterKm ?? 0.5;
       const monthsBack = serialized.dvfPeriodMonths ?? 24;
-      const { mutations, source } = await getDVFMutations(
+      const { mutations, source, radiusKm: finalRadius } = await getDVFMutations(
         serialized.lat,
         serialized.lng,
-        radiusKm,
+        requestedRadius,
         monthsBack,
         dvfTypes
       );
+      liveRequestedRadiusKm = requestedRadius;
+      liveFinalRadiusKm = finalRadius;
       let enriched = computePrixM2(mutations);
       enriched = removeOutliers(enriched);
       dvfStats = computeDVFStats(enriched);
@@ -80,7 +84,8 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
             <DVFStatsPanel
               stats={dvfStats}
               sampleSize={serialized.dvfSampleSize}
-              perimeterKm={serialized.perimeterKm}
+              perimeterKm={liveFinalRadiusKm ?? serialized.perimeterKm}
+              requestedRadiusKm={liveRequestedRadiusKm ?? serialized.requestedRadiusKm}
             />
             <div className="lg:col-span-2">
               <PerimeterPanel lat={serialized.lat} lng={serialized.lng} perimeterKm={serialized.perimeterKm} />

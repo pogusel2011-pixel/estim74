@@ -12,9 +12,11 @@ interface NotairesResponse {
  * API publique : https://www.notaires.fr/fr/immobilier-succession/prix-et-tendances-de-limmobilier
  */
 export async function fetchNotairesMarket(
-  postalCode: string,
+  postalCode: string | undefined | null,
   propertyType: string
 ): Promise<MarketReading | null> {
+  if (!postalCode) return buildFallbackReading();
+
   // L'API notaires n'est pas documentée publiquement — on interroge leur endpoint observé
   const dept = postalCode.slice(0, 2);
   const url = `https://www.notaires.fr/api/prix-immobilier?departement=${dept}&type=${encodeURIComponent(propertyType)}`;

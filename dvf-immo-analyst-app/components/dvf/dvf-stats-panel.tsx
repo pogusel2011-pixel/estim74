@@ -1,5 +1,6 @@
 import { DVFStats } from "@/types/dvf";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { formatPsm, formatDate } from "@/lib/utils";
 import { Database } from "lucide-react";
 
@@ -7,9 +8,10 @@ interface Props {
   stats?: DVFStats | null;
   sampleSize?: number | null;
   perimeterKm?: number | null;
+  requestedRadiusKm?: number | null;
 }
 
-export function DVFStatsPanel({ stats, sampleSize, perimeterKm }: Props) {
+export function DVFStatsPanel({ stats, sampleSize, perimeterKm, requestedRadiusKm }: Props) {
   if (!stats) {
     return (
       <Card>
@@ -18,6 +20,13 @@ export function DVFStatsPanel({ stats, sampleSize, perimeterKm }: Props) {
     );
   }
 
+  const wasExpanded =
+    requestedRadiusKm != null &&
+    perimeterKm != null &&
+    perimeterKm > requestedRadiusKm;
+
+  const perimeterDisplay = perimeterKm ? `${perimeterKm} km` : "—";
+
   const rows = [
     { label: "Transactions", value: String(sampleSize ?? stats.count) },
     { label: "Médiane €/m²", value: formatPsm(stats.medianPsm) },
@@ -25,7 +34,12 @@ export function DVFStatsPanel({ stats, sampleSize, perimeterKm }: Props) {
     { label: "Q1 – Q3", value: formatPsm(stats.p25Psm) + " – " + formatPsm(stats.p75Psm) },
     { label: "Min – Max", value: formatPsm(stats.minPsm) + " – " + formatPsm(stats.maxPsm) },
     { label: "Période", value: formatDate(stats.oldestDate) + " – " + formatDate(stats.newestDate) },
-    { label: "Périmètre", value: perimeterKm ? perimeterKm + " km" : "—" },
+    {
+      label: "Périmètre",
+      value: wasExpanded
+        ? `${perimeterDisplay} (demandé : ${requestedRadiusKm} km)`
+        : perimeterDisplay,
+    },
     { label: "Source", value: stats.source === "csv" ? "CSV local" : stats.source === "api" ? "API DVF" : "CSV + API" },
   ];
 
@@ -35,6 +49,11 @@ export function DVFStatsPanel({ stats, sampleSize, perimeterKm }: Props) {
         <CardTitle className="text-sm flex items-center gap-2">
           <Database className="h-4 w-4 text-primary" />
           Statistiques DVF
+          {wasExpanded && (
+            <Badge variant="outline" className="ml-auto text-xs font-normal text-amber-600 border-amber-400">
+              Rayon élargi à {perimeterKm} km
+            </Badge>
+          )}
         </CardTitle>
       </CardHeader>
       <CardContent>

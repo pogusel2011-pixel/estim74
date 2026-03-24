@@ -36,9 +36,9 @@ export async function POST(req: Request) {
 
     const propertyWithGeo = { ...property, lat, lng };
 
-    // 2. DVF — mutations
+    // 2. DVF — mutations (avec auto-expansion du rayon si < 5 transactions)
     const dvfTypes = propertyTypeToDvfTypes(property.propertyType);
-    const { mutations, source } = await getDVFMutations(lat, lng, radiusKm, monthsBack, dvfTypes);
+    const { mutations, source, radiusKm: finalRadiusKm } = await getDVFMutations(lat, lng, radiusKm, monthsBack, dvfTypes);
     let enrichedMutations = computePrixM2(mutations);
     if (excludeOutliers) enrichedMutations = removeOutliers(enrichedMutations);
 
@@ -94,7 +94,8 @@ export async function POST(req: Request) {
           dvfSampleSize: dvfStats?.count,
           dvfMedianPsm: dvfStats?.medianPsm,
           dvfPeriodMonths: dvfStats?.periodMonths,
-          perimeterKm: radiusKm,
+          perimeterKm: finalRadiusKm,
+          requestedRadiusKm: radiusKm,
           dvfComparables: dvfComparables as never,
           dvfStats: dvfStats as never,
           listings: listings as never,
@@ -116,7 +117,8 @@ export async function POST(req: Request) {
       listings,
       valuation,
       marketReading,
-      perimeterKm: radiusKm,
+      perimeterKm: finalRadiusKm,
+      requestedRadiusKm: radiusKm,
     });
   } catch (err) {
     console.error("[POST /api/estimate]", err);

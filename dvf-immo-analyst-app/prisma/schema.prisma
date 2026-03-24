@@ -13,9 +13,9 @@ model Analysis {
   updatedAt   DateTime @updatedAt
 
   // Propriété analysée
-  address     String
-  postalCode  String
-  city        String
+  address     String?
+  postalCode  String?
+  city        String?
   lat         Float?
   lng         Float?
   irisCode    String?
@@ -54,10 +54,11 @@ model Analysis {
   confidenceLabel String?
 
   // Contexte marché
-  dvfSampleSize   Int?
-  dvfMedianPsm    Float?
-  dvfPeriodMonths Int?
-  perimeterKm     Float?
+  dvfSampleSize      Int?
+  dvfMedianPsm       Float?
+  dvfPeriodMonths    Int?
+  perimeterKm        Float?
+  requestedRadiusKm  Float?
 
   // Données JSON sérialisées
   dvfComparables  Json?
