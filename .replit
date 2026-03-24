@@ -23,13 +23,13 @@ args = "Start application"
 name = "Start application"
 author = "agent"
 
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "cd dvf-immo-analyst-app && npm run dev -- -p 5000"
-waitForPort = 5000
-
 [workflows.workflow.metadata]
 outputType = "webview"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd dvf-immo-analyst-app && npm run dev -- -p 5000 -H 0.0.0.0"
+waitForPort = 5000
 
 [[ports]]
 localPort = 5000
