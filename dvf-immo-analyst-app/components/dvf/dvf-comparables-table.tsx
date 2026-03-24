@@ -8,7 +8,6 @@ import { useState } from "react";
 
 interface Props {
   comparables: DVFComparable[];
-  /** Indique si des données temps réel ont été fusionnées */
   hasLiveData?: boolean;
 }
 
@@ -26,6 +25,9 @@ function SourceBadge({ source }: { source?: "csv" | "live" }) {
     </span>
   );
 }
+
+// Spec Estim74 : Date | Distance (m) | Nature du bien | Surface (m²) | Pièces | Prix signé DVF | Prix/m² | Adresse/parcelle | Source
+const HEADERS = ["Date", "Distance", "Nature du bien", "Surface", "Pièces", "Prix DVF", "€/m²", "Adresse/parcelle", "Source"];
 
 export function DVFComparablesTable({ comparables, hasLiveData }: Props) {
   const [showAll, setShowAll] = useState(false);
@@ -66,10 +68,10 @@ export function DVFComparablesTable({ comparables, hasLiveData }: Props) {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b bg-muted/50">
-                {["Date", "Adresse", "Type", "Surface", "Prix", "€/m²", "Distance", "Score", "Source"].map((h) => (
+                {HEADERS.map((h) => (
                   <th
                     key={h}
-                    className="px-4 py-2 text-left text-xs font-medium text-muted-foreground whitespace-nowrap"
+                    className="px-3 py-2 text-left text-xs font-medium text-muted-foreground whitespace-nowrap"
                   >
                     {h}
                   </th>
@@ -82,40 +84,39 @@ export function DVFComparablesTable({ comparables, hasLiveData }: Props) {
                   key={c.id ?? i}
                   className="border-b last:border-0 hover:bg-muted/30 transition-colors"
                 >
-                  <td className="px-4 py-2 whitespace-nowrap text-muted-foreground">
+                  {/* Date */}
+                  <td className="px-3 py-2 whitespace-nowrap text-muted-foreground">
                     {formatDateShort(c.date)}
                   </td>
-                  <td
-                    className="px-4 py-2 max-w-[160px] truncate"
-                    title={c.address + ", " + c.city}
-                  >
-                    {c.address}
+                  {/* Distance (m) */}
+                  <td className="px-3 py-2 whitespace-nowrap text-muted-foreground">
+                    {c.distanceM != null ? `${Math.round(c.distanceM)} m` : "—"}
                   </td>
-                  <td className="px-4 py-2 whitespace-nowrap">{c.type}</td>
-                  <td className="px-4 py-2 whitespace-nowrap">{c.surface} m²</td>
-                  <td className="px-4 py-2 whitespace-nowrap font-medium">
+                  {/* Nature du bien */}
+                  <td className="px-3 py-2 whitespace-nowrap">{c.type}</td>
+                  {/* Surface (m²) */}
+                  <td className="px-3 py-2 whitespace-nowrap">{c.surface} m²</td>
+                  {/* Pièces */}
+                  <td className="px-3 py-2 whitespace-nowrap text-muted-foreground">
+                    {c.rooms != null ? c.rooms : "—"}
+                  </td>
+                  {/* Prix signé DVF */}
+                  <td className="px-3 py-2 whitespace-nowrap font-medium">
                     {formatPrice(c.price, true)}
                   </td>
-                  <td className="px-4 py-2 whitespace-nowrap font-semibold text-primary">
+                  {/* Prix/m² */}
+                  <td className="px-3 py-2 whitespace-nowrap font-semibold text-primary">
                     {formatPsm(c.pricePsm)}
                   </td>
-                  <td className="px-4 py-2 whitespace-nowrap text-muted-foreground">
-                    {c.distanceM != null ? Math.round(c.distanceM) + " m" : "—"}
+                  {/* Adresse/parcelle */}
+                  <td
+                    className="px-3 py-2 max-w-[160px] truncate text-muted-foreground"
+                    title={[c.address, c.city].filter(Boolean).join(", ")}
+                  >
+                    {c.address || "—"}
                   </td>
-                  <td className="px-4 py-2">
-                    <div className="flex items-center gap-1">
-                      <div className="h-1.5 w-12 rounded-full bg-muted overflow-hidden">
-                        <div
-                          className="h-full rounded-full bg-primary"
-                          style={{ width: (c.similarity ?? 0) * 100 + "%" }}
-                        />
-                      </div>
-                      <span className="text-xs text-muted-foreground">
-                        {Math.round((c.similarity ?? 0) * 100)}%
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-2">
+                  {/* Source */}
+                  <td className="px-3 py-2">
                     <SourceBadge source={c.source} />
                   </td>
                 </tr>
@@ -129,9 +130,7 @@ export function DVFComparablesTable({ comparables, hasLiveData }: Props) {
               onClick={() => setShowAll(!showAll)}
               className="text-sm text-primary hover:underline"
             >
-              {showAll
-                ? "Réduire"
-                : `Voir les ${comparables.length} transactions`}
+              {showAll ? "Réduire" : `Voir les ${comparables.length} transactions`}
             </button>
           </div>
         )}

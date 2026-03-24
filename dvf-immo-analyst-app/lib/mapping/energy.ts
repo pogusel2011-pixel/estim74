@@ -1,7 +1,8 @@
 type DPELetter = "A" | "B" | "C" | "D" | "E" | "F" | "G";
 
+// Spec Estim74 : A/B +1-3% → +2% | C/D 0% | E -2/-4% → -3% | F -5/-8% → -6% | G -5/-8% → -7%
 export const DPE_ADJUSTMENT: Record<DPELetter, number> = {
-  A: 0.06, B: 0.04, C: 0.02, D: 0.00, E: -0.03, F: -0.07, G: -0.12,
+  A: 0.02, B: 0.02, C: 0.00, D: 0.00, E: -0.03, F: -0.06, G: -0.07,
 };
 
 export function getDpeAdjustment(letter?: string): number {

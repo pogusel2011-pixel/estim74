@@ -62,6 +62,26 @@ dvf-immo-analyst-app/
 - `OPENAI_API_KEY` — optional; app falls back to rule-based analysis if absent
 - `NEXT_PUBLIC_APP_URL` — optional; defaults to `http://localhost:5000`
 
+## Audit Recette — Adjustments Engine (Estim74 Spec)
+Implemented in `lib/valuation/adjustments.ts` and aligned in `lib/mapping/energy.ts` + `lib/valuation/valuation.ts`:
+- **Condition**: Refait neuf +5% | Bon état 0% | Rafraîchissement -4% | Travaux lourds -10%
+- **DPE**: A/B +2% | C/D 0% | E -3% | F -6% | G -7% (both `energy.ts` and fallback in `valuation.ts`)
+- **Étage appartement**: RDC -4% | Élevé sans ascenseur -6.5% | Élevé avec ascenseur +1% (ratio ≥ 70%)
+- **Garage**: Appartement +5% | Maison +3%
+- **Balcon** +2% | **Terrasse** +3% | **Parking** +2%
+- **Jardin/terrain**: < 300m² +1%, 300–1000m² +2%, > 1000m² +3% (maison surtout)
+- **Piscine** +2.5% | **Cave** +1%
+- **Vue**: lac/montagne +2%, dégagée +1.5%, jardin +1%, cour -1%
+- **Plafond global ±20%** with brut vs retenu logging
+
+## gptPayload
+`Analysis.gptPayload String?` (Prisma) — JSON string built in `app/api/estimate/route.ts`:
+- Contains: adresse, type, surface, DVF stats (médianes, Q1/Q3, rayon), estimation fourchette, ajustements détaillés, psmBase/Ajuste, confidenceLabel
+
+## Comparables Table Column Order (Spec Estim74)
+Date | Distance (m) | Nature du bien | Surface (m²) | Pièces | Prix DVF | €/m² | Adresse/parcelle | Source
+(Both web table `components/dvf/dvf-comparables-table.tsx` and print page `app/analyses/[id]/print/page.tsx`)
+
 ## Notes
 - First page load after server restart takes ~10s (CSV load); subsequent loads ~50ms
 - Notaires API returns 404/502 — non-critical, fallback market reading used

@@ -70,6 +70,7 @@ model Analysis {
 
   status      AnalysisStatus @default(DRAFT)
   notes       String?
+  gptPayload  String?
 
   @@index([postalCode])
   @@index([propertyType])

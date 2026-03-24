@@ -5,15 +5,17 @@ import { ValuationResult } from "@/types/valuation";
 import { computeAdjustments, applyAdjustments } from "./adjustments";
 import { computeConfidence } from "./confidence";
 
+// Spec Estim74 : Refait neuf +5% | Bon état 0% | Rafraîchissement -4% | Travaux lourds -10%
 const CONDITION_COEFFICIENTS: Record<string, number> = {
   EXCELLENT: 0.05,
   GOOD: 0.00,
-  AVERAGE: -0.05,
-  TO_RENOVATE: -0.15,
+  AVERAGE: -0.04,
+  TO_RENOVATE: -0.10,
 };
 
+// Spec Estim74 : A/B +2% | C/D 0% | E -3% | F -6% | G -7%
 const DPE_COEFFICIENTS: Record<string, number> = {
-  A: 0.03, B: 0.03, C: 0.00, D: 0.00, E: -0.05, F: -0.05, G: -0.05,
+  A: 0.02, B: 0.02, C: 0.00, D: 0.00, E: -0.03, F: -0.06, G: -0.07,
 };
 
 export function computeValuation(
