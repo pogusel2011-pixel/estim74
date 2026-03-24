@@ -97,8 +97,12 @@ export async function POST(
     if (dvfStats) dvfStats.source = source;
     const dvfComparables = toComparables(enriched, property.surface as number);
 
-    // 6. Annonces actives
-    const listings = await findActiveListings(propertyWithGeo as never);
+    // 6. Annonces actives (via MoteurImmo avec code INSEE + coords du sujet)
+    const listings = await findActiveListings(propertyWithGeo as never, {
+      inseeCode: communeCode,
+      lat,
+      lng,
+    });
 
     // 7. Valorisation
     const valuation = computeValuation(propertyWithGeo as never, dvfStats ?? null, listings);

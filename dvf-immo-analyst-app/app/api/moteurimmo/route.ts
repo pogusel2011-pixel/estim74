@@ -1,12 +1,25 @@
 import { NextResponse } from "next/server";
-import { findActiveListings } from "@/lib/moteurimmo/search";
+import { findActiveListings, isApiKeyConfigured } from "@/lib/moteurimmo/search";
 import { PropertyInput } from "@/types/property";
+
+export async function GET() {
+  return NextResponse.json({ apiAvailable: isApiKeyConfigured() });
+}
 
 export async function POST(req: Request) {
   try {
-    const property = (await req.json()) as PropertyInput;
-    const listings = await findActiveListings(property);
-    return NextResponse.json({ listings, count: listings.length });
+    const body = await req.json() as { property: PropertyInput; inseeCode?: string };
+    const { property, inseeCode } = body;
+    const listings = await findActiveListings(property, {
+      inseeCode,
+      lat: property.lat,
+      lng: property.lng,
+    });
+    return NextResponse.json({
+      listings,
+      count: listings.length,
+      apiAvailable: isApiKeyConfigured(),
+    });
   } catch (err) {
     console.error("[POST /api/moteurimmo]", err);
     return NextResponse.json({ error: "Erreur recherche annonces" }, { status: 500 });

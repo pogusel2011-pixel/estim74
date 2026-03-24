@@ -6,19 +6,25 @@ export interface ActiveListing {
   address?: string;
   city: string;
   postalCode?: string;
+  inseeCode?: string;
   propertyType: string;
   surface: number;
   rooms?: number;
+  bedrooms?: number;
   floor?: number;
   price: number;
   pricePsm: number;
   description?: string;
   publishedAt?: string;
+  lastEventDate?: string;
   photos?: string[];
+  pictureUrl?: string;
   features?: string[];
   dpe?: string;
   lat?: number;
   lng?: number;
+  distance?: number;
+  publisher?: { name?: string; phone?: string };
 }
 
 export interface QualitativeComparison {

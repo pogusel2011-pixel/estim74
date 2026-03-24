@@ -20,6 +20,7 @@ import { computePrixM2, removeOutliers } from "@/lib/dvf/outliers";
 import { computeDVFStats } from "@/lib/dvf/stats";
 import { toComparables } from "@/lib/dvf/comparables";
 import { propertyTypeToDvfTypes } from "@/lib/mapping/property-type";
+import { isApiKeyConfigured } from "@/lib/moteurimmo/search";
 import { DVFStats, DVFComparable } from "@/types/dvf";
 
 export const dynamic = "force-dynamic";
@@ -62,6 +63,7 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
 
   const perimeterKm = liveFinalRadiusKm ?? serialized.perimeterKm;
   const requestedRadiusKm = liveRequestedRadiusKm ?? serialized.requestedRadiusKm;
+  const apiAvailable = isApiKeyConfigured();
 
   // Map propertyType to DVF type string for the trend chart
   const dvfTypeForChart = serialized.propertyType === "APARTMENT" ? "Appartement"
@@ -138,9 +140,10 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
         </TabsContent>
 
         <TabsContent value="listings" className="space-y-4 mt-4">
-          {(serialized.listings ?? []).length > 0 ? (
-            <ActiveListingsPanel listings={serialized.listings ?? []} />
-          ) : null}
+          <ActiveListingsPanel
+            listings={serialized.listings ?? []}
+            apiAvailable={apiAvailable}
+          />
           <DVFRecentSalesPanel comparables={dvfComparables} />
         </TabsContent>
 
