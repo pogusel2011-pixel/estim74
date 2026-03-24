@@ -19,6 +19,8 @@ export interface DVFMutation {
   lon?: number;
   distance_m?: number;
   prix_m2?: number;
+  /** Source de la donnée : "csv" = fichier local DGFiP, "live" = API cquest.org temps réel */
+  _source?: "csv" | "live";
 }
 
 export interface DVFStats {
@@ -49,6 +51,8 @@ export interface DVFComparable {
   landSurface?: number;
   distanceM?: number;
   similarity?: number;
+  /** Source : "csv" = données locales 2014-2024, "live" = API temps réel */
+  source?: "csv" | "live";
 }
 
 export interface DVFFilters {

@@ -1,0 +1,41 @@
+INTEGRATION IRIS + API DVF LIVE
+
+Ajoute 2 nouvelles sources de données à l'app :
+
+## 1. FICHIER IRIS (déjà uploadé dans le projet)
+
+Un fichier Excel IRIS a été uploadé (cherche-le dans les fichiers du projet, probablement nommé iris ou contenant IRIS dans le nom). Ce fichier contient la correspondance entre codes INSEE des communes et leurs IRIS (sous-communes). Il est crucial pour les communes fusionnées de Haute-Savoie comme Annecy (qui intègre maintenant Meythet 74192, Cran-Gévrier 74085, Annecy-le-Vieux 74010, Seynod 74270, Pringy 74213, Épagny Metz-Tessy 74108 - toutes maintenant code INSEE 74010).
+
+Crée un fichier `iris_utils.js` qui :
+- Parse le fichier IRIS Excel au démarrage (utilise la lib xlsx déjà présente ou ajoute-la)
+- Fournit une fonction `getInseeCodesForCity(cityName, postalCode)` qui retourne un tableau de codes INSEE (gère les fusions de communes)
+- Fournit une table de mapping hardcodée pour les fusions connues en Haute-Savoie 74 comme fallback
+
+## 2. API DVF LIVE (api.cquest.org)
+
+Intègre l'API DVF live `https://api.cquest.org/dvf` comme source complémentaire aux fichiers CSV locaux.
+
+Endpoint : `GET https://api.cquest.org/dvf?code_commune=CODE_INSEE&nature_mutation=Vente&type_local=TYPE`
+- type_local : 'Appartement' ou 'Maison'
+- Retourne JSON avec tableau de transactions
+
+Flux de données dans `server/routes.ts` :
+1. Géocode l'adresse via `https://api-adresse.data.gouv.fr/search/?q=ADRESSE&postcode=CP` pour obtenir lat/lon + code INSEE
+2. Récupère les DVF via `https://api.cquest.org/dvf?lat=LAT&lon=LON&dist=1000&nature_mutation=Vente&type_local=TYPE` 
+3. Fusionne avec les données CSV locales existantes
+4. Trie par pertinence (distance, surface similaire, même type)
+5. Affiche les 20 meilleures transactions comparables dans la section 'Transactions comparables'
+
+## 3. MISE À JOUR DE L'INTERFACE
+
+Dans la section 'Transactions comparables' de la page résultats :
+- Ajoute une badge source sur chaque transaction : 'DVF Live' (bleu) ou 'DVF Local' (gris)
+- Ajoute une colonne 'Distance' en mètres
+- Affiche la période couverte : 'DVF 2014-2024 + données récentes'
+- Si l'API live échoue (timeout/erreur), fallback silencieux sur les données locales uniquement
+
+## 4. HEADER UPDATE
+
+Mets à jour le header de l'app : 'DVF 2014-2024 + Données récentes' au lieu de 'DVF 2014-2024'
+
+IMPORTANT : Tout doit fonctionner sans clé API, utilise uniquement les APIs publiques gratuites. Gère les erreurs CORS côté serveur (les appels API DVF se font depuis le backend Node.js, pas depuis le frontend).

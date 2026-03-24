@@ -8,7 +8,9 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
         <Menu className="h-5 w-5" />
       </Button>
       <div className="flex-1" />
-      <p className="text-xs text-muted-foreground">Haute-Savoie (74) • DVF 2014–2024</p>
+      <p className="text-xs text-muted-foreground">
+        Haute-Savoie (74) • DVF 2014–2024 + Données récentes
+      </p>
     </header>
   );
 }

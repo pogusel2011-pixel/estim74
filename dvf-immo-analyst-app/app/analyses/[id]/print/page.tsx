@@ -370,7 +370,7 @@ export default async function PrintPage({ params }: { params: { id: string } }) 
               <table>
                 <thead>
                   <tr>
-                    {["Date", "Adresse", "Type", "Surface", "Prix", "€/m²", "Distance", "Score"].map(h => (
+                    {["Date", "Adresse", "Type", "Surface", "Prix", "€/m²", "Distance", "Score", "Source"].map(h => (
                       <th key={h}>{h}</th>
                     ))}
                   </tr>
@@ -379,7 +379,7 @@ export default async function PrintPage({ params }: { params: { id: string } }) 
                   {dvfComparables.slice(0, 20).map((c, i) => (
                     <tr key={c.id ?? i}>
                       <td style={{ color: "#64748b", whiteSpace: "nowrap" }}>{formatDateShort(c.date)}</td>
-                      <td style={{ maxWidth: 140, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      <td style={{ maxWidth: 130, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         {c.address}
                       </td>
                       <td style={{ whiteSpace: "nowrap" }}>{c.type}</td>
@@ -388,6 +388,12 @@ export default async function PrintPage({ params }: { params: { id: string } }) 
                       <td style={{ whiteSpace: "nowrap", fontWeight: 700, color: "#1e40af" }}>{formatPsm(c.pricePsm)}</td>
                       <td style={{ whiteSpace: "nowrap", color: "#64748b" }}>{c.distanceM != null ? Math.round(c.distanceM) + " m" : "—"}</td>
                       <td style={{ whiteSpace: "nowrap", color: "#64748b" }}>{Math.round((c.similarity ?? 0) * 100)}%</td>
+                      <td style={{ whiteSpace: "nowrap" }}>
+                        {c.source === "live"
+                          ? <span style={{ color: "#1d4ed8", fontWeight: 600, fontSize: "7pt" }}>Live</span>
+                          : <span style={{ color: "#94a3b8", fontSize: "7pt" }}>Local</span>
+                        }
+                      </td>
                     </tr>
                   ))}
                 </tbody>

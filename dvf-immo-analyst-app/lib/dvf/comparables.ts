@@ -21,6 +21,7 @@ export function toComparables(mutations: DVFMutation[], subjectSurface: number):
         landSurface: m.surface_terrain,
         distanceM: m.distance_m,
         similarity,
+        source: m._source ?? "csv",
       };
     })
     .sort((a, b) => (b.similarity ?? 0) - (a.similarity ?? 0))

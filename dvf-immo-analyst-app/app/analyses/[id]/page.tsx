@@ -117,7 +117,10 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
               <PerimeterPanel lat={serialized.lat} lng={serialized.lng} perimeterKm={perimeterKm} />
             </div>
           </div>
-          <DVFComparablesTable comparables={dvfComparables} />
+          <DVFComparablesTable
+            comparables={dvfComparables}
+            hasLiveData={dvfComparables.some((c) => c.source === "live")}
+          />
         </TabsContent>
 
         <TabsContent value="listings" className="space-y-4 mt-4">

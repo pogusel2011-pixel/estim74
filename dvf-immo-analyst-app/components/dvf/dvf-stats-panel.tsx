@@ -40,7 +40,7 @@ export function DVFStatsPanel({ stats, sampleSize, perimeterKm, requestedRadiusK
         ? `${perimeterDisplay} (demandé : ${requestedRadiusKm} km)`
         : perimeterDisplay,
     },
-    { label: "Source", value: stats.source === "csv" ? "CSV local" : stats.source === "api" ? "API DVF" : "CSV + API" },
+    { label: "Source", value: stats.source === "csv" ? "CSV local 2014–2024" : stats.source === "api" ? "DVF Live (API)" : "CSV local + DVF Live" },
   ];
 
   return (
