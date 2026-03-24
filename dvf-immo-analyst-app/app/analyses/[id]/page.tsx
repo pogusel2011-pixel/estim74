@@ -4,7 +4,9 @@ import { AnalysisSummaryPanel } from "@/components/analysis/analysis-summary";
 import { ValuationCards } from "@/components/analysis/valuation-cards";
 import { DVFComparablesTable } from "@/components/dvf/dvf-comparables-table";
 import { DVFStatsPanel } from "@/components/dvf/dvf-stats-panel";
+import { MarketTrendChart } from "@/components/dvf/market-trend-chart";
 import { ActiveListingsPanel } from "@/components/listings/active-listings-panel";
+import { DVFRecentSalesPanel } from "@/components/listings/dvf-recent-sales-panel";
 import { MarketReading } from "@/components/analysis/market-reading";
 import { PerimeterPanel } from "@/components/analysis/perimeter-panel";
 import { GPTActionsPanel } from "@/components/gpt/gpt-actions-panel";
@@ -54,6 +56,15 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
     }
   }
 
+  const perimeterKm = liveFinalRadiusKm ?? serialized.perimeterKm;
+  const requestedRadiusKm = liveRequestedRadiusKm ?? serialized.requestedRadiusKm;
+
+  // Map propertyType to DVF type string for the trend chart
+  const dvfTypeForChart = serialized.propertyType === "APARTMENT" ? "Appartement"
+    : serialized.propertyType === "HOUSE" ? "Maison"
+    : serialized.propertyType === "LAND" ? "Terrain"
+    : undefined;
+
   return (
     <div className="space-y-6">
       {/* En-tête */}
@@ -68,6 +79,8 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
         confidence={serialized.confidence}
         confidenceLabel={serialized.confidenceLabel}
         adjustments={serialized.adjustments}
+        dvfSampleSize={serialized.dvfSampleSize}
+        perimeterKm={perimeterKm}
       />
 
       {/* Tabs secondaires */}
@@ -84,22 +97,33 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
             <DVFStatsPanel
               stats={dvfStats}
               sampleSize={serialized.dvfSampleSize}
-              perimeterKm={liveFinalRadiusKm ?? serialized.perimeterKm}
-              requestedRadiusKm={liveRequestedRadiusKm ?? serialized.requestedRadiusKm}
+              perimeterKm={perimeterKm}
+              requestedRadiusKm={requestedRadiusKm}
             />
             <div className="lg:col-span-2">
-              <PerimeterPanel lat={serialized.lat} lng={serialized.lng} perimeterKm={serialized.perimeterKm} />
+              <PerimeterPanel lat={serialized.lat} lng={serialized.lng} perimeterKm={perimeterKm} />
             </div>
           </div>
           <DVFComparablesTable comparables={dvfComparables} />
         </TabsContent>
 
-        <TabsContent value="listings" className="mt-4">
-          <ActiveListingsPanel listings={serialized.listings ?? []} />
+        <TabsContent value="listings" className="space-y-4 mt-4">
+          {(serialized.listings ?? []).length > 0 ? (
+            <ActiveListingsPanel listings={serialized.listings ?? []} />
+          ) : null}
+          <DVFRecentSalesPanel comparables={dvfComparables} />
         </TabsContent>
 
-        <TabsContent value="market" className="mt-4">
+        <TabsContent value="market" className="space-y-4 mt-4">
           <MarketReading marketReading={serialized.marketReading} />
+          {serialized.lat && serialized.lng && (
+            <MarketTrendChart
+              lat={serialized.lat}
+              lng={serialized.lng}
+              radiusKm={Math.max(perimeterKm ?? 2, 2)}
+              propertyType={dvfTypeForChart}
+            />
+          )}
         </TabsContent>
 
         <TabsContent value="gpt" className="mt-4">

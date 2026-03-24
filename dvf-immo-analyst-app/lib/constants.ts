@@ -17,6 +17,7 @@ export const DPE_COLORS: Record<string, string> = {
 };
 
 export const CONFIDENCE_COLORS: Record<string, string> = {
+  "Indicative": "#D97706",
   "Faible": "#EF4444",
   "Correcte": "#F97316",
   "Bonne": "#EAB308",

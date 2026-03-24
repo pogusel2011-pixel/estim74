@@ -4,7 +4,7 @@ export interface ValuationResult {
   high: number;
   pricePsm: number;
   confidence: number;
-  confidenceLabel: "Faible" | "Correcte" | "Bonne" | "Très bonne" | "Excellente";
+  confidenceLabel: "Indicative" | "Faible" | "Correcte" | "Bonne" | "Très bonne" | "Excellente";
   method: "dvf_stats" | "comparables" | "mixed" | "fallback";
   adjustments: Adjustment[];
   breakdown: ValuationBreakdown;

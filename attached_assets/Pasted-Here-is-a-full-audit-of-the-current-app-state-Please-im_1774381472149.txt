@@ -1,0 +1,34 @@
+Here is a full audit of the current app state. Please implement ALL of the following improvements in one session:
+
+## PROBLEM 1 — Tab IA: JSON error
+Clicking any IA analysis button throws: `Unexpected token '<', "<!DOCTYPE "... is not valid JSON`
+This means the API route `/api/ai/analyse` (or similar) is returning an HTML error page instead of JSON.
+- Check if the route exists in `app/api/`
+- If OPENAI_API_KEY is not set as a Replit Secret, implement a graceful fallback: instead of crashing, generate a rule-based AI-style analysis using the DVF data already available (stats, transactions, perimeterKm, property details). No OpenAI call needed — just produce structured text output based on the data.
+- The 5 buttons (Analyse de marché, Conseils de négociation, Potentiel d'investissement, Description commerciale, Évaluation des risques) should each produce a different relevant text block.
+
+## PROBLEM 2 — Tab Annonces: empty
+Currently shows "Aucune annonce active trouvée dans ce secteur". 
+- We don't have a live scraper. Instead, query the DVF data we already have: show the most recent comparable transactions (last 12 months, same type, within 5km) formatted as "listing cards" with address, surface, price, €/m², date, distance. This gives the agent real comparable market data even without external scraping.
+- Add a "Dernières ventes comparables" section with these cards.
+
+## PROBLEM 3 — Tab Marché: too minimal
+- Add a chart (use recharts, already likely installed) showing the **annual evolution of median €/m²** computed from our local DVF CSV for the same postal code / commune, for the last 10 years (2014–2024). Group transactions by year, compute median price/m² per year, and display a line chart.
+- Add a summary block: number of transactions per year in the area, trend (rising/stable/falling based on last 3 years vs previous 3 years).
+
+## PROBLEM 4 — Estimation banner: improve fallback
+When DVF data is insufficient even after radius expansion (< 3 transactions found), instead of showing a flat "Estimation non disponible", compute a rough estimate range using:
+- The median €/m² from the broadest radius available
+- Apply a condition coefficient (Excellent=+5%, Bon=0%, Moyen=-5%, À rénover=-15%)
+- Apply a DPE coefficient (A/B=+3%, C/D=0%, E/F/G=-5%)
+- Show as: "Estimation indicative : XXX k€ – YYY k€ (basée sur X transactions dans un rayon de Z km)"
+- Badge it as "Indicative" not "Complète"
+
+## PROBLEM 5 — Page Accueil
+Currently likely empty or placeholder. Build a proper dashboard showing:
+- Total transactions in the DVF database (count)
+- Average and median €/m² for Haute-Savoie (74) overall
+- Top 5 communes by transaction volume
+- A welcome message explaining the tool
+
+Implement all 5 improvements. Start with Problems 1 and 4 (most impactful), then 3, 2, 5.
