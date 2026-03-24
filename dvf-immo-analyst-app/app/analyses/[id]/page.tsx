@@ -1,5 +1,8 @@
 import { notFound } from "next/navigation";
+import Link from "next/link";
+import { FileDown } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { Button } from "@/components/ui/button";
 import { AnalysisSummaryPanel } from "@/components/analysis/analysis-summary";
 import { ValuationCards } from "@/components/analysis/valuation-cards";
 import { DVFComparablesTable } from "@/components/dvf/dvf-comparables-table";
@@ -68,7 +71,17 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
   return (
     <div className="space-y-6">
       {/* En-tête */}
-      <AnalysisSummaryPanel analysis={serialized} />
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex-1 min-w-0">
+          <AnalysisSummaryPanel analysis={serialized} />
+        </div>
+        <Button asChild variant="outline" size="sm" className="shrink-0 gap-1.5">
+          <Link href={`/analyses/${serialized.id}/print`} target="_blank" rel="noopener noreferrer">
+            <FileDown className="h-4 w-4" />
+            Exporter PDF
+          </Link>
+        </Button>
+      </div>
 
       {/* Valorisation */}
       <ValuationCards
