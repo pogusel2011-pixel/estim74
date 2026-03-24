@@ -1,9 +1,15 @@
 import { z } from "zod";
 
+const optionalString = z.string().optional().or(z.literal("")).transform((v) => (v === "" ? undefined : v));
+
+const optionalPostalCode = z
+  .union([z.string().regex(/^\d{5}$/, "Code postal invalide"), z.literal(""), z.undefined()])
+  .transform((v) => (v === "" ? undefined : v));
+
 export const propertySchema = z.object({
-  address: z.string().min(5, "Adresse trop courte"),
-  postalCode: z.string().regex(/^\d{5}$/, "Code postal invalide"),
-  city: z.string().min(2, "Ville requise"),
+  address: optionalString,
+  postalCode: optionalPostalCode,
+  city: optionalString,
   lat: z.number().optional(),
   lng: z.number().optional(),
   irisCode: z.string().optional(),

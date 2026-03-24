@@ -38,19 +38,23 @@ export function PropertyForm({ onSubmit, loading, defaultValues }: PropertyFormP
         <CardHeader className="pb-3"><CardTitle className="text-base">Localisation</CardTitle></CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="md:col-span-2 space-y-1">
-            <Label htmlFor="address">Adresse</Label>
+            <Label htmlFor="address" className="flex items-center gap-1">
+              Adresse <span className="text-xs font-normal text-muted-foreground">(optionnel)</span>
+            </Label>
             <Input id="address" placeholder="12 rue des Alpes" {...register("address")} />
-            {errors.address && <p className="text-xs text-destructive">{errors.address.message}</p>}
           </div>
           <div className="space-y-1">
-            <Label htmlFor="postalCode">Code postal</Label>
+            <Label htmlFor="postalCode" className="flex items-center gap-1">
+              Code postal <span className="text-xs font-normal text-muted-foreground">(optionnel)</span>
+            </Label>
             <Input id="postalCode" placeholder="74000" maxLength={5} {...register("postalCode")} />
             {errors.postalCode && <p className="text-xs text-destructive">{errors.postalCode.message}</p>}
           </div>
           <div className="space-y-1">
-            <Label htmlFor="city">Ville</Label>
+            <Label htmlFor="city" className="flex items-center gap-1">
+              Ville <span className="text-xs font-normal text-muted-foreground">(optionnel)</span>
+            </Label>
             <Input id="city" placeholder="Annecy" {...register("city")} />
-            {errors.city && <p className="text-xs text-destructive">{errors.city.message}</p>}
           </div>
         </CardContent>
       </Card>
