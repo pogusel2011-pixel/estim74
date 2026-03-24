@@ -8,7 +8,7 @@ import { propertyTypeToDvfTypes } from "@/lib/mapping/property-type";
 import { findActiveListings } from "@/lib/moteurimmo/search";
 import { computeValuation } from "@/lib/valuation/valuation";
 import { fetchNotairesMarket } from "@/lib/notaires/market-check";
-import { geocodeAddress } from "@/lib/geo/address";
+import { geocodeAddress, isGeoError } from "@/lib/geo/address";
 
 export async function POST(
   req: Request,
@@ -66,19 +66,30 @@ export async function POST(
     // 4. Géocodage si coordonnées manquantes ou si adresse modifiée
     let lat = property.lat as number | undefined;
     let lng = property.lng as number | undefined;
+    let communeCode: string | undefined = existing.communeCode ?? undefined;
+
     if (!lat || !lng) {
       const geo = await geocodeAddress(property.address as string, property.postalCode as string);
-      if (geo) { lat = geo.lat; lng = geo.lng; }
+      if (isGeoError(geo)) {
+        return NextResponse.json({ error: geo.error }, { status: 422 });
+      }
+      if (geo) {
+        lat = geo.lat;
+        lng = geo.lng;
+        communeCode = geo.citycode ?? communeCode;
+      }
     }
     if (!lat || !lng) {
       return NextResponse.json({ error: "Impossible de géocoder l'adresse" }, { status: 422 });
     }
     const propertyWithGeo = { ...property, lat, lng };
 
-    // 5. DVF mutations
+    // 5. DVF mutations (+ filtre INSEE secondaire via city/postalCode)
     const dvfTypes = propertyTypeToDvfTypes(property.propertyType as string);
     const { mutations, source, radiusKm: finalRadiusKm } = await getDVFMutations(
-      lat, lng, radiusKm, monthsBack, dvfTypes
+      lat, lng, radiusKm, monthsBack, dvfTypes,
+      property.city as string | undefined,
+      property.postalCode as string | undefined,
     );
     let enriched = computePrixM2(mutations);
     enriched = removeOutliers(enriched);
@@ -162,6 +173,7 @@ export async function POST(
         city: property.city as string,
         lat,
         lng,
+        communeCode: communeCode ?? null,
         propertyType: property.propertyType as string,
         surface: property.surface as number,
         rooms: property.rooms as number ?? null,

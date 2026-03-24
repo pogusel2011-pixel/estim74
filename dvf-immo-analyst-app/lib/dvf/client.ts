@@ -111,18 +111,23 @@ export async function fetchDVFFromAPI(
  * 2. Appelle l'API cquest.org pour les données récentes (complémentaire)
  * 3. Fusionne + déduplique
  * 4. Auto-expand le rayon par pas de 0.5 km (jusqu'à 5 km) si < 5 transactions
+ *
+ * @param city       Nom de la commune — active le filtre INSEE secondaire (mutations sans coords)
+ * @param postalCode Code postal — précise la recherche INSEE
  */
 export async function getDVFMutations(
   lat: number,
   lng: number,
   initialRadiusKm: number,
   monthsBack = 24,
-  propertyTypes?: string[]
+  propertyTypes?: string[],
+  city?: string,
+  postalCode?: string,
 ): Promise<{ mutations: DVFMutation[]; source: "csv" | "api" | "mixed"; radiusKm: number }> {
   let radiusKm = initialRadiusKm;
 
   while (true) {
-    const result = await _fetchAtRadius(lat, lng, radiusKm, monthsBack, propertyTypes);
+    const result = await _fetchAtRadius(lat, lng, radiusKm, monthsBack, propertyTypes, city, postalCode);
 
     if (result.mutations.length >= MIN_SAMPLES) {
       if (radiusKm !== initialRadiusKm) {
@@ -150,10 +155,12 @@ async function _fetchAtRadius(
   lng: number,
   radiusKm: number,
   monthsBack: number,
-  propertyTypes?: string[]
+  propertyTypes?: string[],
+  city?: string,
+  postalCode?: string,
 ): Promise<{ mutations: DVFMutation[]; source: "csv" | "api" | "mixed" }> {
-  // CSV local en priorité — on marque chaque mutation
-  const csvRaw = await loadCsvMutations(lat, lng, radiusKm, monthsBack, propertyTypes);
+  // CSV local en priorité — on marque chaque mutation (+ filtre INSEE secondaire si city fourni)
+  const csvRaw = await loadCsvMutations(lat, lng, radiusKm, monthsBack, propertyTypes, city, postalCode);
   const csvMutations: DVFMutation[] = csvRaw.map((m) => ({ ...m, _source: "csv" as const }));
 
   // API Live en parallèle (on convertit le premier type DVF si disponible)

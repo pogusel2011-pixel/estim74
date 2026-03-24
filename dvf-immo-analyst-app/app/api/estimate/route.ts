@@ -10,7 +10,7 @@ import { findActiveListings } from "@/lib/moteurimmo/search";
 import { computeValuation } from "@/lib/valuation/valuation";
 import { fetchNotairesMarket } from "@/lib/notaires/market-check";
 import { prisma } from "@/lib/prisma";
-import { geocodeAddress } from "@/lib/geo/address";
+import { geocodeAddress, isGeoError } from "@/lib/geo/address";
 
 export async function POST(req: Request) {
   try {
@@ -25,9 +25,21 @@ export async function POST(req: Request) {
     // 1. Géocodage si pas de coordonnées
     let lat = property.lat;
     let lng = property.lng;
+    let communeCode: string | undefined;
+
     if (!lat || !lng) {
+      if (!property.address) {
+        return NextResponse.json({ error: "Adresse requise pour l'estimation" }, { status: 422 });
+      }
       const geo = await geocodeAddress(property.address, property.postalCode);
-      if (geo) { lat = geo.lat; lng = geo.lng; }
+      if (isGeoError(geo)) {
+        return NextResponse.json({ error: geo.error }, { status: 422 });
+      }
+      if (geo) {
+        lat = geo.lat;
+        lng = geo.lng;
+        communeCode = geo.citycode;
+      }
     }
 
     if (!lat || !lng) {
@@ -37,8 +49,12 @@ export async function POST(req: Request) {
     const propertyWithGeo = { ...property, lat, lng };
 
     // 2. DVF — mutations (avec auto-expansion du rayon si < 5 transactions)
+    // On passe city + postalCode pour activer le filtre INSEE secondaire (mutations sans coords)
     const dvfTypes = propertyTypeToDvfTypes(property.propertyType);
-    const { mutations, source, radiusKm: finalRadiusKm } = await getDVFMutations(lat, lng, radiusKm, monthsBack, dvfTypes);
+    const { mutations, source, radiusKm: finalRadiusKm } = await getDVFMutations(
+      lat, lng, radiusKm, monthsBack, dvfTypes,
+      property.city, property.postalCode
+    );
     let enrichedMutations = computePrixM2(mutations);
     if (excludeOutliers) enrichedMutations = removeOutliers(enrichedMutations);
 
@@ -121,6 +137,7 @@ export async function POST(req: Request) {
           city: property.city,
           lat,
           lng,
+          communeCode: communeCode ?? null,
           propertyType: property.propertyType,
           surface: property.surface,
           rooms: property.rooms,

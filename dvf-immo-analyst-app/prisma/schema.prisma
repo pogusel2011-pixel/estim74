@@ -18,6 +18,7 @@ model Analysis {
   city        String?
   lat         Float?
   lng         Float?
+  communeCode String?
   irisCode    String?
 
   propertyType PropertyType

@@ -3,6 +3,7 @@ import path from "path";
 import { parse } from "csv-parse/sync";
 import { DVFMutation } from "@/types/dvf";
 import { haversineDistance } from "@/lib/utils";
+import { getInseeCodesForCity } from "@/lib/geo/iris_utils";
 
 // Use a global singleton so the cache survives Next.js hot-module reloads in dev
 declare global {
@@ -91,37 +92,72 @@ export async function loadAllCsvMutations(): Promise<DVFMutation[]> {
   }
 }
 
+/**
+ * Filtre les mutations DVF par rayon géographique (Haversine) + filtre INSEE secondaire
+ * pour les mutations sans coordonnées.
+ *
+ * @param city     Nom de la commune (optionnel) — active le filtre INSEE de secours
+ * @param postalCode Code postal (optionnel) — précise la recherche INSEE
+ */
 export async function loadCsvMutations(
   lat: number,
   lng: number,
   radiusKm: number,
   monthsBack: number,
-  propertyTypes?: string[]
+  propertyTypes?: string[],
+  city?: string,
+  postalCode?: string,
 ): Promise<DVFMutation[]> {
   const all = await loadAllCsvMutations();
 
   const dateMin = new Date();
   dateMin.setMonth(dateMin.getMonth() - monthsBack);
 
-  return all
+  // Récupérer les codes INSEE de la commune pour le filtre de secours
+  // (mutations sans coordonnées lat/lon, ~2% du CSV)
+  let inseeCodes: string[] = [];
+  if (city) {
+    try {
+      inseeCodes = await getInseeCodesForCity(city, postalCode);
+      if (inseeCodes.length > 0) {
+        console.log(`[DVF CSV] Codes INSEE pour "${city}" (${postalCode ?? ""}): [${inseeCodes.join(", ")}]`);
+      }
+    } catch {
+      // Non bloquant — le filtre Haversine reste la source principale
+    }
+  }
+
+  let inseeFallbackCount = 0;
+
+  const filtered = all
     .filter((m) => {
-      if (!m.lat || !m.lon) return false;
+      // Vérifications de base
       if (m.nature_mutation !== "Vente") return false;
       if (!m.valeur_fonciere || m.valeur_fonciere <= 0) return false;
-
-      if (propertyTypes) {
-        if (!m.type_local) return false;
-        if (!propertyTypes.includes(m.type_local)) return false;
-      }
+      if (propertyTypes && (!m.type_local || !propertyTypes.includes(m.type_local))) return false;
 
       const mDate = new Date(m.date_mutation);
       if (mDate < dateMin) return false;
 
-      const dist = haversineDistance(lat, lng, m.lat, m.lon);
-      if (dist > radiusKm * 1000) return false;
-
-      m.distance_m = dist;
-      return true;
+      if (m.lat && m.lon) {
+        // ── Filtre primaire : distance Haversine ──
+        const dist = haversineDistance(lat, lng, m.lat, m.lon);
+        if (dist > radiusKm * 1000) return false;
+        m.distance_m = dist;
+        return true;
+      } else {
+        // ── Filtre secondaire : code INSEE pour les mutations sans coordonnées ──
+        if (inseeCodes.length === 0) return false;
+        const match = inseeCodes.includes(m.code_commune);
+        if (match) inseeFallbackCount++;
+        return match;
+      }
     })
     .sort((a, b) => (a.distance_m ?? 0) - (b.distance_m ?? 0));
+
+  if (inseeFallbackCount > 0) {
+    console.log(`[DVF CSV] ${inseeFallbackCount} mutations sans coords récupérées par code INSEE`);
+  }
+
+  return filtered;
 }
