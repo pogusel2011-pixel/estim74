@@ -1,0 +1,41 @@
+Implémente 2 choses :
+
+**CHANTIER 1 — Bloc "Tendânce Notaires" dans le dashboard résultat (option immédiate)**
+
+Dans l'onglet "Marché" de la page résultat d'une estimation (`app/analyses/[id]/page.tsx` et le composant marché), ajoute un bloc visuellement distingué intitulé **"Indicateurs Notaires de France — Fraicheur S2-2025"** qui contient :
+
+1. Un texte d'explication court : "Consultez les statistiques officielles des notaires pour contrôler la fraîcheur des prix signés sur ce secteur. Données disponibles jusqu'en décembre 2025."
+
+2. Deux boutons liens qui ouvrent leprixdelimmo.notaires.fr dans un nouvel onglet, avec les paramètres pré-remplis selon le bien estimé :
+   - Bouton "Prix au m² — [commune]" → `https://leprixdelimmo.notaires.fr/#/prix-immobilier` (pré-remplir la commune si l'URL le permet)
+   - Bouton "Dernières ventes — [commune]" → `https://leprixdelimmo.notaires.fr/#/dernieres-ventes-immobilieres`
+   
+3. Une note discrète en bas : "Source : Notaires de France — LePrixDeLImmo.fr — Consultation manuelle requise — Ces données ne sont pas injectées dans le calcul d'estimation"
+
+Le bloc doit s'afficher en mode neutre avec une icône notaire/sceau et un fond légèrement différent pour le distinguer des autres blocs.
+
+---
+
+**CHANTIER 2 — Script de mise à jour DVF (prévision complète)**
+
+Crée un fichier `scripts/update-dvf.ts` (ou `.js`) exécutable manuellement, qui :
+
+1. Télécharge le dernier fichier DVF géolocalisé du département 74 depuis data.gouv.fr :
+   URL source : `https://static.data.gouv.fr/resources/demandes-de-valeurs-foncieres-geolocalisees/latest/dvf.csv.gz`
+   (ou construire l'URL dynamiquement si elle change)
+
+2. Vérifie que le fichier téléchargé est bien plus récent que le CSV actuel (comparaison de dates dans le nom de fichier ou du nombre de lignes)
+
+3. Filtre uniquement les lignes du département 74 (code_commune commençant par "74")
+
+4. Remplace `data/dvf/2014-2024mutationsd74.csv` par le nouveau fichier, avec renommage automatique selon l'année couverte (ex: `2014-2025mutationsd74.csv`)
+
+5. Met à jour la référence au fichier dans `lib/dvf/client.ts` automatiquement
+
+6. Affiche un résumé de fin : ancien nombre de lignes → nouveau nombre de lignes, période couverte
+
+Ajoute aussi dans le README ou un fichier `docs/dvf-update-procedure.md` la procédure complète :
+- Quand exécuter ce script (publication data.gouv.fr généralement mi-2026 pour S2-2025)
+- Comment vérifier la qualité du fichier avant de remplacer
+- Commande d'exécution : `npx ts-node scripts/update-dvf.ts`
+- Procédure de rollback si problème

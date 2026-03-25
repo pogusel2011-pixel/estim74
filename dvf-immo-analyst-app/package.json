@@ -11,7 +11,9 @@
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
     "db:seed": "tsx prisma/seed.ts",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "dvf:update": "tsx scripts/update-dvf.ts",
+    "dvf:update:dry": "tsx scripts/update-dvf.ts --dry-run"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.6.0",

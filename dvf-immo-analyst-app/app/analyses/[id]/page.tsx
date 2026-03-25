@@ -13,6 +13,7 @@ import { MarketTrendChart } from "@/components/dvf/market-trend-chart";
 import { ActiveListingsPanel } from "@/components/listings/active-listings-panel";
 import { DVFRecentSalesPanel } from "@/components/listings/dvf-recent-sales-panel";
 import { MarketReading } from "@/components/analysis/market-reading";
+import { NotairesPanel } from "@/components/analysis/notaires-panel";
 import { PerimeterPanel } from "@/components/analysis/perimeter-panel";
 import { GPTActionsPanel } from "@/components/gpt/gpt-actions-panel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -209,6 +210,10 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
               propertyType={dvfTypeForChart}
             />
           )}
+          <NotairesPanel
+            city={serialized.city as string | null}
+            propertyType={serialized.propertyType as string | null}
+          />
         </TabsContent>
 
         <TabsContent value="gpt" className="mt-4">
