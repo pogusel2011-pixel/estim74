@@ -1,0 +1,1472 @@
+[
+  {
+    "insee": "74001",
+    "cp": "74360",
+    "commune": "ABONDANCE"
+  },
+  {
+    "insee": "74002",
+    "cp": "74540",
+    "commune": "ALBY-SUR-CHERAN"
+  },
+  {
+    "insee": "74003",
+    "cp": "74290",
+    "commune": "ALEX"
+  },
+  {
+    "insee": "74004",
+    "cp": "74540",
+    "commune": "ALLEVES"
+  },
+  {
+    "insee": "74005",
+    "cp": "74200",
+    "commune": "ALLINGES"
+  },
+  {
+    "insee": "74006",
+    "cp": "74350",
+    "commune": "ALLONZIER-LA-CAILLE"
+  },
+  {
+    "insee": "74007",
+    "cp": "74800",
+    "commune": "AMANCY"
+  },
+  {
+    "insee": "74008",
+    "cp": "74100",
+    "commune": "AMBILLY"
+  },
+  {
+    "insee": "74009",
+    "cp": "74350",
+    "commune": "ANDILLY"
+  },
+  {
+    "insee": "74010",
+    "cp": "74000",
+    "commune": "ANNECY"
+  },
+  {
+    "insee": "74011",
+    "cp": "74940",
+    "commune": "ANNECY-LE-VIEUX"
+  },
+  {
+    "insee": "74012",
+    "cp": "74100",
+    "commune": "ANNEMASSE"
+  },
+  {
+    "insee": "74013",
+    "cp": "74200",
+    "commune": "ANTHY-SUR-LEMAN"
+  },
+  {
+    "insee": "74014",
+    "cp": "74300",
+    "commune": "ARACHES-LA-FRASSE"
+  },
+  {
+    "insee": "74015",
+    "cp": "74930",
+    "commune": "ARBUSIGNY"
+  },
+  {
+    "insee": "74016",
+    "cp": "74160",
+    "commune": "ARCHAMPS"
+  },
+  {
+    "insee": "74018",
+    "cp": "74800",
+    "commune": "ARENTHON"
+  },
+  {
+    "insee": "74019",
+    "cp": "74370",
+    "commune": "ARGONAY"
+  },
+  {
+    "insee": "74020",
+    "cp": "74200",
+    "commune": "ARMOY"
+  },
+  {
+    "insee": "74021",
+    "cp": "74380",
+    "commune": "ARTHAZ-PONT-NOTRE-DAME"
+  },
+  {
+    "insee": "74022",
+    "cp": "74570",
+    "commune": "AVIERNOZ"
+  },
+  {
+    "insee": "74024",
+    "cp": "74130",
+    "commune": "AYSE"
+  },
+  {
+    "insee": "74025",
+    "cp": "74140",
+    "commune": "BALLAISON"
+  },
+  {
+    "insee": "74029",
+    "cp": "74910",
+    "commune": "BASSY"
+  },
+  {
+    "insee": "74031",
+    "cp": "74160",
+    "commune": "BEAUMONT"
+  },
+  {
+    "insee": "74032",
+    "cp": "74470",
+    "commune": "BELLEVAUX"
+  },
+  {
+    "insee": "74033",
+    "cp": "74500",
+    "commune": "BERNEX"
+  },
+  {
+    "insee": "74035",
+    "cp": "74150",
+    "commune": "BLOYE"
+  },
+  {
+    "insee": "74036",
+    "cp": "74290",
+    "commune": "BLUFFY"
+  },
+  {
+    "insee": "74037",
+    "cp": "74420",
+    "commune": "BOEGE"
+  },
+  {
+    "insee": "74038",
+    "cp": "74250",
+    "commune": "BOGEVE"
+  },
+  {
+    "insee": "74040",
+    "cp": "74380",
+    "commune": "BONNE"
+  },
+  {
+    "insee": "74041",
+    "cp": "74360",
+    "commune": "BONNEVAUX"
+  },
+  {
+    "insee": "74042",
+    "cp": "74130",
+    "commune": "BONNEVILLE"
+  },
+  {
+    "insee": "74043",
+    "cp": "74890",
+    "commune": "BONS-EN-CHABLAIS"
+  },
+  {
+    "insee": "74044",
+    "cp": "74160",
+    "commune": "BOSSEY"
+  },
+  {
+    "insee": "74046",
+    "cp": "74150",
+    "commune": "BOUSSY"
+  },
+  {
+    "insee": "74048",
+    "cp": "74890",
+    "commune": "BRENTHONNE"
+  },
+  {
+    "insee": "74049",
+    "cp": "74130",
+    "commune": "BRIZON"
+  },
+  {
+    "insee": "74050",
+    "cp": "74420",
+    "commune": "BURDIGNIN"
+  },
+  {
+    "insee": "74051",
+    "cp": "74350",
+    "commune": "CERCIER"
+  },
+  {
+    "insee": "74052",
+    "cp": "74350",
+    "commune": "CERNEX"
+  },
+  {
+    "insee": "74053",
+    "cp": "74550",
+    "commune": "CERVENS"
+  },
+  {
+    "insee": "74054",
+    "cp": "74540",
+    "commune": "CHAINAZ-LES-FRASSES"
+  },
+  {
+    "insee": "74055",
+    "cp": "74910",
+    "commune": "CHALLONGES"
+  },
+  {
+    "insee": "74056",
+    "cp": "74400",
+    "commune": "CHAMONIX-MONT-BLANC"
+  },
+  {
+    "insee": "74057",
+    "cp": "74500",
+    "commune": "CHAMPANGES"
+  },
+  {
+    "insee": "74061",
+    "cp": "74540",
+    "commune": "CHAPEIRY"
+  },
+  {
+    "insee": "74062",
+    "cp": "74370",
+    "commune": "CHARVONNEX"
+  },
+  {
+    "insee": "74063",
+    "cp": "74390",
+    "commune": "CHATEL"
+  },
+  {
+    "insee": "74064",
+    "cp": "74300",
+    "commune": "CHATILLON-SUR-CLUSES"
+  },
+  {
+    "insee": "74065",
+    "cp": "74270",
+    "commune": "CHAUMONT"
+  },
+  {
+    "insee": "74066",
+    "cp": "74270",
+    "commune": "CHAVANNAZ"
+  },
+  {
+    "insee": "74067",
+    "cp": "74650",
+    "commune": "CHAVANOD"
+  },
+  {
+    "insee": "74068",
+    "cp": "74270",
+    "commune": "CHENE-EN-SEMINE"
+  },
+  {
+    "insee": "74069",
+    "cp": "74520",
+    "commune": "CHENEX"
+  },
+  {
+    "insee": "74070",
+    "cp": "74140",
+    "commune": "CHENS-SUR-LEMAN"
+  },
+  {
+    "insee": "74071",
+    "cp": "74270",
+    "commune": "CHESSENAZ"
+  },
+  {
+    "insee": "74072",
+    "cp": "74210",
+    "commune": "CHEVALINE"
+  },
+  {
+    "insee": "74073",
+    "cp": "74500",
+    "commune": "CHEVENOZ"
+  },
+  {
+    "insee": "74074",
+    "cp": "74520",
+    "commune": "CHEVRIER"
+  },
+  {
+    "insee": "74075",
+    "cp": "74270",
+    "commune": "CHILLY"
+  },
+  {
+    "insee": "74076",
+    "cp": "74330",
+    "commune": "CHOISY"
+  },
+  {
+    "insee": "74077",
+    "cp": "74270",
+    "commune": "CLARAFOND-ARCINE"
+  },
+  {
+    "insee": "74078",
+    "cp": "74270",
+    "commune": "CLERMONT"
+  },
+  {
+    "insee": "74081",
+    "cp": "74300",
+    "commune": "CLUSES"
+  },
+  {
+    "insee": "74082",
+    "cp": "74160",
+    "commune": "COLLONGES-SOUS-SALEVE"
+  },
+  {
+    "insee": "74083",
+    "cp": "74920",
+    "commune": "COMBLOUX"
+  },
+  {
+    "insee": "74084",
+    "cp": "74210",
+    "commune": "CONS-SAINTE-COLOMBE"
+  },
+  {
+    "insee": "74086",
+    "cp": "74270",
+    "commune": "CONTAMINE-SARZIN"
+  },
+  {
+    "insee": "74087",
+    "cp": "74130",
+    "commune": "CONTAMINE-SUR-ARVE"
+  },
+  {
+    "insee": "74088",
+    "cp": "74350",
+    "commune": "COPPONEX"
+  },
+  {
+    "insee": "74089",
+    "cp": "74700",
+    "commune": "CORDON"
+  },
+  {
+    "insee": "74090",
+    "cp": "74800",
+    "commune": "CORNIER"
+  },
+  {
+    "insee": "74093",
+    "cp": "74960",
+    "commune": "CRAN-GEVRIER"
+  },
+  {
+    "insee": "74094",
+    "cp": "74380",
+    "commune": "CRANVES-SALES"
+  },
+  {
+    "insee": "74095",
+    "cp": "74150",
+    "commune": "CREMPIGNY-BONNEGUETE"
+  },
+  {
+    "insee": "74096",
+    "cp": "74350",
+    "commune": "CRUSEILLES"
+  },
+  {
+    "insee": "74097",
+    "cp": "74540",
+    "commune": "CUSY"
+  },
+  {
+    "insee": "74098",
+    "cp": "74350",
+    "commune": "CUVAT"
+  },
+  {
+    "insee": "74099",
+    "cp": "74120",
+    "commune": "DEMI-QUARTIER"
+  },
+  {
+    "insee": "74100",
+    "cp": "74270",
+    "commune": "DESINGY"
+  },
+  {
+    "insee": "74101",
+    "cp": "74520",
+    "commune": "DINGY-EN-VUACHE"
+  },
+  {
+    "insee": "74102",
+    "cp": "74230",
+    "commune": "DINGY-SAINT-CLAIR"
+  },
+  {
+    "insee": "74103",
+    "cp": "74700",
+    "commune": "DOMANCY"
+  },
+  {
+    "insee": "74104",
+    "cp": "74210",
+    "commune": "DOUSSARD"
+  },
+  {
+    "insee": "74105",
+    "cp": "74140",
+    "commune": "DOUVAINE"
+  },
+  {
+    "insee": "74106",
+    "cp": "74550",
+    "commune": "DRAILLANT"
+  },
+  {
+    "insee": "74107",
+    "cp": "74270",
+    "commune": "DROISY"
+  },
+  {
+    "insee": "74108",
+    "cp": "74410",
+    "commune": "DUINGT"
+  },
+  {
+    "insee": "74109",
+    "cp": "01200",
+    "commune": "ELOISE"
+  },
+  {
+    "insee": "74110",
+    "cp": "74130",
+    "commune": "ENTREMONT"
+  },
+  {
+    "insee": "74111",
+    "cp": "74410",
+    "commune": "ENTREVERNES"
+  },
+  {
+    "insee": "74112",
+    "cp": "74330",
+    "commune": "EPAGNY"
+  },
+  {
+    "insee": "74114",
+    "cp": "74110",
+    "commune": "ESSERT-ROMAND"
+  },
+  {
+    "insee": "74116",
+    "cp": "74800",
+    "commune": "ETAUX"
+  },
+  {
+    "insee": "74117",
+    "cp": "74150",
+    "commune": "ETERCY"
+  },
+  {
+    "insee": "74118",
+    "cp": "74100",
+    "commune": "ETREMBIERES"
+  },
+  {
+    "insee": "74119",
+    "cp": "74500",
+    "commune": "EVIAN-LES-BAINS"
+  },
+  {
+    "insee": "74120",
+    "cp": "74570",
+    "commune": "EVIRES"
+  },
+  {
+    "insee": "74121",
+    "cp": "74140",
+    "commune": "EXCENEVEX"
+  },
+  {
+    "insee": "74122",
+    "cp": "74130",
+    "commune": "FAUCIGNY"
+  },
+  {
+    "insee": "74123",
+    "cp": "74210",
+    "commune": "FAVERGES"
+  },
+  {
+    "insee": "74124",
+    "cp": "74160",
+    "commune": "FEIGERES"
+  },
+  {
+    "insee": "74126",
+    "cp": "74890",
+    "commune": "FESSY"
+  },
+  {
+    "insee": "74127",
+    "cp": "74500",
+    "commune": "FETERNES"
+  },
+  {
+    "insee": "74128",
+    "cp": "74250",
+    "commune": "FILLINGES"
+  },
+  {
+    "insee": "74130",
+    "cp": "74910",
+    "commune": "FRANCLENS"
+  },
+  {
+    "insee": "74131",
+    "cp": "74270",
+    "commune": "FRANGY"
+  },
+  {
+    "insee": "74133",
+    "cp": "74240",
+    "commune": "GAILLARD"
+  },
+  {
+    "insee": "74135",
+    "cp": "74210",
+    "commune": "GIEZ"
+  },
+  {
+    "insee": "74137",
+    "cp": "74570",
+    "commune": "GROISY"
+  },
+  {
+    "insee": "74138",
+    "cp": "74540",
+    "commune": "GRUFFY"
+  },
+  {
+    "insee": "74139",
+    "cp": "74420",
+    "commune": "HABERE-LULLIN"
+  },
+  {
+    "insee": "74140",
+    "cp": "74420",
+    "commune": "HABERE-POCHE"
+  },
+  {
+    "insee": "74141",
+    "cp": "74150",
+    "commune": "HAUTEVILLE-SUR-FIER"
+  },
+  {
+    "insee": "74142",
+    "cp": "74540",
+    "commune": "HERY-SUR-ALBY"
+  },
+  {
+    "insee": "74144",
+    "cp": "74520",
+    "commune": "JONZIER-EPAGNY"
+  },
+  {
+    "insee": "74145",
+    "cp": "74100",
+    "commune": "JUVIGNY"
+  },
+  {
+    "insee": "74026",
+    "cp": "74330",
+    "commune": "LA BALME-DE-SILLINGY"
+  },
+  {
+    "insee": "74027",
+    "cp": "74230",
+    "commune": "LA BALME-DE-THUY"
+  },
+  {
+    "insee": "74030",
+    "cp": "74430",
+    "commune": "LA BAUME"
+  },
+  {
+    "insee": "74058",
+    "cp": "74360",
+    "commune": "LA CHAPELLE-D'ABONDANCE"
+  },
+  {
+    "insee": "74059",
+    "cp": "74800",
+    "commune": "LA CHAPELLE-RAMBAUD"
+  },
+  {
+    "insee": "74060",
+    "cp": "74410",
+    "commune": "LA CHAPELLE-SAINT-MAURICE"
+  },
+  {
+    "insee": "74080",
+    "cp": "74220",
+    "commune": "LA CLUSAZ"
+  },
+  {
+    "insee": "74091",
+    "cp": "74110",
+    "commune": "LA COTE-D'ARBROZ"
+  },
+  {
+    "insee": "74129",
+    "cp": "74200",
+    "commune": "LA FORCLAZ"
+  },
+  {
+    "insee": "74193",
+    "cp": "74560",
+    "commune": "LA MURAZ"
+  },
+  {
+    "insee": "74223",
+    "cp": "74440",
+    "commune": "LA RIVIERE-ENVERSE"
+  },
+  {
+    "insee": "74224",
+    "cp": "74800",
+    "commune": "LA ROCHE-SUR-FORON"
+  },
+  {
+    "insee": "74284",
+    "cp": "74250",
+    "commune": "LA TOUR"
+  },
+  {
+    "insee": "74295",
+    "cp": "74200",
+    "commune": "LA VERNAZ"
+  },
+  {
+    "insee": "74146",
+    "cp": "74500",
+    "commune": "LARRINGES"
+  },
+  {
+    "insee": "74147",
+    "cp": "74210",
+    "commune": "LATHUILE"
+  },
+  {
+    "insee": "74034",
+    "cp": "74430",
+    "commune": "LE BIOT"
+  },
+  {
+    "insee": "74045",
+    "cp": "74230",
+    "commune": "LE BOUCHET"
+  },
+  {
+    "insee": "74136",
+    "cp": "74450",
+    "commune": "LE GRAND-BORNAND"
+  },
+  {
+    "insee": "74212",
+    "cp": "74130",
+    "commune": "LE PETIT-BORNAND-LES-GLIERES"
+  },
+  {
+    "insee": "74221",
+    "cp": "74950",
+    "commune": "LE REPOSOIR"
+  },
+  {
+    "insee": "74259",
+    "cp": "74350",
+    "commune": "LE SAPPEY"
+  },
+  {
+    "insee": "74079",
+    "cp": "74230",
+    "commune": "LES CLEFS"
+  },
+  {
+    "insee": "74085",
+    "cp": "74170",
+    "commune": "LES CONTAMINES-MONTJOIE"
+  },
+  {
+    "insee": "74134",
+    "cp": "74260",
+    "commune": "LES GETS"
+  },
+  {
+    "insee": "74143",
+    "cp": "74310",
+    "commune": "LES HOUCHES"
+  },
+  {
+    "insee": "74204",
+    "cp": "74370",
+    "commune": "LES OLLIERES"
+  },
+  {
+    "insee": "74302",
+    "cp": "74230",
+    "commune": "LES VILLARDS-SUR-THONES"
+  },
+  {
+    "insee": "74148",
+    "cp": "74320",
+    "commune": "LESCHAUX"
+  },
+  {
+    "insee": "74150",
+    "cp": "74140",
+    "commune": "LOISIN"
+  },
+  {
+    "insee": "74151",
+    "cp": "74150",
+    "commune": "LORNAY"
+  },
+  {
+    "insee": "74152",
+    "cp": "74330",
+    "commune": "LOVAGNY"
+  },
+  {
+    "insee": "74153",
+    "cp": "74380",
+    "commune": "LUCINGES"
+  },
+  {
+    "insee": "74154",
+    "cp": "74500",
+    "commune": "LUGRIN"
+  },
+  {
+    "insee": "74155",
+    "cp": "74470",
+    "commune": "LULLIN"
+  },
+  {
+    "insee": "74156",
+    "cp": "74890",
+    "commune": "LULLY"
+  },
+  {
+    "insee": "74157",
+    "cp": "74200",
+    "commune": "LYAUD"
+  },
+  {
+    "insee": "74158",
+    "cp": "74140",
+    "commune": "MACHILLY"
+  },
+  {
+    "insee": "74159",
+    "cp": "74300",
+    "commune": "MAGLAND"
+  },
+  {
+    "insee": "74160",
+    "cp": "74230",
+    "commune": "MANIGOD"
+  },
+  {
+    "insee": "74162",
+    "cp": "74250",
+    "commune": "MARCELLAZ"
+  },
+  {
+    "insee": "74161",
+    "cp": "74150",
+    "commune": "MARCELLAZ-ALBANAIS"
+  },
+  {
+    "insee": "74163",
+    "cp": "74200",
+    "commune": "MARGENCEL"
+  },
+  {
+    "insee": "74164",
+    "cp": "74970",
+    "commune": "MARIGNIER"
+  },
+  {
+    "insee": "74165",
+    "cp": "74150",
+    "commune": "MARIGNY-SAINT-MARCEL"
+  },
+  {
+    "insee": "74166",
+    "cp": "74200",
+    "commune": "MARIN"
+  },
+  {
+    "insee": "74167",
+    "cp": "74210",
+    "commune": "MARLENS"
+  },
+  {
+    "insee": "74168",
+    "cp": "74270",
+    "commune": "MARLIOZ"
+  },
+  {
+    "insee": "74169",
+    "cp": "74460",
+    "commune": "MARNAZ"
+  },
+  {
+    "insee": "74170",
+    "cp": "74150",
+    "commune": "MASSINGY"
+  },
+  {
+    "insee": "74171",
+    "cp": "74140",
+    "commune": "MASSONGY"
+  },
+  {
+    "insee": "74172",
+    "cp": "74500",
+    "commune": "MAXILLY-SUR-LEMAN"
+  },
+  {
+    "insee": "74173",
+    "cp": "74120",
+    "commune": "MEGEVE"
+  },
+  {
+    "insee": "74174",
+    "cp": "74490",
+    "commune": "MEGEVETTE"
+  },
+  {
+    "insee": "74175",
+    "cp": "74500",
+    "commune": "MEILLERIE"
+  },
+  {
+    "insee": "74176",
+    "cp": "74290",
+    "commune": "MENTHON-SAINT-BERNARD"
+  },
+  {
+    "insee": "74177",
+    "cp": "74350",
+    "commune": "MENTHONNEX-EN-BORNES"
+  },
+  {
+    "insee": "74178",
+    "cp": "74270",
+    "commune": "MENTHONNEX-SOUS-CLERMONT"
+  },
+  {
+    "insee": "74179",
+    "cp": "74330",
+    "commune": "MESIGNY"
+  },
+  {
+    "insee": "74180",
+    "cp": "74140",
+    "commune": "MESSERY"
+  },
+  {
+    "insee": "74181",
+    "cp": "74370",
+    "commune": "METZ-TESSY"
+  },
+  {
+    "insee": "74182",
+    "cp": "74960",
+    "commune": "MEYTHET"
+  },
+  {
+    "insee": "74183",
+    "cp": "74440",
+    "commune": "MIEUSSY"
+  },
+  {
+    "insee": "74184",
+    "cp": "74270",
+    "commune": "MINZIER"
+  },
+  {
+    "insee": "74185",
+    "cp": "74560",
+    "commune": "MONNETIER-MORNEX"
+  },
+  {
+    "insee": "74189",
+    "cp": "74130",
+    "commune": "MONT-SAXONNEX"
+  },
+  {
+    "insee": "74186",
+    "cp": "74600",
+    "commune": "MONTAGNY-LES-LANCHES"
+  },
+  {
+    "insee": "74187",
+    "cp": "74210",
+    "commune": "MONTMIN"
+  },
+  {
+    "insee": "74188",
+    "cp": "74110",
+    "commune": "MONTRIOND"
+  },
+  {
+    "insee": "74190",
+    "cp": "74440",
+    "commune": "MORILLON"
+  },
+  {
+    "insee": "74191",
+    "cp": "74110",
+    "commune": "MORZINE"
+  },
+  {
+    "insee": "74192",
+    "cp": "74150",
+    "commune": "MOYE"
+  },
+  {
+    "insee": "74194",
+    "cp": "74540",
+    "commune": "MURES"
+  },
+  {
+    "insee": "74195",
+    "cp": "74270",
+    "commune": "MUSIEGES"
+  },
+  {
+    "insee": "74196",
+    "cp": "74300",
+    "commune": "NANCY-SUR-CLUSES"
+  },
+  {
+    "insee": "74197",
+    "cp": "74380",
+    "commune": "NANGY"
+  },
+  {
+    "insee": "74198",
+    "cp": "74370",
+    "commune": "NAVES-PARMELAN"
+  },
+  {
+    "insee": "74199",
+    "cp": "74140",
+    "commune": "NERNIER"
+  },
+  {
+    "insee": "74200",
+    "cp": "74500",
+    "commune": "NEUVECELLE"
+  },
+  {
+    "insee": "74201",
+    "cp": "74160",
+    "commune": "NEYDENS"
+  },
+  {
+    "insee": "74202",
+    "cp": "74330",
+    "commune": "NONGLARD"
+  },
+  {
+    "insee": "74203",
+    "cp": "74500",
+    "commune": "NOVEL"
+  },
+  {
+    "insee": "74205",
+    "cp": "74490",
+    "commune": "ONNION"
+  },
+  {
+    "insee": "74206",
+    "cp": "74550",
+    "commune": "ORCIER"
+  },
+  {
+    "insee": "74208",
+    "cp": "74190",
+    "commune": "PASSY"
+  },
+  {
+    "insee": "74209",
+    "cp": "74250",
+    "commune": "PEILLONNEX"
+  },
+  {
+    "insee": "74210",
+    "cp": "74550",
+    "commune": "PERRIGNIER"
+  },
+  {
+    "insee": "74211",
+    "cp": "74930",
+    "commune": "PERS-JUSSY"
+  },
+  {
+    "insee": "74213",
+    "cp": "74330",
+    "commune": "POISY"
+  },
+  {
+    "insee": "74215",
+    "cp": "74120",
+    "commune": "PRAZ-SUR-ARLY"
+  },
+  {
+    "insee": "74216",
+    "cp": "74160",
+    "commune": "PRESILLY"
+  },
+  {
+    "insee": "74217",
+    "cp": "74370",
+    "commune": "PRINGY"
+  },
+  {
+    "insee": "74218",
+    "cp": "74500",
+    "commune": "PUBLIER"
+  },
+  {
+    "insee": "74219",
+    "cp": "74600",
+    "commune": "QUINTAL"
+  },
+  {
+    "insee": "74220",
+    "cp": "74930",
+    "commune": "REIGNIER-ESERY"
+  },
+  {
+    "insee": "74222",
+    "cp": "74200",
+    "commune": "REYVROZ"
+  },
+  {
+    "insee": "74225",
+    "cp": "74150",
+    "commune": "RUMILLY"
+  },
+  {
+    "insee": "74226",
+    "cp": "74420",
+    "commune": "SAINT-ANDRE-DE-BOEGE"
+  },
+  {
+    "insee": "74228",
+    "cp": "74350",
+    "commune": "SAINT-BLAISE"
+  },
+  {
+    "insee": "74229",
+    "cp": "74140",
+    "commune": "SAINT-CERGUES"
+  },
+  {
+    "insee": "74231",
+    "cp": "74150",
+    "commune": "SAINT-EUSEBE"
+  },
+  {
+    "insee": "74232",
+    "cp": "74410",
+    "commune": "SAINT-EUSTACHE"
+  },
+  {
+    "insee": "74233",
+    "cp": "74540",
+    "commune": "SAINT-FELIX"
+  },
+  {
+    "insee": "74234",
+    "cp": "74210",
+    "commune": "SAINT-FERREOL"
+  },
+  {
+    "insee": "74235",
+    "cp": "74910",
+    "commune": "SAINT-GERMAIN-SUR-RHONE"
+  },
+  {
+    "insee": "74236",
+    "cp": "74170",
+    "commune": "SAINT-GERVAIS-LES-BAINS"
+  },
+  {
+    "insee": "74237",
+    "cp": "74500",
+    "commune": "SAINT-GINGOLPH"
+  },
+  {
+    "insee": "74238",
+    "cp": "74430",
+    "commune": "SAINT-JEAN-D'AULPS"
+  },
+  {
+    "insee": "74239",
+    "cp": "74450",
+    "commune": "SAINT-JEAN-DE-SIXT"
+  },
+  {
+    "insee": "74240",
+    "cp": "74250",
+    "commune": "SAINT-JEAN-DE-THOLOME"
+  },
+  {
+    "insee": "74241",
+    "cp": "74490",
+    "commune": "SAINT-JEOIRE"
+  },
+  {
+    "insee": "74242",
+    "cp": "74410",
+    "commune": "SAINT-JORIOZ"
+  },
+  {
+    "insee": "74243",
+    "cp": "74160",
+    "commune": "SAINT-JULIEN-EN-GENEVOIS"
+  },
+  {
+    "insee": "74244",
+    "cp": "74800",
+    "commune": "SAINT-LAURENT"
+  },
+  {
+    "insee": "74245",
+    "cp": "74370",
+    "commune": "SAINT-MARTIN-BELLEVUE"
+  },
+  {
+    "insee": "74249",
+    "cp": "74500",
+    "commune": "SAINT-PAUL-EN-CHABLAIS"
+  },
+  {
+    "insee": "74250",
+    "cp": "74800",
+    "commune": "SAINT-PIERRE-EN-FAUCIGNY"
+  },
+  {
+    "insee": "74252",
+    "cp": "74300",
+    "commune": "SAINT-SIGISMOND"
+  },
+  {
+    "insee": "74253",
+    "cp": "74800",
+    "commune": "SAINT-SIXT"
+  },
+  {
+    "insee": "74254",
+    "cp": "74540",
+    "commune": "SAINT-SYLVESTRE"
+  },
+  {
+    "insee": "74255",
+    "cp": "74150",
+    "commune": "SALES"
+  },
+  {
+    "insee": "74256",
+    "cp": "74700",
+    "commune": "SALLANCHES"
+  },
+  {
+    "insee": "74257",
+    "cp": "74270",
+    "commune": "SALLENOVES"
+  },
+  {
+    "insee": "74258",
+    "cp": "74340",
+    "commune": "SAMOENS"
+  },
+  {
+    "insee": "74260",
+    "cp": "74520",
+    "commune": "SAVIGNY"
+  },
+  {
+    "insee": "74261",
+    "cp": "74420",
+    "commune": "SAXEL"
+  },
+  {
+    "insee": "74262",
+    "cp": "74930",
+    "commune": "SCIENTRIER"
+  },
+  {
+    "insee": "74263",
+    "cp": "74140",
+    "commune": "SCIEZ"
+  },
+  {
+    "insee": "74264",
+    "cp": "74950",
+    "commune": "SCIONZIER"
+  },
+  {
+    "insee": "74265",
+    "cp": "74230",
+    "commune": "SERRAVAL"
+  },
+  {
+    "insee": "74266",
+    "cp": "74310",
+    "commune": "SERVOZ"
+  },
+  {
+    "insee": "74267",
+    "cp": "74320",
+    "commune": "SEVRIER"
+  },
+  {
+    "insee": "74268",
+    "cp": "74600",
+    "commune": "SEYNOD"
+  },
+  {
+    "insee": "74269",
+    "cp": "74910",
+    "commune": "SEYSSEL"
+  },
+  {
+    "insee": "74270",
+    "cp": "74210",
+    "commune": "SEYTHENEX"
+  },
+  {
+    "insee": "74271",
+    "cp": "74430",
+    "commune": "SEYTROUX"
+  },
+  {
+    "insee": "74272",
+    "cp": "74330",
+    "commune": "SILLINGY"
+  },
+  {
+    "insee": "74273",
+    "cp": "74740",
+    "commune": "SIXT-FER-A-CHEVAL"
+  },
+  {
+    "insee": "74275",
+    "cp": "74290",
+    "commune": "TALLOIRES"
+  },
+  {
+    "insee": "74276",
+    "cp": "74440",
+    "commune": "TANINGES"
+  },
+  {
+    "insee": "74279",
+    "cp": "74500",
+    "commune": "THOLLON-LES-MEMISES"
+  },
+  {
+    "insee": "74280",
+    "cp": "74230",
+    "commune": "THONES"
+  },
+  {
+    "insee": "74281",
+    "cp": "74200",
+    "commune": "THONON-LES-BAINS"
+  },
+  {
+    "insee": "74282",
+    "cp": "74570",
+    "commune": "THORENS-GLIERES"
+  },
+  {
+    "insee": "74283",
+    "cp": "74150",
+    "commune": "THUSY"
+  },
+  {
+    "insee": "74278",
+    "cp": "74300",
+    "commune": "THYEZ"
+  },
+  {
+    "insee": "74285",
+    "cp": "74910",
+    "commune": "USINENS"
+  },
+  {
+    "insee": "74286",
+    "cp": "74360",
+    "commune": "VACHERESSE"
+  },
+  {
+    "insee": "74287",
+    "cp": "74470",
+    "commune": "VAILLY"
+  },
+  {
+    "insee": "74274",
+    "cp": "74150",
+    "commune": "VAL-DE-FIER"
+  },
+  {
+    "insee": "74288",
+    "cp": "74520",
+    "commune": "VALLEIRY"
+  },
+  {
+    "insee": "74289",
+    "cp": "74150",
+    "commune": "VALLIERES"
+  },
+  {
+    "insee": "74290",
+    "cp": "74660",
+    "commune": "VALLORCINE"
+  },
+  {
+    "insee": "74291",
+    "cp": "74270",
+    "commune": "VANZY"
+  },
+  {
+    "insee": "74292",
+    "cp": "74150",
+    "commune": "VAULX"
+  },
+  {
+    "insee": "74293",
+    "cp": "74140",
+    "commune": "VEIGY-FONCENEX"
+  },
+  {
+    "insee": "74294",
+    "cp": "74440",
+    "commune": "VERCHAIX"
+  },
+  {
+    "insee": "74296",
+    "cp": "74160",
+    "commune": "VERS"
+  },
+  {
+    "insee": "74297",
+    "cp": "74150",
+    "commune": "VERSONNEX"
+  },
+  {
+    "insee": "74298",
+    "cp": "74100",
+    "commune": "VETRAZ-MONTHOUX"
+  },
+  {
+    "insee": "74299",
+    "cp": "74290",
+    "commune": "VEYRIER-DU-LAC"
+  },
+  {
+    "insee": "74301",
+    "cp": "74420",
+    "commune": "VILLARD"
+  },
+  {
+    "insee": "74303",
+    "cp": "74370",
+    "commune": "VILLAZ"
+  },
+  {
+    "insee": "74304",
+    "cp": "74250",
+    "commune": "VILLE-EN-SALLAZ"
+  },
+  {
+    "insee": "74305",
+    "cp": "74100",
+    "commune": "VILLE-LA-GRAND"
+  },
+  {
+    "insee": "74306",
+    "cp": "74350",
+    "commune": "VILLY-LE-BOUVERET"
+  },
+  {
+    "insee": "74307",
+    "cp": "74350",
+    "commune": "VILLY-LE-PELLOUX"
+  },
+  {
+    "insee": "74308",
+    "cp": "74500",
+    "commune": "VINZIER"
+  },
+  {
+    "insee": "74309",
+    "cp": "74580",
+    "commune": "VIRY"
+  },
+  {
+    "insee": "74311",
+    "cp": "74250",
+    "commune": "VIUZ-EN-SALLAZ"
+  },
+  {
+    "insee": "74310",
+    "cp": "74540",
+    "commune": "VIUZ-LA-CHIESAZ"
+  },
+  {
+    "insee": "74312",
+    "cp": "74130",
+    "commune": "VOUGY"
+  },
+  {
+    "insee": "74313",
+    "cp": "74350",
+    "commune": "VOVRAY-EN-BORNES"
+  },
+  {
+    "insee": "74314",
+    "cp": "74520",
+    "commune": "VULBENS"
+  },
+  {
+    "insee": "74315",
+    "cp": "74140",
+    "commune": "YVOIRE"
+  }
+]

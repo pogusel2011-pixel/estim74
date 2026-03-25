@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
 import { PROPERTY_TYPE_OPTIONS, CONDITION_OPTIONS, DPE_OPTIONS, ORIENTATION_OPTIONS, VIEW_OPTIONS } from "@/lib/mapping/options";
 import { PropertyFeatures } from "./property-features";
+import { CommuneSuggest } from "./commune-suggest";
 
 interface PropertyFormProps {
   onSubmit: (values: PropertyFormValues) => void;
@@ -50,13 +51,7 @@ export function PropertyForm({ onSubmit, loading, defaultValues }: PropertyFormP
             <Input id="postalCode" placeholder="74000" maxLength={5} {...register("postalCode")} />
             {errors.postalCode && <p className="text-xs text-destructive">{errors.postalCode.message}</p>}
           </div>
-          <div className="space-y-1">
-            <Label htmlFor="city" className="flex items-center gap-1">
-              Commune <span className="text-destructive">*</span>
-            </Label>
-            <Input id="city" placeholder="Annecy" {...register("city")} />
-            {errors.city && <p className="text-xs text-destructive">{errors.city.message}</p>}
-          </div>
+          <CommuneSuggest form={form} />
         </CardContent>
       </Card>
 

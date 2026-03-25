@@ -11,6 +11,7 @@ import { computeValuation } from "@/lib/valuation/valuation";
 import { fetchNotairesMarket } from "@/lib/notaires/market-check";
 import { prisma } from "@/lib/prisma";
 import { geocodeAddress, isGeoError } from "@/lib/geo/address";
+import { getInseeByPostalCodeAndCommune, getInseeByPostalCode } from "@/lib/geo/cp-insee";
 
 export async function POST(req: Request) {
   try {
@@ -46,6 +47,14 @@ export async function POST(req: Request) {
 
     if (!lat || !lng) {
       return NextResponse.json({ error: "Impossible de géolocaliser le bien — vérifiez la commune et le code postal" }, { status: 422 });
+    }
+
+    // Fallback : enrichir communeCode depuis le référentiel cp-insee-74 si BAN ne l'a pas retourné
+    if (!communeCode && property.postalCode) {
+      communeCode =
+        (property.city
+          ? getInseeByPostalCodeAndCommune(property.postalCode, property.city)
+          : undefined) ?? getInseeByPostalCode(property.postalCode);
     }
 
     const propertyWithGeo = { ...property, lat, lng };
