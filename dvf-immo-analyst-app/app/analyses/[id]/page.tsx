@@ -1,9 +1,10 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { FileDown, ArrowLeft } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
 import { ResimulateButton } from "@/components/analysis/resimulate-button";
+import { PdfDownloadButton } from "@/components/analysis/pdf-download-button";
 import { AnalysisSummaryPanel } from "@/components/analysis/analysis-summary";
 import { ValuationCards } from "@/components/analysis/valuation-cards";
 import { DVFComparablesTable } from "@/components/dvf/dvf-comparables-table";
@@ -101,7 +102,7 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
       enriched = removeOutliers(enriched);
       dvfStats = computeDVFStats(enriched);
       if (dvfStats) dvfStats.source = source;
-      dvfComparables = toComparables(enriched, serialized.surface);
+      dvfComparables = toComparables(enriched, serialized.surface, serialized.rooms);
     } catch (err) {
       console.error("[AnalysisPage] DVF live fetch error:", err);
     }
@@ -136,12 +137,7 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
         </div>
         <div className="flex items-start gap-2 shrink-0 flex-wrap justify-end">
           <ResimulateButton analysisId={serialized.id} />
-          <Button asChild variant="outline" size="sm" className="gap-1.5">
-            <Link href={`/analyses/${serialized.id}/print`} target="_blank" rel="noopener noreferrer">
-              <FileDown className="h-4 w-4" />
-              Exporter PDF
-            </Link>
-          </Button>
+          <PdfDownloadButton analysisId={serialized.id as string} />
         </div>
       </div>
 

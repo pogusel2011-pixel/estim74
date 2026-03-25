@@ -79,8 +79,27 @@ Implemented in `lib/valuation/adjustments.ts` and aligned in `lib/mapping/energy
 - Contains: adresse, type, surface, DVF stats (médianes, Q1/Q3, rayon), estimation fourchette, ajustements détaillés, psmBase/Ajuste, confidenceLabel
 
 ## Comparables Table Column Order (Spec Estim74)
-Date | Distance (m) | Nature du bien | Surface (m²) | Pièces | Prix DVF | €/m² | Adresse/parcelle | Source
+[badge] | Date | Distance (m) | Nature du bien | Surface (m²) | Pièces | Prix DVF | €/m² | Adresse/parcelle | Source
 (Both web table `components/dvf/dvf-comparables-table.tsx` and print page `app/analyses/[id]/print/page.tsx`)
+
+## V2 Features
+
+### Chantier 1 — Export PDF livrable client
+- **Button**: `components/analysis/pdf-download-button.tsx` — "Télécharger PDF" (replaces "Exporter PDF" link)
+- **Implementation**: `html2canvas` + `jsPDF` (dynamically imported) — loads print page in hidden iframe with `?noprint=1`, captures `.print-sheet`, slices into A4 pages
+- **Print page improvements**: `?noprint=1` skips auto-print; blob annonces actives section added (count, price range, PSM listing vs DVF signed + écart); footer updated to full legal mention "Estimation fondée sur les prix signés DVF · Source DGFiP 2014–2024 · Usage professionnel"
+- **Packages**: `jspdf`, `html2canvas` (v1.4.x)
+
+### Chantier 2 — Sélection intelligente des comparables
+- **Scoring 4 dimensions** in `lib/dvf/comparables.ts` — `scoreComparable()`:
+  - Distance 40% : `max(0, 1 - distanceM/2000)`, neutre 0.4 si inconnu
+  - Surface  30% : `(min/max)^1.5` (pénalise davantage les grands écarts)
+  - Récence  20% : `max(0, 1 - ageDays / (365*3))` — zéro à 3 ans
+  - Pièces   10% : 1.0 exact, 0.7 ±1, 0.3 ±2, 0 sinon (0.5 si inconnu)
+- **Top N = 8** comparables marqués `topComparable: true` dans `DVFComparable`
+- **Table**: top comparables en fond bleu + badge "★ Comparable clé" en première colonne ; résumé dans le header (badge avec comptage)
+- **Confidence**: `lib/valuation/confidence.ts` utilise les surfaces réelles des top comparables pour `surfaceMatch` (plus de valeur fixe à 0.7)
+- **Propagation**: `rooms` passé à `toComparables()` dans estimate route, resimulate route, analyses/[id]/page, print/page
 
 ## Notes
 - First page load after server restart takes ~10s (CSV load); subsequent loads ~50ms

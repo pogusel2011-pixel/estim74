@@ -95,7 +95,7 @@ export async function POST(
     enriched = removeOutliers(enriched);
     const dvfStats = computeDVFStats(enriched);
     if (dvfStats) dvfStats.source = source;
-    const dvfComparables = toComparables(enriched, property.surface as number);
+    const dvfComparables = toComparables(enriched, property.surface as number, property.rooms as number | undefined);
 
     // 6. Annonces actives (via MoteurImmo avec code INSEE + coords du sujet)
     const listings = await findActiveListings(propertyWithGeo as never, {
@@ -105,7 +105,7 @@ export async function POST(
     });
 
     // 7. Valorisation
-    const valuation = computeValuation(propertyWithGeo as never, dvfStats ?? null, listings);
+    const valuation = computeValuation(propertyWithGeo as never, dvfStats ?? null, listings, dvfComparables);
 
     // 8. Contexte marché
     const marketReading = await fetchNotairesMarket(

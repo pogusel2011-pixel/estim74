@@ -10,6 +10,7 @@ import { propertyTypeToDvfTypes } from "@/lib/mapping/property-type";
 import { percentile, formatPrice, formatPsm, formatDate, formatDateShort } from "@/lib/utils";
 import { PROPERTY_TYPE_LABELS, CONDITION_LABELS, DPE_COLORS, CONFIDENCE_COLORS } from "@/lib/constants";
 import { DVFStats, DVFComparable } from "@/types/dvf";
+import { ActiveListing } from "@/types/listing";
 import { Adjustment } from "@/types/valuation";
 
 export const dynamic = "force-dynamic";
@@ -66,7 +67,14 @@ async function getTrendData(lat: number, lng: number, radiusKm: number, type?: s
   }
 }
 
-export default async function PrintPage({ params }: { params: { id: string } }) {
+export default async function PrintPage({
+  params,
+  searchParams,
+}: {
+  params: { id: string };
+  searchParams: { noprint?: string };
+}) {
+  const skipPrint = searchParams.noprint === "1";
   const analysis = await prisma.analysis.findUnique({ where: { id: params.id } });
   if (!analysis) notFound();
 
@@ -77,6 +85,7 @@ export default async function PrintPage({ params }: { params: { id: string } }) 
   let dvfComparables: DVFComparable[] = (a.dvfComparables as DVFComparable[]) ?? [];
   let perimeterKm: number | null = (a.perimeterKm as number) ?? null;
   let requestedRadiusKm: number | null = (a.requestedRadiusKm as number) ?? null;
+  const listings: ActiveListing[] = Array.isArray(a.listings) ? (a.listings as ActiveListing[]) : [];
 
   if (!dvfStats && a.lat && a.lng) {
     try {
@@ -92,7 +101,7 @@ export default async function PrintPage({ params }: { params: { id: string } }) 
       enriched = removeOutliers(enriched);
       dvfStats = computeDVFStats(enriched);
       if (dvfStats) dvfStats.source = source;
-      dvfComparables = toComparables(enriched, a.surface as number);
+      dvfComparables = toComparables(enriched, a.surface as number, a.rooms as number | undefined);
     } catch { /* no DVF data */ }
   }
 
@@ -121,7 +130,7 @@ export default async function PrintPage({ params }: { params: { id: string } }) 
 
   return (
     <>
-      <PrintTrigger />
+      <PrintTrigger skip={skipPrint} />
 
       {/* Embedded print + screen styles */}
       <style suppressHydrationWarning>{`
@@ -370,14 +379,21 @@ export default async function PrintPage({ params }: { params: { id: string } }) 
               <table>
                 <thead>
                   <tr>
-                    {["Date", "Distance", "Nature", "Surface", "Pièces", "Prix DVF", "€/m²", "Adresse/parcelle", "Source"].map(h => (
+                    {["", "Date", "Distance", "Nature", "Surface", "Pièces", "Prix DVF", "€/m²", "Adresse/parcelle", "Source"].map(h => (
                       <th key={h}>{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {dvfComparables.slice(0, 20).map((c, i) => (
-                    <tr key={c.id ?? i}>
+                    <tr key={c.id ?? i} style={c.topComparable ? { background: "#eff6ff" } : undefined}>
+                      <td style={{ whiteSpace: "nowrap", paddingRight: 4 }}>
+                        {c.topComparable && (
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: 2, border: "1px solid #60a5fa", borderRadius: 99, padding: "1px 5px", fontSize: "6.5pt", fontWeight: 700, color: "#1d4ed8", background: "#dbeafe" }}>
+                            ★ Clé
+                          </span>
+                        )}
+                      </td>
                       <td style={{ color: "#64748b", whiteSpace: "nowrap" }}>{formatDateShort(c.date)}</td>
                       <td style={{ whiteSpace: "nowrap", color: "#64748b" }}>{c.distanceM != null ? Math.round(c.distanceM) + " m" : "—"}</td>
                       <td style={{ whiteSpace: "nowrap" }}>{c.type}</td>
@@ -461,19 +477,66 @@ export default async function PrintPage({ params }: { params: { id: string } }) 
             </>
           )}
 
+          {/* ── 6. MARCHÉ ANNONCES ACTIVES ── */}
+          {listings.length > 0 && (() => {
+            const prices = listings.map(l => l.price).sort((a, b) => a - b);
+            const psms = listings.map(l => l.pricePsm);
+            const minPrice = prices[0];
+            const maxPrice = prices[prices.length - 1];
+            const avgListingPsm = Math.round(psms.reduce((s, p) => s + p, 0) / psms.length);
+            const dvfMedian = dvfStats?.medianPsm;
+            const ecartPct = dvfMedian
+              ? Math.round(((avgListingPsm - dvfMedian) / dvfMedian) * 100 * 10) / 10
+              : null;
+            return (
+              <>
+                <hr className="divider" />
+                <div className="section no-break">
+                  <h2>Marché actif — Annonces en ligne</h2>
+                  <div className="grid2">
+                    <div>
+                      {[
+                        { k: "Annonces analysées", v: String(listings.length) },
+                        { k: "Fourchette prix affichés", v: `${formatPrice(minPrice, true)} – ${formatPrice(maxPrice, true)}` },
+                        { k: "Prix/m² moyen annonces", v: formatPsm(avgListingPsm) },
+                      ].map(({ k, v }) => (
+                        <div key={k} className="stat-row"><span className="k">{k}</span><span className="v">{v}</span></div>
+                      ))}
+                    </div>
+                    <div>
+                      {[
+                        { k: "Prix/m² médian DVF (signé)", v: dvfMedian ? formatPsm(dvfMedian) : "—" },
+                        { k: "Écart affiché vs signé", v: ecartPct != null ? `${ecartPct > 0 ? "+" : ""}${ecartPct}%` : "—" },
+                        { k: "Source annonces", v: "MoteurImmo" },
+                      ].map(({ k, v }) => (
+                        <div key={k} className="stat-row"><span className="k">{k}</span>
+                          <span className="v" style={{ color: k === "Écart affiché vs signé" && ecartPct != null ? (ecartPct > 5 ? "#dc2626" : ecartPct < -5 ? "#16a34a" : "#374151") : undefined }}>
+                            {v}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </>
+            );
+          })()}
+
           {/* ── FOOTER ── */}
           <div className="footer">
-            <span>Généré par ESTIM&apos;74 · Données DVF officielles DGFiP 2014–2024</span>
-            <span>Réf. {params.id.slice(0, 8).toUpperCase()} · {today}</span>
+            <span>Estimation fondée sur les prix signés DVF · Source DGFiP 2014–2024 · Usage professionnel</span>
+            <span>ESTIM&apos;74 · Réf. {params.id.slice(0, 8).toUpperCase()} · {today}</span>
           </div>
 
         </div>
       </div>
 
-      {/* Screen-only hint bubble (hidden at print time via CSS) */}
-      <div className="screen-hint print:hidden">
-        Ouverture de la boîte d'impression…
-      </div>
+      {/* Screen-only hint bubble (hidden at print time via CSS or when noprint mode) */}
+      {!skipPrint && (
+        <div className="screen-hint print:hidden">
+          Ouverture de la boîte d'impression…
+        </div>
+      )}
     </>
   );
 }

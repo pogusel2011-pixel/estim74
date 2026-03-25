@@ -51,6 +51,10 @@ export interface DVFComparable {
   landSurface?: number;
   distanceM?: number;
   similarity?: number;
+  /** Score composite 0-1 (distance 40% + surface 30% + recency 20% + rooms 10%) */
+  score?: number;
+  /** true si ce comparable fait partie du top 5-10 les plus pertinents */
+  topComparable?: boolean;
   /** Source : "csv" = données locales 2014-2024, "live" = API temps réel */
   source?: "csv" | "live";
 }

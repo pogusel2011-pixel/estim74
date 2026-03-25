@@ -3,7 +3,7 @@ import { DVFComparable } from "@/types/dvf";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatPrice, formatPsm, formatDateShort } from "@/lib/utils";
-import { Table2 } from "lucide-react";
+import { Table2, Star } from "lucide-react";
 import { useState } from "react";
 
 interface Props {
@@ -26,12 +26,25 @@ function SourceBadge({ source }: { source?: "csv" | "live" }) {
   );
 }
 
-// Spec Estim74 : Date | Distance (m) | Nature du bien | Surface (m²) | Pièces | Prix signé DVF | Prix/m² | Adresse/parcelle | Source
-const HEADERS = ["Date", "Distance", "Nature du bien", "Surface", "Pièces", "Prix DVF", "€/m²", "Adresse/parcelle", "Source"];
+function TopBadge() {
+  return (
+    <span className="inline-flex items-center gap-0.5 rounded-full border border-blue-400 bg-blue-50 px-1.5 py-0.5 text-[10px] font-semibold text-blue-700 whitespace-nowrap">
+      <Star className="h-2.5 w-2.5 fill-blue-400 text-blue-400" />
+      Comparable clé
+    </span>
+  );
+}
+
+const HEADERS = ["", "Date", "Distance", "Nature du bien", "Surface", "Pièces", "Prix DVF", "€/m²", "Adresse/parcelle", "Source"];
 
 export function DVFComparablesTable({ comparables, hasLiveData }: Props) {
   const [showAll, setShowAll] = useState(false);
-  const displayed = showAll ? comparables : comparables.slice(0, 10);
+
+  const topComparables = comparables.filter((c) => c.topComparable);
+  const otherComparables = comparables.filter((c) => !c.topComparable);
+
+  const allSorted = [...topComparables, ...otherComparables];
+  const displayed = showAll ? allSorted : allSorted.slice(0, 10);
 
   const liveCount = comparables.filter((c) => c.source === "live").length;
 
@@ -51,6 +64,12 @@ export function DVFComparablesTable({ comparables, hasLiveData }: Props) {
         <CardTitle className="text-sm flex items-center gap-2 flex-wrap">
           <Table2 className="h-4 w-4 text-primary shrink-0" />
           <span>Transactions comparables ({comparables.length})</span>
+          {topComparables.length > 0 && (
+            <Badge variant="outline" className="text-xs font-normal text-blue-700 border-blue-300 bg-blue-50 gap-1">
+              <Star className="h-2.5 w-2.5 fill-blue-400 text-blue-400" />
+              {topComparables.length} comparable{topComparables.length > 1 ? "s" : ""} clé{topComparables.length > 1 ? "s" : ""}
+            </Badge>
+          )}
           {liveCount > 0 && (
             <Badge variant="outline" className="text-xs font-normal text-blue-600 border-blue-300 bg-blue-50">
               {liveCount} DVF Live
@@ -71,7 +90,7 @@ export function DVFComparablesTable({ comparables, hasLiveData }: Props) {
                 {HEADERS.map((h) => (
                   <th
                     key={h}
-                    className="px-3 py-2 text-left text-xs font-medium text-muted-foreground whitespace-nowrap"
+                    className="px-3 py-2 text-left text-xs font-medium text-muted-foreground whitespace-nowrap first:w-[1px] first:px-2"
                   >
                     {h}
                   </th>
@@ -82,25 +101,34 @@ export function DVFComparablesTable({ comparables, hasLiveData }: Props) {
               {displayed.map((c, i) => (
                 <tr
                   key={c.id ?? i}
-                  className="border-b last:border-0 hover:bg-muted/30 transition-colors"
+                  className={[
+                    "border-b last:border-0 transition-colors",
+                    c.topComparable
+                      ? "bg-blue-50/40 hover:bg-blue-50/70"
+                      : "hover:bg-muted/30",
+                  ].join(" ")}
                 >
+                  {/* Badge colonne */}
+                  <td className="px-2 py-2 whitespace-nowrap">
+                    {c.topComparable && <TopBadge />}
+                  </td>
                   {/* Date */}
                   <td className="px-3 py-2 whitespace-nowrap text-muted-foreground">
                     {formatDateShort(c.date)}
                   </td>
-                  {/* Distance (m) */}
+                  {/* Distance */}
                   <td className="px-3 py-2 whitespace-nowrap text-muted-foreground">
                     {c.distanceM != null ? `${Math.round(c.distanceM)} m` : "—"}
                   </td>
                   {/* Nature du bien */}
                   <td className="px-3 py-2 whitespace-nowrap">{c.type}</td>
-                  {/* Surface (m²) */}
+                  {/* Surface */}
                   <td className="px-3 py-2 whitespace-nowrap">{c.surface} m²</td>
                   {/* Pièces */}
                   <td className="px-3 py-2 whitespace-nowrap text-muted-foreground">
                     {c.rooms != null ? c.rooms : "—"}
                   </td>
-                  {/* Prix signé DVF */}
+                  {/* Prix DVF */}
                   <td className="px-3 py-2 whitespace-nowrap font-medium">
                     {formatPrice(c.price, true)}
                   </td>

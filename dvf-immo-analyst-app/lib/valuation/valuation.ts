@@ -1,5 +1,5 @@
 import { PropertyInput } from "@/types/property";
-import { DVFStats } from "@/types/dvf";
+import { DVFStats, DVFComparable } from "@/types/dvf";
 import { ActiveListing } from "@/types/listing";
 import { ValuationResult } from "@/types/valuation";
 import { computeAdjustments, applyAdjustments } from "./adjustments";
@@ -21,7 +21,8 @@ const DPE_COEFFICIENTS: Record<string, number> = {
 export function computeValuation(
   property: PropertyInput,
   dvfStats: DVFStats | null,
-  listings: ActiveListing[]
+  listings: ActiveListing[],
+  dvfComparables?: DVFComparable[]
 ): ValuationResult {
   const adjustments = computeAdjustments(property);
 
@@ -72,7 +73,7 @@ export function computeValuation(
   const low = Math.round(mid * (1 - spread));
   const high = Math.round(mid * (1 + spread));
 
-  const { score, label } = computeConfidence(dvfStats, property.surface);
+  const { score, label } = computeConfidence(dvfStats, property.surface, dvfComparables);
 
   return {
     low, mid, high,

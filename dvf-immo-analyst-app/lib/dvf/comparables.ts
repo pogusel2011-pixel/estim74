@@ -1,12 +1,63 @@
 import { DVFMutation, DVFComparable } from "@/types/dvf";
 
-export function toComparables(mutations: DVFMutation[], subjectSurface: number): DVFComparable[] {
-  return mutations
+/** Nombre de "top comparables" à identifier */
+const TOP_N = 8;
+
+/**
+ * Score composite pour un comparable DVF (0-1) :
+ *  - Distance       40 % — plus proche = meilleur
+ *  - Surface        30 % — plus proche de la cible = meilleur
+ *  - Récence        20 % — plus récent = meilleur (0 à 2 ans)
+ *  - Pièces         10 % — correspondance exacte ou à 1 pièce près
+ */
+export function scoreComparable(
+  comp: { surface: number; distanceM?: number; date: string; rooms?: number },
+  target: { surface: number; rooms?: number }
+): number {
+  // 1. Distance (40 %)
+  const distScore = comp.distanceM != null
+    ? Math.max(0, 1 - comp.distanceM / 2000)
+    : 0.4; // inconnu → score neutre
+
+  // 2. Surface (30 %)
+  const sRatio = Math.min(comp.surface, target.surface) / Math.max(comp.surface, target.surface);
+  const surfScore = Math.pow(sRatio, 1.5); // pénalise davantage les grands écarts
+
+  // 3. Récence (20 %) — full score < 6 mois, zéro à 3 ans
+  const ageMs = Date.now() - new Date(comp.date).getTime();
+  const ageDays = ageMs / 86_400_000;
+  const recencyScore = Math.max(0, 1 - ageDays / (365 * 3));
+
+  // 4. Pièces (10 %)
+  let roomScore = 0.5; // inconnu
+  if (comp.rooms != null && target.rooms != null) {
+    const diff = Math.abs(comp.rooms - target.rooms);
+    roomScore = diff === 0 ? 1.0 : diff === 1 ? 0.7 : diff === 2 ? 0.3 : 0.0;
+  }
+
+  return (
+    distScore   * 0.40 +
+    surfScore   * 0.30 +
+    recencyScore * 0.20 +
+    roomScore   * 0.10
+  );
+}
+
+export function toComparables(
+  mutations: DVFMutation[],
+  subjectSurface: number,
+  subjectRooms?: number
+): DVFComparable[] {
+  const raw = mutations
     .filter((m) => m.prix_m2 != null && m.valeur_fonciere > 0)
     .map((m): DVFComparable => {
       const surface = m.surface_reelle_bati ?? m.surface_terrain ?? 0;
-      const similarity = computeSimilarity(surface, subjectSurface, m.distance_m);
       const adresse = [m.adresse_numero, m.adresse_nom_voie].filter(Boolean).join(" ");
+
+      const score = scoreComparable(
+        { surface, distanceM: m.distance_m, date: m.date_mutation, rooms: m.nombre_pieces_principales },
+        { surface: subjectSurface, rooms: subjectRooms }
+      );
 
       return {
         id: m.id_mutation,
@@ -20,16 +71,20 @@ export function toComparables(mutations: DVFMutation[], subjectSurface: number):
         rooms: m.nombre_pieces_principales,
         landSurface: m.surface_terrain,
         distanceM: m.distance_m,
-        similarity,
+        similarity: Math.round(score * 100) / 100,
+        score: Math.round(score * 100) / 100,
+        topComparable: false, // set below
         source: m._source ?? "csv",
       };
     })
-    .sort((a, b) => (b.similarity ?? 0) - (a.similarity ?? 0))
-    .slice(0, 30);
-}
+    .sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
 
-function computeSimilarity(surface: number, subjectSurface: number, distanceM?: number): number {
-  const surfaceRatio = Math.min(surface, subjectSurface) / Math.max(surface, subjectSurface);
-  const distScore = distanceM ? Math.max(0, 1 - distanceM / 2000) : 0.5;
-  return Math.round((surfaceRatio * 0.6 + distScore * 0.4) * 100) / 100;
+  // Mark top N as key comparables
+  const result = raw.slice(0, 30);
+  result.slice(0, Math.min(TOP_N, result.length)).forEach((c) => {
+    c.topComparable = true;
+  });
+
+  // Keep top comparables first, then the rest in descending score order
+  return result;
 }

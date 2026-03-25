@@ -1,10 +1,11 @@
-import { DVFStats } from "@/types/dvf";
+import { DVFStats, DVFComparable } from "@/types/dvf";
 import { ConfidenceFactors } from "@/types/valuation";
 import { clamp } from "@/lib/utils";
 
 export function computeConfidence(
   dvfStats: DVFStats | null | undefined,
-  subjectSurface: number
+  subjectSurface: number,
+  comparables?: DVFComparable[]
 ): { score: number; label: string; factors: ConfidenceFactors } {
   if (!dvfStats) {
     return { score: 0.3, label: "Faible", factors: { sampleSize: 0, dataFreshness: 0, priceDispersion: 0, surfaceMatch: 0, geographicDensity: 0 } };
@@ -22,13 +23,29 @@ export function computeConfidence(
   const dispersionRatio = iqr / dvfStats.medianPsm;
   const priceDispersion = clamp(1 - dispersionRatio * 2, 0, 1);
 
-  // Match de surface (difficile à mesurer sans les surfaces détaillées)
-  const surfaceMatch = 0.7;
+  // Match de surface — utilise les comparables réels si disponibles
+  let surfaceMatch = 0.7; // valeur par défaut
+  if (comparables && comparables.length > 0) {
+    // Moyenne du score surface des top comparables
+    const top = comparables.filter((c) => c.topComparable).slice(0, 5);
+    const sample = top.length > 0 ? top : comparables.slice(0, 5);
+    const ratios = sample.map((c) => {
+      if (!c.surface || c.surface <= 0) return 0.7;
+      return Math.min(c.surface, subjectSurface) / Math.max(c.surface, subjectSurface);
+    });
+    surfaceMatch = clamp(ratios.reduce((s, r) => s + r, 0) / ratios.length, 0, 1);
+  }
 
   // Densité géographique (proxy: count par km²)
   const geographicDensity = clamp(dvfStats.count / 20, 0, 1);
 
-  const score = (sampleSize * 0.35 + dataFreshness * 0.25 + priceDispersion * 0.2 + surfaceMatch * 0.1 + geographicDensity * 0.1);
+  const score = (
+    sampleSize        * 0.35 +
+    dataFreshness     * 0.25 +
+    priceDispersion   * 0.20 +
+    surfaceMatch      * 0.10 +
+    geographicDensity * 0.10
+  );
 
   const label =
     score >= 0.85 ? "Excellente" :

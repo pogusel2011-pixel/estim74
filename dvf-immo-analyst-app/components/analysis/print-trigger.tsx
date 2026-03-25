@@ -1,10 +1,15 @@
 "use client";
 import { useEffect } from "react";
 
-export function PrintTrigger() {
+interface Props {
+  skip?: boolean;
+}
+
+export function PrintTrigger({ skip }: Props) {
   useEffect(() => {
+    if (skip) return;
     const t = setTimeout(() => window.print(), 600);
     return () => clearTimeout(t);
-  }, []);
+  }, [skip]);
   return null;
 }
