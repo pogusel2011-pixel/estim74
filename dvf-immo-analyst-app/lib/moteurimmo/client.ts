@@ -4,9 +4,13 @@ import { normalizeMoteurImmoListing } from "./normalize";
 const API_URL = "https://moteurimmo.fr/api/ads";
 const API_KEY = process.env.MOTEURIMMO_API_KEY ?? "";
 
-/** Catégories MoteurImmo (nouveau endpoint) */
-const CATEGORY_MAP: Record<string, string> = {
-  APARTMENT: "apartment",
+/**
+ * MoteurImmo renvoie category = "flat" (appartement) ou "house" (maison).
+ * Le champ categories dans le body POST n'accepte pas de valeurs reconnues
+ * → on filtre localement après la requête.
+ */
+const CATEGORY_FILTER: Record<string, string> = {
+  APARTMENT: "flat",
   HOUSE: "house",
 };
 
@@ -33,21 +37,21 @@ export async function searchMoteurImmo(
     return [];
   }
 
-  const category = CATEGORY_MAP[params.propertyType];
-  if (!category) {
-    // Terrain / Commercial non supportés par l'API
+  // Terrain / Commercial non supportés par l'API MoteurImmo
+  const categoryFilter = CATEGORY_FILTER[params.propertyType];
+  if (!categoryFilter) {
     return [];
   }
 
-  const body = {
+  // L'API accepte surfaceMin/surfaceMax uniquement si les deux sont fournis
+  const body: Record<string, unknown> = {
     apiKey: API_KEY,
     types: ["sale"],
-    categories: [category],
     locations: [{ inseeCode: params.inseeCode }],
-    surfaceMin: params.surfaceMin,
-    surfaceMax: params.surfaceMax,
     maxLength: Math.min(params.maxLength ?? 30, 100),
   };
+  if (params.surfaceMin) body.surfaceMin = params.surfaceMin;
+  if (params.surfaceMax) body.surfaceMax = params.surfaceMax;
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 8000);
@@ -71,7 +75,13 @@ export async function searchMoteurImmo(
     const data = await res.json();
     const raw: unknown[] = Array.isArray(data) ? data : (data.ads ?? data.results ?? data.data ?? []);
 
-    return raw
+    // Filtre local par category (flat / house) car le champ categories du body est non supporté
+    const filtered = raw.filter((item) => {
+      const ad = item as Record<string, unknown>;
+      return ad.category === categoryFilter;
+    });
+
+    return filtered
       .map((item) => normalizeMoteurImmoListing(item, params.subjectLat, params.subjectLng))
       .filter(Boolean) as ActiveListing[];
   } catch (err) {

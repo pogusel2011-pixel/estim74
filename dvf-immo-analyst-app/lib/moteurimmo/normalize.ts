@@ -1,6 +1,18 @@
 import { ActiveListing } from "@/types/listing";
 import { haversineDistance } from "@/lib/utils";
 
+/**
+ * Normalise une annonce brute retournée par POST https://moteurimmo.fr/api/ads
+ * vers notre type ActiveListing.
+ *
+ * Champs réels observés dans la réponse :
+ *   reference, title, price, surface, rooms, bedrooms, floor,
+ *   pricePerSquareMeter, landSurface, energyGrade, gasGrade,
+ *   options (string[]), position ([lon,lat] | null),
+ *   location { city, postalCode, inseeCode, coordinates:[lon,lat] },
+ *   publisher { type, name, phone, email }, url, category, type,
+ *   pictureUrl, pictureUrls[], lastEventDate
+ */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function normalizeMoteurImmoListing(
   raw: any,
@@ -11,14 +23,18 @@ export function normalizeMoteurImmoListing(
   const surface = Number(raw.surface ?? 0);
   if (!price || !surface) return null;
 
-  // Position: [lon, lat] selon la doc MoteurImmo
-  const position: [number, number] | undefined = Array.isArray(raw.position) && raw.position.length >= 2
-    ? raw.position
-    : undefined;
-  const listingLng = position?.[0];
-  const listingLat = position?.[1];
+  // Coordonnées : position [lon, lat] ou location.coordinates [lon, lat]
+  const coords: [number, number] | null =
+    Array.isArray(raw.position) && raw.position.length >= 2
+      ? raw.position
+      : Array.isArray(raw.location?.coordinates) && raw.location.coordinates.length >= 2
+      ? raw.location.coordinates
+      : null;
 
-  // Distance Haversine si on dispose des coordonnées du sujet et de l'annonce
+  const listingLng = coords?.[0];
+  const listingLat = coords?.[1];
+
+  // Distance Haversine en mètres
   let distance: number | undefined;
   if (subjectLat != null && subjectLng != null && listingLat != null && listingLng != null) {
     distance = Math.round(haversineDistance(subjectLat, subjectLng, listingLat, listingLng));
@@ -31,20 +47,34 @@ export function normalizeMoteurImmoListing(
   const location = raw.location ?? {};
   const publisher = raw.publisher ?? {};
 
-  // Options — l'API retourne un objet options{}
-  const opts = raw.options ?? {};
+  // Options — l'API retourne un tableau de strings: ["hasGarage", "hasTerrace", ...]
+  const opts: string[] = Array.isArray(raw.options) ? raw.options : [];
+  const OPTION_LABELS: Record<string, string> = {
+    hasGarage: "Garage",
+    hasParking: "Parking",
+    hasGarden: "Jardin",
+    hasTerrace: "Terrasse",
+    hasSwimmingPool: "Piscine",
+    hasBalcony: "Balcon",
+    hasCave: "Cave",
+    hasCellar: "Cave",
+    hasElevator: "Ascenseur",
+    hasLift: "Ascenseur",
+    hasPool: "Piscine",
+    isNew: "Neuf",
+  };
   const features: string[] = [];
-  if (opts.hasGarage) features.push("Garage");
-  if (opts.hasParking) features.push("Parking");
-  if (opts.hasGarden) features.push("Jardin");
-  if (opts.hasTerrace) features.push("Terrasse");
-  if (opts.hasSwimmingPool) features.push("Piscine");
-  if (opts.hasBalcony) features.push("Balcon");
-  if (opts.hasCellar) features.push("Cave");
-  if (opts.hasElevator) features.push("Ascenseur");
+  const seen = new Set<string>();
+  for (const opt of opts) {
+    const label = OPTION_LABELS[opt];
+    if (label && !seen.has(label)) {
+      features.push(label);
+      seen.add(label);
+    }
+  }
 
   return {
-    id: String(raw.reference ?? raw.id ?? Math.random()),
+    id: String(raw.reference ?? raw.adId ?? raw.id ?? Math.random()),
     source: "MoteurImmo",
     url: raw.url,
     title: raw.title ?? "Annonce",
@@ -59,10 +89,10 @@ export function normalizeMoteurImmoListing(
     price,
     pricePsm,
     description: raw.description,
-    publishedAt: raw.lastEventDate,
+    publishedAt: raw.publicationDate ?? raw.lastEventDate,
     lastEventDate: raw.lastEventDate,
-    photos: raw.pictureUrl ? [raw.pictureUrl] : [],
-    pictureUrl: raw.pictureUrl,
+    photos: raw.pictureUrls ?? (raw.pictureUrl ? [raw.pictureUrl] : []),
+    pictureUrl: raw.pictureUrl ?? raw.pictureUrls?.[0],
     features,
     dpe: raw.energyGrade ?? undefined,
     lat: listingLat,
