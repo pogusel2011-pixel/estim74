@@ -2,6 +2,7 @@ import { PropertyInput } from "@/types/property";
 import { Adjustment } from "@/types/valuation";
 import { getDpeAdjustment } from "@/lib/mapping/energy";
 import { clamp } from "@/lib/utils";
+import { BUSINESS_RULES } from "@/lib/rules/business-rules";
 
 /**
  * Calcule les ajustements qualitatifs selon la grille spec Estim74.
@@ -187,7 +188,8 @@ export function applyAdjustments(basePsm: number, adjustments: Adjustment[]): nu
   const totalFactor = adjustments.reduce((sum, adj) => sum + adj.factor, 0);
   const brutPct = (totalFactor * 100).toFixed(2);
 
-  const clamped = clamp(totalFactor, -0.20, 0.20);
+  const cap = BUSINESS_RULES.QUALITATIVE_CAP.value;
+  const clamped = clamp(totalFactor, -cap, cap);
   const retenuPct = (clamped * 100).toFixed(2);
 
   if (Math.abs(totalFactor - clamped) > 0.0001) {

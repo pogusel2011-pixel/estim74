@@ -17,12 +17,15 @@ export const DPE_COLORS: Record<string, string> = {
 };
 
 export const CONFIDENCE_COLORS: Record<string, string> = {
-  "Indicative": "#D97706",
-  "Faible": "#EF4444",
-  "Correcte": "#F97316",
-  "Bonne": "#EAB308",
-  "Très bonne": "#22C55E",
-  "Excellente": "#10B981",
+  "Indicative":  "#D97706",
+  "Insuffisant": "#7F1D1D",
+  "Faible":      "#EF4444",
+  "Moyenne":     "#F97316",
+  "Bonne":       "#3B82F6",
+  "Très bonne":  "#22C55E",
+  // Legacy labels (ancien score — rétro-compat)
+  "Correcte":    "#F97316",
+  "Excellente":  "#10B981",
 };
 
 export const DVF_TYPE_MAP: Record<string, string[]> = {

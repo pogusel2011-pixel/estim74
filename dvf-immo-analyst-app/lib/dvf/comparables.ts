@@ -1,7 +1,8 @@
 import { DVFMutation, DVFComparable } from "@/types/dvf";
+import { BUSINESS_RULES } from "@/lib/rules/business-rules";
 
-/** Nombre de "top comparables" à identifier */
-const TOP_N = 8;
+/** Nombre de "top comparables" à identifier (référence BUSINESS_RULES) */
+const TOP_N = BUSINESS_RULES.TOP_COMPARABLES_COUNT.value;
 
 /**
  * Score composite pour un comparable DVF (0-1) :

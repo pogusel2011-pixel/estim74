@@ -2,7 +2,7 @@ import { formatPrice, formatPsm } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ConfidenceBadge } from "./confidence-badge";
-import { Adjustment } from "@/types/valuation";
+import { Adjustment, ConfidenceFactors } from "@/types/valuation";
 import { TrendingUp, TrendingDown, Minus, AlertCircle } from "lucide-react";
 
 interface Props {
@@ -15,9 +15,10 @@ interface Props {
   adjustments?: Adjustment[] | null;
   dvfSampleSize?: number | null;
   perimeterKm?: number | null;
+  confidenceFactors?: ConfidenceFactors | null;
 }
 
-export function ValuationCards({ low, mid, high, psm, confidence, confidenceLabel, adjustments, dvfSampleSize, perimeterKm }: Props) {
+export function ValuationCards({ low, mid, high, psm, confidence, confidenceLabel, adjustments, dvfSampleSize, perimeterKm, confidenceFactors }: Props) {
   const isIndicative = confidenceLabel === "Indicative" || (mid != null && mid > 0 && (dvfSampleSize != null && dvfSampleSize < 3));
 
   if (!mid) {
@@ -75,7 +76,7 @@ export function ValuationCards({ low, mid, high, psm, confidence, confidenceLabe
       {/* Fiabilité + ajustements */}
       <div className="flex flex-wrap gap-2 items-center">
         {confidence != null && confidenceLabel && (
-          <ConfidenceBadge score={confidence} label={confidenceLabel} />
+          <ConfidenceBadge score={confidence} label={confidenceLabel} factors={confidenceFactors} />
         )}
         {adjustments && adjustments.length > 0 && (
           <div className="flex flex-wrap gap-1">

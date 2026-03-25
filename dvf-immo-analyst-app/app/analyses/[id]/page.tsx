@@ -22,6 +22,7 @@ import { computeDVFStats } from "@/lib/dvf/stats";
 import { toComparables } from "@/lib/dvf/comparables";
 import { propertyTypeToDvfTypes } from "@/lib/mapping/property-type";
 import { isApiKeyConfigured } from "@/lib/moteurimmo/search";
+import { computeConfidence } from "@/lib/valuation/confidence";
 import { DVFStats, DVFComparable } from "@/types/dvf";
 
 export const dynamic = "force-dynamic";
@@ -112,6 +113,14 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
   const requestedRadiusKm = liveRequestedRadiusKm ?? serialized.requestedRadiusKm;
   const apiAvailable = isApiKeyConfigured();
 
+  // Calcul des facteurs de confiance (4 composantes) à partir des données disponibles
+  const { factors: confidenceFactors } = computeConfidence(
+    dvfStats,
+    (serialized.surface as number | null) ?? 0,
+    dvfComparables,
+    perimeterKm ?? undefined,
+  );
+
   // Map propertyType to DVF type string for the trend chart
   const dvfTypeForChart = serialized.propertyType === "APARTMENT" ? "Appartement"
     : serialized.propertyType === "HOUSE" ? "Maison"
@@ -152,6 +161,7 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
         adjustments={safeAdjustments}
         dvfSampleSize={serialized.dvfSampleSize as number | null}
         perimeterKm={perimeterKm}
+        confidenceFactors={confidenceFactors}
       />
 
       {/* Tabs secondaires */}

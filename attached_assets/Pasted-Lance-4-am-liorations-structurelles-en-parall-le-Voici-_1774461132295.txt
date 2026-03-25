@@ -1,0 +1,82 @@
+Lance 4 améliorations structurelles en parallèle. Voici les instructions précises :
+
+---
+
+**CHANTIER A — Registre des règles métier versionnées**
+
+Crée un fichier `lib/rules/business-rules.ts` contenant un registre structuré de toutes les règles métier numériques de l'app. Format TypeScript exporté :
+
+```ts
+export const BUSINESS_RULES = {
+  GEO_RADIUS_INITIAL: { id: 'RULE_GEO_RADIUS_INITIAL_V1', value: 500, unit: 'm', description: 'Rayon initial de recherche DVF', version: 'V1' },
+  GEO_RADIUS_FALLBACK_1: { id: 'RULE_GEO_RADIUS_FALLBACK1_V1', value: 800, unit: 'm', ... },
+  GEO_RADIUS_FALLBACK_2: { id: 'RULE_GEO_RADIUS_FALLBACK2_V1', value: 1000, unit: 'm', ... },
+  DVF_PERIOD_YEARS: { id: 'RULE_DVF_PERIOD_5Y_V1', value: 5, unit: 'ans', ... },
+  SURFACE_TOLERANCE: { id: 'RULE_SURFACE_TOLERANCE_20_V1', value: 0.20, unit: '%', ... },
+  QUALITATIVE_CAP: { id: 'RULE_QUALITATIVE_CAP_20_V1', value: 0.20, unit: '%', description: 'Plafond global ajustements qualitatifs' },
+  CONFIDENCE_HIGH_THRESHOLD: { id: 'RULE_CONFIDENCE_HIGH_V1', value: 10, unit: 'ventes' },
+  CONFIDENCE_MEDIUM_THRESHOLD: { id: 'RULE_CONFIDENCE_MEDIUM_V1', value: 4, unit: 'ventes' },
+  CONFIDENCE_LOW_THRESHOLD: { id: 'RULE_CONFIDENCE_LOW_V1', value: 2, unit: 'ventes' },
+  TOP_COMPARABLES_COUNT: { id: 'RULE_TOP_COMPARABLES_V1', value: 8, unit: 'comparables' },
+} as const
+```
+
+Ensuite remplace TOUTES les valeurs hardcodées correspondantes dans `lib/dvf/filters.ts`, `lib/valuation/confidence.ts`, `lib/valuation/adjustments.ts`, `lib/dvf/comparables.ts` par des références à `BUSINESS_RULES.xxx.value`.
+
+---
+
+**CHANTIER B — Score de confiance multi-composantes**
+
+Refonds `lib/valuation/confidence.ts` pour calculer un vrai score de qualité composé de plusieurs dimensions au lieu d'un simple comptage de ventes :
+
+1. **Densité** (0–30 pts) : basé sur le nombre de ventes retenues
+   - ≥10 ventes = 30 pts / 4–9 = 20 pts / 2–3 = 10 pts / 0–1 = 0 pts
+2. **Fraicheur** (0–25 pts) : basé sur la date médiane des comparables
+   - Moins de 12 mois = 25 pts / 12–24 mois = 18 pts / 24–36 mois = 10 pts / > 36 mois = 5 pts
+3. **Proximité** (0–25 pts) : basé sur la distance médiane des comparables
+   - Rayon utilisé 500m = 25 pts / 800m = 15 pts / 1000m = 8 pts
+4. **Homogénéité** (0–20 pts) : basé sur la dispersion des prix/m² (coefficient de variation = écart-type / médiane)
+   - CV < 15% = 20 pts / 15–25% = 12 pts / 25–35% = 6 pts / > 35% = 0 pts
+
+Score total sur 100. Niveaux :
+- 75–100 = "Très bonne" (vert)
+- 55–74 = "Bonne" (bleu)
+- 35–54 = "Moyenne" (orange)
+- 15–34 = "Faible" (rouge)
+- < 15 = "Insuffisant" (rouge foncé)
+
+Dans le badge de confiance UI (`confidence-badge.tsx`), ajouter un tooltip ou une ligne secondaire affichant le détail des 4 composantes (ex: "Densité 20/30 • Fraîcheur 25/25 • Proximité 15/25 • Homogénéité 12/20").
+
+Renommer le label de "Fiabilité" en "Qualité des données" dans l'UI pour éviter la surpromesse.
+
+---
+
+**CHANTIER C — Matrice de refus**
+
+Crée un fichier `lib/valuation/refusal-matrix.ts` contenant une fonction `checkRefusalConditions(params)` qui retourne soit `null` (pas de refus) soit `{ code, level, userMessage, technicalLog, corrective }`. Cas à implémenter :
+
+- `REFUSAL_NO_COMPARABLES` : 0–1 vente retenue — bloquant — "Données insuffisantes pour ce secteur"
+- `REFUSAL_GEOCODING_FAILED` : lat/lng null ou (0,0) — bloquant — "Adresse non localisable"
+- `REFUSAL_SURFACE_MISSING` : surface ≤ 0 ou null — bloquant — "Surface habitable requise"
+- `WARNING_LOW_COMPARABLES` : 2–3 ventes — avertissement — "Peu de ventes comparables — estimation prudente"
+- `WARNING_HIGH_DISPERSION` : CV des prix/m² > 40% — avertissement — "Forte dispersion des prix — marché hétérogène"
+- `WARNING_OLD_COMPARABLES` : date médiane > 36 mois — avertissement — "Données DVF anciennes — marché à vérifier"
+
+Branche cette fonction dans `app/api/estimate/route.ts` : si refus bloquant, retourner une réponse 422 avec le message métier. Si avertissement, inclure les warnings dans la réponse et les afficher dans le dashboard.
+
+---
+
+**CHANTIER D — Périmètre IA explicité**
+
+Ajoute dans `lib/gpt/prompt-builders.ts` un en-tête système obligatoire injecté dans TOUS les prompts GPT :
+
+```
+Tu es un assistant immobilier. Tu dois UNIQUEMENT produire des contenus textuels (synthèse, analyse, reformulation). Tu ne dois JAMAIS :
+- modifier ou suggérer de modifier l'estimation centrale, la fourchette ou le score de qualité
+- inventer des transactions ou des comparables
+- produire des chiffres non présents dans les données fournies
+- présenter tes productions comme des certitudes ou des expertises certifiées
+Toutes tes réponses sont des aides à l'interprétation, non des décisions.
+```
+
+Ajoute aussi dans l'UI du panneau IA (`gpt-actions-panel.tsx`) une mention discrète sous chaque analyse générée : "Analyse textuelle IA — Ne modifie pas l'estimation calculée".

@@ -1,6 +1,24 @@
 import { GPTActionType, GPTDossier } from "@/types/gpt";
 
-const BASE_CONTEXT = (dossier: GPTDossier) => `
+/**
+ * En-tête système injecté dans TOUS les prompts GPT.
+ * Définit le périmètre IA : analyse textuelle uniquement, pas de modification des chiffres.
+ */
+const SYSTEM_BOUNDARY = `
+[PÉRIMÈTRE IA — RÈGLES OBLIGATOIRES]
+Tu es un assistant immobilier. Tu dois UNIQUEMENT produire des contenus textuels (synthèse, analyse, reformulation).
+Tu ne dois JAMAIS :
+- modifier ou suggérer de modifier l'estimation centrale, la fourchette ou le score de qualité
+- inventer des transactions ou des comparables non présents dans les données fournies
+- produire des chiffres non présents dans les données fournies
+- présenter tes productions comme des certitudes ou des expertises certifiées
+
+Toutes tes réponses sont des aides à l'interprétation, non des décisions. 
+L'estimation chiffrée a été calculée algorithmiquement à partir des données DVF officielles DGFiP — elle ne peut pas être modifiée par cette analyse.
+[FIN PÉRIMÈTRE IA]
+`;
+
+const BASE_CONTEXT = (dossier: GPTDossier) => `${SYSTEM_BOUNDARY}
 Tu es un expert en immobilier français spécialisé sur le marché alpin (Haute-Savoie, Savoie).
 Tu analyses le dossier suivant avec rigueur et objectivité.
 

@@ -2,7 +2,7 @@ import { GPTOutput } from "@/types/gpt";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/utils";
-import { Sparkles } from "lucide-react";
+import { Info, Sparkles } from "lucide-react";
 
 interface Props { output: GPTOutput; }
 
@@ -22,11 +22,18 @@ export function GPTOutputCard({ output }: Props) {
           </div>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-3">
         <div className="prose prose-sm max-w-none text-foreground">
           {output.content.split("\n").map((line, i) => (
             <p key={i} className="mb-2 last:mb-0 text-sm leading-relaxed">{line}</p>
           ))}
+        </div>
+        {/* Mention de périmètre IA */}
+        <div className="flex items-start gap-1.5 rounded-md border border-muted bg-muted/40 px-3 py-2">
+          <Info className="h-3 w-3 text-muted-foreground mt-0.5 shrink-0" />
+          <p className="text-[11px] text-muted-foreground leading-snug">
+            Analyse textuelle IA — Ne modifie pas l'estimation calculée. Les chiffres restent ceux issus des données DVF officielles.
+          </p>
         </div>
       </CardContent>
     </Card>

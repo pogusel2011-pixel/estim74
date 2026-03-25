@@ -9,6 +9,7 @@ import { propertyTypeToDvfTypes } from "@/lib/mapping/property-type";
 import { findActiveListings } from "@/lib/moteurimmo/search";
 import { computeValuation } from "@/lib/valuation/valuation";
 import { fetchNotairesMarket } from "@/lib/notaires/market-check";
+import { checkRefusalConditions } from "@/lib/valuation/refusal-matrix";
 import { prisma } from "@/lib/prisma";
 import { geocodeAddress, isGeoError } from "@/lib/geo/address";
 import { getInseeByPostalCodeAndCommune, getInseeByPostalCode } from "@/lib/geo/cp-insee";
@@ -74,7 +75,31 @@ export async function POST(req: Request) {
 
     const dvfComparables = toComparables(enrichedMutations, property.surface, property.rooms);
 
-    // 3. Annonces actives (via MoteurImmo avec code INSEE + coords du sujet)
+    // 3. Matrice de refus — vérification des conditions bloquantes et avertissements
+    const { blocking, warnings } = checkRefusalConditions({
+      dvfStats,
+      lat,
+      lng,
+      surface: property.surface,
+    });
+
+    if (blocking) {
+      console.warn(`[estimate] Refus bloquant: ${blocking.code} — ${blocking.technicalLog}`);
+      return NextResponse.json(
+        {
+          error: blocking.userMessage,
+          code: blocking.code,
+          corrective: blocking.corrective,
+        },
+        { status: 422 }
+      );
+    }
+
+    if (warnings.length > 0) {
+      console.log(`[estimate] Avertissements: ${warnings.map(w => w.code).join(", ")}`);
+    }
+
+    // 5. Annonces actives (via MoteurImmo avec code INSEE + coords du sujet)
     const listings = includeListings
       ? await findActiveListings(propertyWithGeo, {
           inseeCode: communeCode,
@@ -83,13 +108,13 @@ export async function POST(req: Request) {
         })
       : [];
 
-    // 4. Valorisation
+    // 6. Valorisation
     const valuation = computeValuation(propertyWithGeo, dvfStats ?? null, listings, dvfComparables);
 
-    // 5. Contexte marché Notaires
+    // 7. Contexte marché Notaires
     const marketReading = await fetchNotairesMarket(property.postalCode, property.propertyType);
 
-    // 6. Construction du gptPayload (export complet pour GPT)
+    // 8. Construction du gptPayload (export complet pour GPT)
     const gptPayload = JSON.stringify({
       adresse: property.address,
       ville: property.city,
@@ -144,7 +169,7 @@ export async function POST(req: Request) {
       psmAjuste: valuation.breakdown.adjustedPsm,
     });
 
-    // 7. Sauvegarde en BDD
+    // 9. Sauvegarde en BDD
     let analysisId: string | null = null;
     try {
       const saved = await prisma.analysis.create({
@@ -209,6 +234,11 @@ export async function POST(req: Request) {
       marketReading,
       perimeterKm: finalRadiusKm,
       requestedRadiusKm: radiusKm,
+      warnings: warnings.map(w => ({
+        code: w.code,
+        message: w.userMessage,
+        corrective: w.corrective,
+      })),
     });
   } catch (err) {
     console.error("[POST /api/estimate]", err);

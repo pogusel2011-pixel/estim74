@@ -1,9 +1,10 @@
 import { DVFMutation } from "@/types/dvf";
 import { loadCsvMutations } from "./csv-loader";
+import { BUSINESS_RULES } from "@/lib/rules/business-rules";
 
-const MIN_SAMPLES = 5;
-const EXPANSION_STEP_KM = 0.5;
-const MAX_RADIUS_KM = 5;
+const MIN_SAMPLES = BUSINESS_RULES.MIN_SAMPLE_SIZE.value;
+const EXPANSION_STEP_KM = BUSINESS_RULES.GEO_RADIUS_EXPANSION_STEP.value;
+const MAX_RADIUS_KM = BUSINESS_RULES.GEO_RADIUS_MAX.value;
 const DVF_API_BASE = process.env.DVF_API_URL ?? "https://api.cquest.org/dvf";
 const DVF_API_TIMEOUT_MS = 8000;
 
