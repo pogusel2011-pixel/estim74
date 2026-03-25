@@ -28,10 +28,12 @@ export async function POST(req: Request) {
     let communeCode: string | undefined;
 
     if (!lat || !lng) {
-      if (!property.address) {
-        return NextResponse.json({ error: "Adresse requise pour l'estimation" }, { status: 422 });
+      // Geocode from address if provided, otherwise fall back to city + postal code
+      const geocodeQuery = property.address || property.city;
+      if (!geocodeQuery) {
+        return NextResponse.json({ error: "La commune est requise pour l'estimation" }, { status: 422 });
       }
-      const geo = await geocodeAddress(property.address, property.postalCode);
+      const geo = await geocodeAddress(geocodeQuery, property.postalCode);
       if (isGeoError(geo)) {
         return NextResponse.json({ error: geo.error }, { status: 422 });
       }
@@ -43,7 +45,7 @@ export async function POST(req: Request) {
     }
 
     if (!lat || !lng) {
-      return NextResponse.json({ error: "Impossible de géocoder l'adresse" }, { status: 422 });
+      return NextResponse.json({ error: "Impossible de géolocaliser le bien — vérifiez la commune et le code postal" }, { status: 422 });
     }
 
     const propertyWithGeo = { ...property, lat, lng };

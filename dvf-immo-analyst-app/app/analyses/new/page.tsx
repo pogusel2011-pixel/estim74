@@ -33,6 +33,9 @@ export default function NewAnalysisPage() {
       const data = await res.json();
       if (data.analysisId) {
         router.push("/analyses/" + data.analysisId);
+      } else {
+        setError("L'estimation a réussi mais aucun identifiant retourné.");
+        setLoading(false);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur inconnue");

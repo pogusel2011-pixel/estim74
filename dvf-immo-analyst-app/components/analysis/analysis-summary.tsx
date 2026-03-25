@@ -19,7 +19,10 @@ export function AnalysisSummaryPanel({ analysis }: Props) {
         </div>
         <h1 className="text-xl font-bold tracking-tight flex items-center gap-2">
           <MapPin className="h-4 w-4 text-muted-foreground shrink-0" />
-          {analysis.address as string}, {analysis.postalCode as string} {analysis.city as string}
+          {[
+            analysis.address,
+            [analysis.postalCode, analysis.city].filter(Boolean).join(" "),
+          ].filter(Boolean).join(", ")}
         </h1>
         <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
           <span className="flex items-center gap-1"><Ruler className="h-3.5 w-3.5" />{analysis.surface as number} m²</span>
