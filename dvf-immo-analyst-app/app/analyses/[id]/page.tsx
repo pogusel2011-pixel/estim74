@@ -25,15 +25,61 @@ import { DVFStats, DVFComparable } from "@/types/dvf";
 
 export const dynamic = "force-dynamic";
 
+/** Safely parses a Prisma Json? field into an array — returns [] on null/non-array/error. */
+function safeJsonArray<T = unknown>(value: unknown): T[] {
+  if (value == null) return [];
+  if (Array.isArray(value)) return value as T[];
+  // Stored as JSON string (legacy)
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? (parsed as T[]) : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
+/** Safely parses a Prisma Json? field into an object — returns null on null/non-object/error. */
+function safeJsonObject<T = Record<string, unknown>>(value: unknown): T | null {
+  if (value == null) return null;
+  if (typeof value === "object" && !Array.isArray(value)) return value as T;
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value);
+      return typeof parsed === "object" && !Array.isArray(parsed) ? (parsed as T) : null;
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
 export default async function AnalysisPage({ params }: { params: { id: string } }) {
   const analysis = await prisma.analysis.findUnique({ where: { id: params.id } });
   if (!analysis) notFound();
 
-  const serialized = JSON.parse(JSON.stringify(analysis));
+  // Safe serialization — Prisma objects are always JSON-safe, but guard anyway
+  let serialized: Record<string, unknown>;
+  try {
+    serialized = JSON.parse(JSON.stringify(analysis));
+  } catch {
+    console.error("[AnalysisPage] Serialization error for", params.id);
+    serialized = analysis as unknown as Record<string, unknown>;
+  }
+
+  // Defensive reads of all Json? fields — handle null, non-array, JSON-string legacy formats
+  const safeListings = safeJsonArray(serialized.listings);
+  const safeDvfComparables = safeJsonArray<DVFComparable>(serialized.dvfComparables);
+  const safeGptOutputs = safeJsonArray(serialized.gptOutputs);
+  const safeAdjustments = safeJsonArray(serialized.adjustments);
+  const safeDvfStatsRaw = safeJsonObject<DVFStats>(serialized.dvfStats);
+  const safeMarketReading = safeJsonObject(serialized.marketReading);
 
   // If the analysis has no dvfStats saved (e.g. seeded records), fetch live
-  let dvfStats: DVFStats | null = serialized.dvfStats ?? null;
-  let dvfComparables: DVFComparable[] = serialized.dvfComparables ?? [];
+  let dvfStats: DVFStats | null = safeDvfStatsRaw;
+  let dvfComparables: DVFComparable[] = safeDvfComparables;
   let liveFinalRadiusKm: number | null = null;
   let liveRequestedRadiusKm: number | null = null;
 
@@ -101,14 +147,14 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
 
       {/* Valorisation */}
       <ValuationCards
-        low={serialized.valuationLow}
-        mid={serialized.valuationMid}
-        high={serialized.valuationHigh}
-        psm={serialized.valuationPsm}
-        confidence={serialized.confidence}
-        confidenceLabel={serialized.confidenceLabel}
-        adjustments={serialized.adjustments}
-        dvfSampleSize={serialized.dvfSampleSize}
+        low={serialized.valuationLow as number | null}
+        mid={serialized.valuationMid as number | null}
+        high={serialized.valuationHigh as number | null}
+        psm={serialized.valuationPsm as number | null}
+        confidence={serialized.confidence as number | null}
+        confidenceLabel={serialized.confidenceLabel as string | null}
+        adjustments={safeAdjustments}
+        dvfSampleSize={serialized.dvfSampleSize as number | null}
         perimeterKm={perimeterKm}
       />
 
@@ -141,14 +187,14 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
 
         <TabsContent value="listings" className="space-y-4 mt-4">
           <ActiveListingsPanel
-            listings={serialized.listings ?? []}
+            listings={safeListings}
             apiAvailable={apiAvailable}
           />
           <DVFRecentSalesPanel comparables={dvfComparables} />
         </TabsContent>
 
         <TabsContent value="market" className="space-y-4 mt-4">
-          <MarketReading marketReading={serialized.marketReading} />
+          <MarketReading marketReading={safeMarketReading} />
           {serialized.lat && serialized.lng && (
             <MarketTrendChart
               lat={serialized.lat}
@@ -160,7 +206,7 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
         </TabsContent>
 
         <TabsContent value="gpt" className="mt-4">
-          <GPTActionsPanel analysisId={serialized.id} initialOutputs={serialized.gptOutputs ?? []} />
+          <GPTActionsPanel analysisId={serialized.id as string} initialOutputs={safeGptOutputs} />
         </TabsContent>
       </Tabs>
     </div>
