@@ -1,0 +1,60 @@
+Implémente la connexion vers le GPT personnalisé "DVF Immo Analyst" de l'utilisateur.
+
+URL du GPT : https://chatgpt.com/g/g-69914d0e2aa48191955454117055fdc6-dvf-immo-analyst
+
+Principe : le GPT ChatGPT ne dispose pas d'API publique accessible programmatiquement depuis l'app. La connexion se fait donc via un bouton qui :
+1. Assemble un prompt structuré complet avec toutes les données du dossier
+2. Copie ce prompt dans le presse-papier
+3. Ouvre le GPT dans un nouvel onglet
+4. Affiche une instruction courte : "Colle le prompt dans la conversation pour générer le livrable"
+
+**Ce qu'il faut implémenter :**
+
+**1. Bouton principal dans l'onglet IA** (`components/analysis/gpt/gpt-actions-panel.tsx`)
+Ajoute un bouton distinct visuellement, en haut du panneau, intitulé **"Ouvrir dans DVF Immo Analyst"** avec l'icône ChatGPT (ou un icône externalLink). Au clic :
+- Génère le prompt (voir format ci-dessous)
+- Copie dans le presse-papier via `navigator.clipboard.writeText()`
+- Ouvre `https://chatgpt.com/g/g-69914d0e2aa48191955454117055fdc6-dvf-immo-analyst` dans un nouvel onglet
+- Affiche un toast ou un message sous le bouton : "✅ Prompt copié — Colle-le dans la conversation ChatGPT pour générer le rapport"
+
+**2. Format du prompt assem blé** (crée `lib/gpt/chatgpt-prompt-builder.ts`) :
+
+```
+Dossier d'estimation ESTIM'74 — [date du jour]
+
+BIEN ESTIMÉ
+- Type : [appartement/maison]
+- Adresse : [adresse ou commune]
+- Surface : [X] m²
+- Pièces : [X] | Étage : [X] | DPE : [X] | État : [X]
+- Équipements : [liste des équipements cochés]
+
+RÉSULTAT D'ESTIMATION
+- Fourchette basse : [X] €
+- Estimation centrale : [X] €  
+- Fourchette haute : [X] €
+- Prix/m² estimé : [X] €/m²
+- Qualité des données : [niveau] ([score]/100)
+  Détail : Densité [X]/30 • Fraîcheur [X]/25 • Proximité [X]/25 • Homogénéité [X]/20
+
+SOCLE DVF
+- Ventes retenues : [X] transactions
+- Période : [date] à [date]
+- Rayon utilisé : [X] m
+- Médiane DVF : [X] €/m² | Q1 : [X] | Q3 : [X]
+- Ajustements qualitatifs : [cumul] % (plafonné à ±20%)
+  Détail : [logs des bonus/malus appliqués]
+
+COMPARABLES CLÉS (top 5)
+[tableau : date | distance | surface | pièces | prix signé | €/m² | adresse]
+
+MARCHÉ ACTIF (MoteurImmo)
+- Annonces actives comparables : [X]
+- Fourchette prix affichés : [X] € à [X] €
+- Prix affiché médian : [X] €/m²
+- Écart affiché / signé : [+/-X%]
+```
+
+**3. Aussi dans le bouton PDF** : ajouter ce même bouton "Ouvrir dans DVF Immo Analyst" à côté du bouton Télécharger PDF dans l'en-tête de la page résultat (`app/analyses/[id]/page.tsx`) pour un accès rapide sans aller dans l'onglet IA.
+
+**Important :** le prompt doit être un texte propre, bien formaté, directement utilisable dans une conversation ChatGPT sans modification. Toutes les valeurs doivent être remplacées par les vraies données du dossier (pas de placeholders vides).

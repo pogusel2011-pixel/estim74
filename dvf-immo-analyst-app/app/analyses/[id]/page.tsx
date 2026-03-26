@@ -16,6 +16,7 @@ import { MarketReading } from "@/components/analysis/market-reading";
 import { NotairesPanel } from "@/components/analysis/notaires-panel";
 import { PerimeterPanel } from "@/components/analysis/perimeter-panel";
 import { GPTActionsPanel } from "@/components/gpt/gpt-actions-panel";
+import { ChatGPTButton } from "@/components/gpt/chatgpt-button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getDVFMutations } from "@/lib/dvf/client";
 import { computePrixM2, removeOutliers } from "@/lib/dvf/outliers";
@@ -24,7 +25,10 @@ import { toComparables } from "@/lib/dvf/comparables";
 import { propertyTypeToDvfTypes } from "@/lib/mapping/property-type";
 import { isApiKeyConfigured } from "@/lib/moteurimmo/search";
 import { computeConfidence } from "@/lib/valuation/confidence";
+import { buildChatGPTPrompt } from "@/lib/gpt/chatgpt-prompt-builder";
 import { DVFStats, DVFComparable } from "@/types/dvf";
+import { ActiveListing } from "@/types/listing";
+import { Adjustment, ConfidenceFactors } from "@/types/valuation";
 
 export const dynamic = "force-dynamic";
 
@@ -122,6 +126,44 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
     perimeterKm ?? undefined,
   );
 
+  // Construction du prompt ChatGPT (côté serveur — toutes les données disponibles)
+  const chatgptPrompt = buildChatGPTPrompt({
+    propertyType: serialized.propertyType as string,
+    address: serialized.address as string | null,
+    city: serialized.city as string,
+    postalCode: serialized.postalCode as string | null,
+    surface: serialized.surface as number,
+    rooms: serialized.rooms as number | null,
+    bedrooms: serialized.bedrooms as number | null,
+    floor: serialized.floor as number | null,
+    totalFloors: serialized.totalFloors as number | null,
+    condition: serialized.condition as string | null,
+    dpeLetter: serialized.dpeLetter as string | null,
+    landSurface: serialized.landSurface as number | null,
+    yearBuilt: serialized.yearBuilt as number | null,
+    hasParking: Boolean(serialized.hasParking),
+    hasGarage: Boolean(serialized.hasGarage),
+    hasBalcony: Boolean(serialized.hasBalcony),
+    hasTerrace: Boolean(serialized.hasTerrace),
+    hasCellar: Boolean(serialized.hasCellar),
+    hasPool: Boolean(serialized.hasPool),
+    hasElevator: Boolean(serialized.hasElevator),
+    orientation: serialized.orientation as string | null,
+    view: serialized.view as string | null,
+    valuationLow: serialized.valuationLow as number | null,
+    valuationMid: serialized.valuationMid as number | null,
+    valuationHigh: serialized.valuationHigh as number | null,
+    valuationPsm: serialized.valuationPsm as number | null,
+    confidence: serialized.confidence as number | null,
+    confidenceLabel: serialized.confidenceLabel as string | null,
+    confidenceFactors,
+    dvfStats,
+    perimeterKm: perimeterKm ?? null,
+    adjustments: safeAdjustments as Adjustment[],
+    dvfComparables,
+    listings: safeListings as ActiveListing[],
+  });
+
   // Map propertyType to DVF type string for the trend chart
   const dvfTypeForChart = serialized.propertyType === "APARTMENT" ? "Appartement"
     : serialized.propertyType === "HOUSE" ? "Maison"
@@ -147,6 +189,7 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
         </div>
         <div className="flex items-start gap-2 shrink-0 flex-wrap justify-end">
           <ResimulateButton analysisId={serialized.id} />
+          <ChatGPTButton promptText={chatgptPrompt} variant="outline" size="sm" />
           <PdfDownloadButton analysisId={serialized.id as string} />
         </div>
       </div>
@@ -217,7 +260,11 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
         </TabsContent>
 
         <TabsContent value="gpt" className="mt-4">
-          <GPTActionsPanel analysisId={serialized.id as string} initialOutputs={safeGptOutputs} />
+          <GPTActionsPanel
+            analysisId={serialized.id as string}
+            initialOutputs={safeGptOutputs}
+            chatgptPrompt={chatgptPrompt}
+          />
         </TabsContent>
       </Tabs>
     </div>
