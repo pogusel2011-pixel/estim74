@@ -88,7 +88,7 @@ export function computeValuation(
     low, mid, high,
     pricePsm: adjustedPsm,
     confidence: isIndicative ? Math.min(score, 0.35) : score,
-    confidenceLabel: isIndicative ? "Indicative" : label,
+    confidenceLabel: (isIndicative ? "Indicative" : label) as ValuationResult["confidenceLabel"],
     method,
     adjustments: isIndicative ? [] : adjustments,
     breakdown: {
