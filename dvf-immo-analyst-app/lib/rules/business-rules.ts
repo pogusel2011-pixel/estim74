@@ -206,6 +206,31 @@ export const BUSINESS_RULES = {
     description: "Avertissement si date médiane des comparables > 36 mois",
     version: "V1",
   },
+
+  // ── Détection des valeurs aberrantes DVF (outliers) ───────────────────────
+  OUTLIER_IQR_FACTOR: {
+    id: "RULE_OUTLIER_IQR_FACTOR_V1",
+    value: 2.0,
+    unit: "×IQR",
+    description: "Facteur IQR pour la détection des outliers DVF : Q1 - 2×IQR / Q3 + 2×IQR",
+    version: "V1",
+  },
+
+  // ── Pression de marché affiché/signé ──────────────────────────────────────
+  MARKET_PRESSURE_WEIGHT: {
+    id: "RULE_MARKET_PRESSURE_WEIGHT_V1",
+    value: 0.25,
+    unit: "ratio",
+    description: "Fraction de l'écart affiché/signé appliquée comme ajustement de pression marché",
+    version: "V1",
+  },
+  MARKET_PRESSURE_CAP: {
+    id: "RULE_MARKET_PRESSURE_CAP_V1",
+    value: 0.05,
+    unit: "%",
+    description: "Plafond de l'ajustement de pression de marché (±5% maximum)",
+    version: "V1",
+  },
 } as const;
 
 export type BusinessRuleKey = keyof typeof BUSINESS_RULES;

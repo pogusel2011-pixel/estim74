@@ -2,8 +2,9 @@
 import { DVFComparable } from "@/types/dvf";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { formatPrice, formatPsm, formatDateShort } from "@/lib/utils";
-import { Table2, Star } from "lucide-react";
+import { Table2, Star, AlertTriangle } from "lucide-react";
 import { useState } from "react";
 
 interface Props {
@@ -35,18 +36,39 @@ function TopBadge() {
   );
 }
 
+function OutlierBadge() {
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className="inline-flex items-center gap-0.5 rounded-full border border-orange-300 bg-orange-50 px-1.5 py-0.5 text-[10px] font-semibold text-orange-700 cursor-help whitespace-nowrap">
+            <AlertTriangle className="h-2.5 w-2.5" />
+            Valeur atypique
+          </span>
+        </TooltipTrigger>
+        <TooltipContent side="top" className="max-w-xs text-xs">
+          Cette vente présente un prix/m² anormalement éloigné de la médiane du secteur. Elle est exclue du calcul de référence.
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+}
+
 const HEADERS = ["", "Date", "Distance", "Nature du bien", "Surface", "Pièces", "Prix DVF", "€/m²", "Adresse/parcelle", "Source"];
 
 export function DVFComparablesTable({ comparables, hasLiveData }: Props) {
   const [showAll, setShowAll] = useState(false);
 
-  const topComparables = comparables.filter((c) => c.topComparable);
-  const otherComparables = comparables.filter((c) => !c.topComparable);
+  const topComparables = comparables.filter((c) => c.topComparable && !c.outlier);
+  const normalComparables = comparables.filter((c) => !c.topComparable && !c.outlier);
+  const outlierComparables = comparables.filter((c) => c.outlier);
 
-  const allSorted = [...topComparables, ...otherComparables];
+  const allSorted = [...topComparables, ...normalComparables, ...outlierComparables];
   const displayed = showAll ? allSorted : allSorted.slice(0, 10);
 
   const liveCount = comparables.filter((c) => c.source === "live").length;
+  const outlierCount = outlierComparables.length;
+  const retainedCount = comparables.length - outlierCount;
 
   if (!comparables.length) {
     return (
@@ -63,7 +85,12 @@ export function DVFComparablesTable({ comparables, hasLiveData }: Props) {
       <CardHeader className="pb-3">
         <CardTitle className="text-sm flex items-center gap-2 flex-wrap">
           <Table2 className="h-4 w-4 text-primary shrink-0" />
-          <span>Transactions comparables ({comparables.length})</span>
+          <span>
+            Transactions comparables — {retainedCount} retenue{retainedCount > 1 ? "s" : ""}
+            {outlierCount > 0 && (
+              <span className="text-orange-600"> / {outlierCount} atypique{outlierCount > 1 ? "s" : ""}</span>
+            )}
+          </span>
           {topComparables.length > 0 && (
             <Badge variant="outline" className="text-xs font-normal text-blue-700 border-blue-300 bg-blue-50 gap-1">
               <Star className="h-2.5 w-2.5 fill-blue-400 text-blue-400" />
@@ -103,14 +130,16 @@ export function DVFComparablesTable({ comparables, hasLiveData }: Props) {
                   key={c.id ?? i}
                   className={[
                     "border-b last:border-0 transition-colors",
-                    c.topComparable
+                    c.outlier
+                      ? "bg-orange-50/40 opacity-60 hover:opacity-80"
+                      : c.topComparable
                       ? "bg-blue-50/40 hover:bg-blue-50/70"
                       : "hover:bg-muted/30",
                   ].join(" ")}
                 >
                   {/* Badge colonne */}
                   <td className="px-2 py-2 whitespace-nowrap">
-                    {c.topComparable && <TopBadge />}
+                    {c.outlier ? <OutlierBadge /> : c.topComparable ? <TopBadge /> : null}
                   </td>
                   {/* Date */}
                   <td className="px-3 py-2 whitespace-nowrap text-muted-foreground">

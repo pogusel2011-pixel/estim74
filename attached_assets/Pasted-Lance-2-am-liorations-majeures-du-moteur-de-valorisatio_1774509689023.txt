@@ -1,0 +1,64 @@
+Lance 2 améliorations majeures du moteur de valorisation :
+
+---
+
+**CHANTIER A — Détection et traitement des valeurs aberrantes DVF (outliers)**
+
+Dans `lib/dvf/outliers.ts`, implémente une détection robuste des outliers AVANT le calcul statistique :
+
+1. **Détection par méthode IQR étendue** :
+   - Calcule Q1 et Q3 des prix/m² bruts
+   - IQR = Q3 - Q1
+   - Borne basse = Q1 - 2.0 × IQR (seuil prudent pour l'immo)
+   - Borne haute = Q3 + 2.0 × IQR
+   - Toute transaction hors bornes est marquée `outlier: true` avec motif `"prix_m2_aberrant"`
+
+2. **Dans le tableau des comparables** (`dvf-comparables-table.tsx`) :
+   - Les lignes outliers affichent un badge orange ⚠️ **"Valeur atypique"** à côté du prix/m²
+   - La ligne est visuellement atténuée (opacité réduite ou fond orange très clair)
+   - Un tooltip au survol explique : "Cette vente présente un prix/m² anormalement éloigné de la médiane du secteur. Elle est exclue du calcul de référence."
+
+3. **Dans les statistiques DVF** :
+   - Afficher : "X transactions retenues / Y exclues (valeurs atypiques)" 
+   - La médiane, Q1, Q3 et l'estimation centrale sont calculées **sans les outliers**
+   - Les outliers restent visibles dans le tableau mais avec le badge
+
+4. **Dans les logs métier** :
+   - Logger chaque outlier exclu : adresse, date, prix/m², bornes calculées
+
+---
+
+**CHANTIER B — Intégration des annonces MoteurImmo dans le calcul (méthode pro)**
+
+Les professionnels de l'immobilier utilisent une méthode en 2 temps :
+1. Le **prix signé DVF** donne le socle de valeur marché réelle
+2. Le **prix affiché du marché actif** donne le contexte de négociation actuel
+
+La méthode pro calcule un **écart affiché/signé** (le "taux de négociation" réel du secteur) et l'applique pour affiner l'estimation.
+
+**Implémentation dans `lib/valuation/valuation.ts` et `lib/moteurimmo/qualitative.ts`** :
+
+1. Après récupération des annonces MoteurImmo, calculer :
+   - `medianListingPriceSqm` = médiane des prix/m² affichés
+   - `listingToDvfGap` = (medianListingPriceSqm - dvfMedianSqm) / dvfMedianSqm × 100
+   - Ex: si affiché = 4 500 €/m² et signé = 3 864 €/m² → gap = +16.5%
+
+2. **Ajustement de marché actif** plafonné à ±15% :
+   - Si gap > 0 (marché affiché supérieur au signé) : le marché est tendu, légère prime prudente de gap × 0.25 (1/4 de l'écart, très prudent)
+   - Si gap < 0 (marché affiché inférieur au signé) : marché détendu, décote légère de gap × 0.25
+   - Plafonné à ±5% maximum (prudence)
+   - Cet ajustement s’appelle `marketPressureAdjustment` et compte dans le cumul qualitatif
+
+3. **Affichage dans le dashboard** :
+   - Dans l’onglet DVF, bloc statistiques : ajouter une ligne "Pression de marché" avec le gap calculé et l’ajustement appliqué
+   - Exemple : "Marché affiché : 4 200 €/m² • Écart affiché/signé : +8.7% • Ajustement appliqué : +2.2%"
+   - Couleur verte si marché tendu (prime), orange si détendu (décote)
+
+4. **Mode dégradé propre** : si MoteurImmo indisponible ou 0 annonces, `marketPressureAdjustment = 0`, ligne affichée "Pression de marché : données indisponibles"
+
+5. **Logs** : tracer l’ajustement de pression de marché dans `valuationLogs` avec les valeurs sources
+
+Ces deux améliorations doivent être logées dans les règles métier (`lib/rules/business-rules.ts`) avec leurs nouveaux identifiants :
+- `RULE_OUTLIER_IQR_FACTOR_V1` : valeur 2.0
+- `RULE_MARKET_PRESSURE_WEIGHT_V1` : valeur 0.25
+- `RULE_MARKET_PRESSURE_CAP_V1` : valeur 0.05

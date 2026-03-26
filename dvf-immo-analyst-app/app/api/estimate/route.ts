@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { estimateRequestSchema } from "@/lib/validation/estimate";
 import { getDVFMutations } from "@/lib/dvf/client";
-import { computePrixM2 } from "@/lib/dvf/outliers";
-import { removeOutliers } from "@/lib/dvf/outliers";
+import { computePrixM2, markOutliers } from "@/lib/dvf/outliers";
+import { computeMarketPressure } from "@/lib/moteurimmo/qualitative";
 import { computeDVFStats } from "@/lib/dvf/stats";
 import { toComparables } from "@/lib/dvf/comparables";
 import { propertyTypeToDvfTypes } from "@/lib/mapping/property-type";
@@ -68,11 +68,20 @@ export async function POST(req: Request) {
       property.city, property.postalCode
     );
     let enrichedMutations = computePrixM2(mutations);
-    if (excludeOutliers) enrichedMutations = removeOutliers(enrichedMutations);
+    // Toujours marquer les outliers (IQR×2) — ils restent visibles dans le tableau avec badge
+    enrichedMutations = markOutliers(enrichedMutations);
+    const cleanMutations = excludeOutliers
+      ? enrichedMutations.filter((m) => !m.outlier)
+      : enrichedMutations.filter((m) => !m.outlier); // stats toujours sur clean
+    const excludedCount = enrichedMutations.length - cleanMutations.length;
 
-    const dvfStats = computeDVFStats(enrichedMutations);
-    if (dvfStats) dvfStats.source = source;
+    const dvfStats = computeDVFStats(cleanMutations);
+    if (dvfStats) {
+      dvfStats.source = source;
+      dvfStats.excludedCount = excludedCount;
+    }
 
+    // Comparables : inclure TOUTES les mutations (outliers inclus, badgés dans le tableau)
     const dvfComparables = toComparables(enrichedMutations, property.surface, property.rooms);
 
     // 3. Matrice de refus — vérification des conditions bloquantes et avertissements
@@ -108,10 +117,16 @@ export async function POST(req: Request) {
         })
       : [];
 
-    // 6. Valorisation
+    // 6. Pression de marché affiché/signé (méthode pro) — enrichit dvfStats avant la valorisation
+    const marketPressure = computeMarketPressure(dvfStats ?? null, listings);
+    if (dvfStats && marketPressure) {
+      dvfStats.marketPressure = marketPressure;
+    }
+
+    // 7. Valorisation (applique marketPressure depuis dvfStats.marketPressure)
     const valuation = computeValuation(propertyWithGeo, dvfStats ?? null, listings, dvfComparables);
 
-    // 7. Contexte marché Notaires
+    // 8. Contexte marché Notaires
     const marketReading = await fetchNotairesMarket(property.postalCode, property.propertyType);
 
     // 8. Construction du gptPayload (export complet pour GPT)

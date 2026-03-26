@@ -26,6 +26,10 @@ export function computeValuation(
 ): ValuationResult {
   const adjustments = computeAdjustments(property);
 
+  // Ajustement de pression de marché pré-calculé dans dvfStats (par computeMarketPressure)
+  const marketPressure = dvfStats?.marketPressure ?? null;
+  const marketPressureAdj = marketPressure?.adjustment ?? 0;
+
   let basePsm: number;
   let dvfWeight = 0;
   let listingsWeight = 0;
@@ -33,9 +37,16 @@ export function computeValuation(
   let isIndicative = false;
 
   if (dvfStats && dvfStats.count >= 5) {
-    basePsm = dvfStats.medianPsm;
+    // Appliquer la pression de marché sur le PSM de base DVF
+    basePsm = Math.round(dvfStats.medianPsm * (1 + marketPressureAdj));
     dvfWeight = 0.7;
     method = "dvf_stats";
+    if (marketPressureAdj !== 0) {
+      console.log(
+        `[valuation] Pression marché appliquée : ${(marketPressureAdj * 100).toFixed(2)}% ` +
+        `| PSM DVF: ${dvfStats.medianPsm} → PSM base ajusté: ${basePsm}`
+      );
+    }
   } else if (listings.length >= 3) {
     const avgListingPsm = listings.reduce((s, l) => s + l.pricePsm, 0) / listings.length;
     basePsm = Math.round(avgListingPsm * 0.96);
@@ -43,13 +54,12 @@ export function computeValuation(
     method = "comparables";
   } else if (dvfStats && dvfStats.count > 0 && listings.length > 0) {
     const listingsPsm = listings.reduce((s, l) => s + l.pricePsm, 0) / listings.length;
-    basePsm = Math.round(dvfStats.medianPsm * 0.7 + listingsPsm * 0.96 * 0.3);
+    basePsm = Math.round(dvfStats.medianPsm * (1 + marketPressureAdj) * 0.7 + listingsPsm * 0.96 * 0.3);
     dvfWeight = 0.7;
     listingsWeight = 0.3;
     method = "mixed";
   } else if (dvfStats && dvfStats.count > 0) {
     // Données DVF limitées (< 5 transactions) — estimation indicative
-    // Apply condition + DPE coefficients manually since the spread will be wider
     const condCoef = CONDITION_COEFFICIENTS[property.condition] ?? 0;
     const dpeCoef = property.dpeLetter ? (DPE_COEFFICIENTS[property.dpeLetter] ?? 0) : 0;
     basePsm = Math.round(dvfStats.medianPsm * (1 + condCoef + dpeCoef));
@@ -68,7 +78,6 @@ export function computeValuation(
   const totalFactor = adjustments.reduce((sum, a) => sum + a.factor, 0);
 
   const mid = Math.round(adjustedPsm * property.surface);
-  // Wider spread for indicative estimates
   const spread = isIndicative ? 0.15 : 0.08;
   const low = Math.round(mid * (1 - spread));
   const high = Math.round(mid * (1 + spread));

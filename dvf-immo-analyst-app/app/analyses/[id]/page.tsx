@@ -19,13 +19,14 @@ import { GPTActionsPanel } from "@/components/gpt/gpt-actions-panel";
 import { ChatGPTButton } from "@/components/gpt/chatgpt-button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getDVFMutations } from "@/lib/dvf/client";
-import { computePrixM2, removeOutliers } from "@/lib/dvf/outliers";
+import { computePrixM2, markOutliers } from "@/lib/dvf/outliers";
 import { computeDVFStats } from "@/lib/dvf/stats";
 import { toComparables } from "@/lib/dvf/comparables";
 import { propertyTypeToDvfTypes } from "@/lib/mapping/property-type";
 import { isApiKeyConfigured } from "@/lib/moteurimmo/search";
 import { computeConfidence } from "@/lib/valuation/confidence";
 import { buildChatGPTPrompt } from "@/lib/gpt/chatgpt-prompt-builder";
+import { computeMarketPressure } from "@/lib/moteurimmo/qualitative";
 import { DVFStats, DVFComparable } from "@/types/dvf";
 import { ActiveListing } from "@/types/listing";
 import { Adjustment, ConfidenceFactors } from "@/types/valuation";
@@ -105,9 +106,13 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
       liveRequestedRadiusKm = requestedRadius;
       liveFinalRadiusKm = finalRadius;
       let enriched = computePrixM2(mutations);
-      enriched = removeOutliers(enriched);
-      dvfStats = computeDVFStats(enriched);
-      if (dvfStats) dvfStats.source = source;
+      enriched = markOutliers(enriched);
+      const cleanEnriched = enriched.filter((m) => !m.outlier);
+      dvfStats = computeDVFStats(cleanEnriched);
+      if (dvfStats) {
+        dvfStats.source = source;
+        dvfStats.excludedCount = enriched.length - cleanEnriched.length;
+      }
       dvfComparables = toComparables(enriched, serialized.surface, serialized.rooms);
     } catch (err) {
       console.error("[AnalysisPage] DVF live fetch error:", err);
@@ -117,6 +122,13 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
   const perimeterKm = liveFinalRadiusKm ?? serialized.perimeterKm;
   const requestedRadiusKm = liveRequestedRadiusKm ?? serialized.requestedRadiusKm;
   const apiAvailable = isApiKeyConfigured();
+
+  // Enrichir dvfStats avec la pression de marché si listings disponibles
+  // (pour analyses stockées dont dvfStats ne contient pas encore marketPressure)
+  if (dvfStats && !dvfStats.marketPressure && safeListings.length > 0) {
+    const mp = computeMarketPressure(dvfStats, safeListings as ActiveListing[]);
+    if (mp) dvfStats.marketPressure = mp;
+  }
 
   // Calcul des facteurs de confiance (4 composantes) à partir des données disponibles
   const { factors: confidenceFactors } = computeConfidence(

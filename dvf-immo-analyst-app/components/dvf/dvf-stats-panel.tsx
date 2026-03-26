@@ -1,4 +1,4 @@
-import { DVFStats } from "@/types/dvf";
+import { DVFStats, MarketPressureData } from "@/types/dvf";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatPsm, formatDate } from "@/lib/utils";
@@ -9,6 +9,33 @@ interface Props {
   sampleSize?: number | null;
   perimeterKm?: number | null;
   requestedRadiusKm?: number | null;
+}
+
+function MarketPressureRow({ mp }: { mp: MarketPressureData }) {
+  const gapFormatted = (mp.gapPct >= 0 ? "+" : "") + mp.gapPct.toFixed(1) + "%";
+  const adjFormatted = (mp.adjustment >= 0 ? "+" : "") + (mp.adjustment * 100).toFixed(1) + "%";
+  const isTight = mp.gapPct >= 0;
+
+  return (
+    <div className="pt-2 mt-2 border-t space-y-1.5">
+      <div className="flex justify-between text-sm">
+        <dt className="text-muted-foreground">Marché affiché (médiane)</dt>
+        <dd className="font-medium text-right">{formatPsm(mp.medianListingPsm)}</dd>
+      </div>
+      <div className="flex justify-between text-sm">
+        <dt className="text-muted-foreground">Écart affiché / signé</dt>
+        <dd className={["font-medium text-right", isTight ? "text-green-600" : "text-orange-600"].join(" ")}>
+          {gapFormatted}
+        </dd>
+      </div>
+      <div className="flex justify-between text-sm">
+        <dt className="text-muted-foreground">Ajustement pression marché</dt>
+        <dd className={["font-semibold text-right", isTight ? "text-green-600" : "text-orange-600"].join(" ")}>
+          {adjFormatted}
+        </dd>
+      </div>
+    </div>
+  );
 }
 
 export function DVFStatsPanel({ stats, sampleSize, perimeterKm, requestedRadiusKm }: Props) {
@@ -27,8 +54,15 @@ export function DVFStatsPanel({ stats, sampleSize, perimeterKm, requestedRadiusK
 
   const perimeterDisplay = perimeterKm ? `${perimeterKm} km` : "—";
 
+  const retainedCount = sampleSize ?? stats.count;
+  const excludedCount = stats.excludedCount;
+  const transactionsValue =
+    excludedCount != null && excludedCount > 0
+      ? `${retainedCount} retenue${retainedCount > 1 ? "s" : ""} / ${excludedCount} exclue${excludedCount > 1 ? "s" : ""} ⚠️`
+      : String(retainedCount);
+
   const rows = [
-    { label: "Transactions", value: String(sampleSize ?? stats.count) },
+    { label: "Transactions", value: transactionsValue },
     { label: "Médiane €/m²", value: formatPsm(stats.medianPsm) },
     { label: "Moyenne €/m²", value: formatPsm(stats.meanPsm) },
     { label: "Q1 – Q3", value: formatPsm(stats.p25Psm) + " – " + formatPsm(stats.p75Psm) },
@@ -59,12 +93,29 @@ export function DVFStatsPanel({ stats, sampleSize, perimeterKm, requestedRadiusK
       <CardContent>
         <dl className="space-y-2">
           {rows.map(({ label, value }) => (
-            <div key={label} className="flex justify-between text-sm">
-              <dt className="text-muted-foreground">{label}</dt>
-              <dd className="font-medium text-right">{value}</dd>
+            <div key={label} className="flex justify-between text-sm gap-2">
+              <dt className="text-muted-foreground shrink-0">{label}</dt>
+              <dd className={[
+                "font-medium text-right",
+                label === "Transactions" && excludedCount && excludedCount > 0
+                  ? "text-orange-600"
+                  : "",
+              ].join(" ")}>{value}</dd>
             </div>
           ))}
         </dl>
+
+        {/* Pression de marché */}
+        {stats.marketPressure ? (
+          <MarketPressureRow mp={stats.marketPressure} />
+        ) : (
+          <div className="pt-2 mt-2 border-t">
+            <div className="flex justify-between text-sm">
+              <dt className="text-muted-foreground">Pression de marché</dt>
+              <dd className="text-muted-foreground text-right italic">données indisponibles</dd>
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

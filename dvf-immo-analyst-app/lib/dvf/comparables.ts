@@ -76,6 +76,7 @@ export function toComparables(
         score: Math.round(score * 100) / 100,
         topComparable: false, // set below
         source: m._source ?? "csv",
+        outlier: m.outlier ?? false,
       };
     })
     .sort((a, b) => (b.score ?? 0) - (a.score ?? 0));

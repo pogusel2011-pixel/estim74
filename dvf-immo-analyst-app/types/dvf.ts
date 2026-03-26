@@ -21,6 +21,21 @@ export interface DVFMutation {
   prix_m2?: number;
   /** Source de la donnée : "csv" = fichier local DGFiP, "live" = API cquest.org temps réel */
   _source?: "csv" | "live";
+  /** true si la transaction est détectée comme valeur aberrante (hors bornes IQR×2) */
+  outlier?: boolean;
+  /** Raison de l'exclusion : "prix_m2_aberrant" */
+  outlierReason?: string;
+}
+
+export interface MarketPressureData {
+  /** Médiane des prix/m² affichés dans les annonces actives */
+  medianListingPsm: number;
+  /** Médiane DVF signée de référence */
+  dvfMedianPsm: number;
+  /** Écart relatif affiché/signé en % : (listing - dvf) / dvf × 100 */
+  gapPct: number;
+  /** Ajustement appliqué sur l'estimation, plafonné à ±5% */
+  adjustment: number;
 }
 
 export interface DVFStats {
@@ -36,6 +51,10 @@ export interface DVFStats {
   oldestDate: string;
   newestDate: string;
   source: "csv" | "api" | "mixed";
+  /** Nombre de transactions exclues (valeurs aberrantes IQR) — undefined pour anciennes analyses */
+  excludedCount?: number;
+  /** Données de pression de marché affiché/signé — undefined si indisponible */
+  marketPressure?: MarketPressureData;
 }
 
 export interface DVFComparable {
@@ -57,6 +76,8 @@ export interface DVFComparable {
   topComparable?: boolean;
   /** Source : "csv" = données locales 2014-2024, "live" = API temps réel */
   source?: "csv" | "live";
+  /** true si la transaction est une valeur aberrante exclue du calcul de référence */
+  outlier?: boolean;
 }
 
 export interface DVFFilters {
