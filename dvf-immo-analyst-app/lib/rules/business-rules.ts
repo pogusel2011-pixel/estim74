@@ -215,6 +215,13 @@ export const BUSINESS_RULES = {
     description: "Facteur IQR pour la détection des outliers DVF : Q1 - 2×IQR / Q3 + 2×IQR",
     version: "V1",
   },
+  OUTLIER_MEDIAN_DEVIATION: {
+    id: "RULE_OUTLIER_MEDIAN_DEV_V1",
+    value: 0.40,
+    unit: "%",
+    description: "Déviation relative maximale par rapport à la médiane locale : au-delà de ±40%, la transaction est exclue comme outlier",
+    version: "V1",
+  },
 
   // ── Pression de marché affiché/signé ──────────────────────────────────────
   MARKET_PRESSURE_WEIGHT: {

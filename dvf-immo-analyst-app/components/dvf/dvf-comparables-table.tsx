@@ -41,13 +41,13 @@ function OutlierBadge() {
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <span className="inline-flex items-center gap-0.5 rounded-full border border-orange-300 bg-orange-50 px-1.5 py-0.5 text-[10px] font-semibold text-orange-700 cursor-help whitespace-nowrap">
+          <span className="inline-flex items-center gap-0.5 rounded-full border border-red-300 bg-red-50 px-1.5 py-0.5 text-[10px] font-semibold text-red-700 cursor-help whitespace-nowrap">
             <AlertTriangle className="h-2.5 w-2.5" />
-            Valeur atypique
+            Outlier exclu
           </span>
         </TooltipTrigger>
         <TooltipContent side="top" className="max-w-xs text-xs">
-          Cette vente présente un prix/m² anormalement éloigné de la médiane du secteur. Elle est exclue du calcul de référence.
+          Cette vente est exclue du calcul de référence : son prix/m² s'écarte de plus de 40% de la médiane locale ou dépasse les bornes IQR×2. Elle reste visible pour transparence.
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
@@ -88,7 +88,7 @@ export function DVFComparablesTable({ comparables, hasLiveData }: Props) {
           <span>
             Transactions comparables — {retainedCount} retenue{retainedCount > 1 ? "s" : ""}
             {outlierCount > 0 && (
-              <span className="text-orange-600"> / {outlierCount} atypique{outlierCount > 1 ? "s" : ""}</span>
+              <span className="text-red-600"> / {outlierCount} outlier{outlierCount > 1 ? "s" : ""} exclu{outlierCount > 1 ? "s" : ""}</span>
             )}
           </span>
           {topComparables.length > 0 && (
@@ -131,7 +131,7 @@ export function DVFComparablesTable({ comparables, hasLiveData }: Props) {
                   className={[
                     "border-b last:border-0 transition-colors",
                     c.outlier
-                      ? "bg-orange-50/40 opacity-60 hover:opacity-80"
+                      ? "bg-red-50/40 opacity-60 hover:opacity-80"
                       : c.topComparable
                       ? "bg-blue-50/40 hover:bg-blue-50/70"
                       : "hover:bg-muted/30",

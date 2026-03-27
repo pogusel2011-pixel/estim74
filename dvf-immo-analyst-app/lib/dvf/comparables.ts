@@ -81,9 +81,10 @@ export function toComparables(
     })
     .sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
 
-  // Mark top N as key comparables
+  // Mark top N as key comparables — outliers are explicitly excluded
   const result = raw.slice(0, 30);
-  result.slice(0, Math.min(TOP_N, result.length)).forEach((c) => {
+  const nonOutliers = result.filter((c) => !c.outlier);
+  nonOutliers.slice(0, Math.min(TOP_N, nonOutliers.length)).forEach((c) => {
     c.topComparable = true;
   });
 
