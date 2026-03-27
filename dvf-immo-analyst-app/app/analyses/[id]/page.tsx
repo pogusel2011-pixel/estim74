@@ -276,6 +276,8 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
             analysisId={serialized.id as string}
             initialOutputs={safeGptOutputs}
             chatgptPrompt={chatgptPrompt}
+            address={serialized.address as string | null}
+            city={serialized.city as string | null}
           />
         </TabsContent>
       </Tabs>

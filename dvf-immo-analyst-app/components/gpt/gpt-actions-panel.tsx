@@ -7,20 +7,44 @@ import { Separator } from "@/components/ui/separator";
 import { GPTOutputCard } from "./gpt-output-card";
 import { ChatGPTButton } from "./chatgpt-button";
 import { GPT_ACTION_LABELS } from "@/lib/gpt/prompt-builders";
-import { Sparkles, Loader2 } from "lucide-react";
+import { Sparkles, Loader2, Download } from "lucide-react";
 
 interface Props {
   analysisId: string;
   initialOutputs: GPTOutput[];
   chatgptPrompt?: string;
+  address?: string | null;
+  city?: string | null;
 }
 
 const ACTIONS: GPTActionType[] = ["MARKET_ANALYSIS", "NEGOTIATION_ADVICE", "INVESTMENT_POTENTIAL", "PROPERTY_DESCRIPTION", "RISK_ASSESSMENT"];
 
-export function GPTActionsPanel({ analysisId, initialOutputs, chatgptPrompt }: Props) {
+export function GPTActionsPanel({ analysisId, initialOutputs, chatgptPrompt, address, city }: Props) {
   const [outputs, setOutputs] = useState<GPTOutput[]>(initialOutputs);
   const [loading, setLoading] = useState<GPTActionType | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  function handleDownload() {
+    if (!chatgptPrompt) return;
+    const slug = [address, city]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase()
+      .replace(/[^a-z0-9À-ÿ\s-]/g, "")
+      .trim()
+      .replace(/\s+/g, "-");
+    const date = new Date().toISOString().slice(0, 10);
+    const filename = `dossier-gpt_${slug || "bien"}_${date}.txt`;
+    const blob = new Blob([chatgptPrompt], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
 
   async function runAction(action: GPTActionType) {
     setLoading(action);
@@ -68,6 +92,15 @@ export function GPTActionsPanel({ analysisId, initialOutputs, chatgptPrompt }: P
               size="sm"
               showInstructions={true}
             />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleDownload}
+              className="gap-2 w-full border-[#10a37f]/40 text-[#0d7a5f] hover:bg-[#10a37f]/10 hover:border-[#10a37f]"
+            >
+              <Download className="h-3.5 w-3.5 shrink-0" />
+              Télécharger le dossier GPT (.txt)
+            </Button>
           </CardContent>
         </Card>
       )}
