@@ -164,18 +164,13 @@ export function DVFComparablesTable({ comparables, hasLiveData }: Props) {
                   {/* Prix/m² — indexé 2025 si disponible, sinon brut */}
                   <td className="px-3 py-2 whitespace-nowrap font-semibold text-primary">
                     {c.indexedPricePsm != null ? (
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <span className="flex items-center gap-1 cursor-default">
-                            {formatPsm(c.indexedPricePsm)}
-                            <TrendingUp className="h-3 w-3 text-emerald-600 shrink-0" />
-                          </span>
-                        </TooltipTrigger>
-                        <TooltipContent side="top" className="text-xs">
-                          Prix brut : {formatPsm(c.pricePsm)}<br />
-                          Indexé 2025 (indice notaires 74)
-                        </TooltipContent>
-                      </Tooltip>
+                      <span
+                        className="flex items-center gap-1 cursor-default"
+                        title={`Prix brut : ${formatPsm(c.pricePsm)} · Indexé 2025 (indice notaires 74)`}
+                      >
+                        {formatPsm(c.indexedPricePsm)}
+                        <TrendingUp className="h-3 w-3 text-emerald-600 shrink-0" />
+                      </span>
                     ) : (
                       formatPsm(c.pricePsm)
                     )}
