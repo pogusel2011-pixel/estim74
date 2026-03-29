@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { formatPrice, formatPsm, formatDateShort } from "@/lib/utils";
-import { Table2, Star, AlertTriangle } from "lucide-react";
+import { Table2, Star, AlertTriangle, TrendingUp } from "lucide-react";
 import { useState } from "react";
 
 interface Props {
@@ -54,7 +54,7 @@ function OutlierBadge() {
   );
 }
 
-const HEADERS = ["", "Date", "Distance", "Nature du bien", "Surface", "Pièces", "Prix DVF", "€/m²", "Adresse/parcelle", "Source"];
+const HEADERS = ["", "Date", "Distance", "Nature du bien", "Surface", "Pièces", "Prix DVF", "€/m² (2025)", "Adresse/parcelle", "Source"];
 
 export function DVFComparablesTable({ comparables, hasLiveData }: Props) {
   const [showAll, setShowAll] = useState(false);
@@ -161,9 +161,24 @@ export function DVFComparablesTable({ comparables, hasLiveData }: Props) {
                   <td className="px-3 py-2 whitespace-nowrap font-medium">
                     {formatPrice(c.price, true)}
                   </td>
-                  {/* Prix/m² */}
+                  {/* Prix/m² — indexé 2025 si disponible, sinon brut */}
                   <td className="px-3 py-2 whitespace-nowrap font-semibold text-primary">
-                    {formatPsm(c.pricePsm)}
+                    {c.indexedPricePsm != null ? (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="flex items-center gap-1 cursor-default">
+                            {formatPsm(c.indexedPricePsm)}
+                            <TrendingUp className="h-3 w-3 text-emerald-600 shrink-0" />
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="text-xs">
+                          Prix brut : {formatPsm(c.pricePsm)}<br />
+                          Indexé 2025 (indice notaires 74)
+                        </TooltipContent>
+                      </Tooltip>
+                    ) : (
+                      formatPsm(c.pricePsm)
+                    )}
                   </td>
                   {/* Adresse/parcelle */}
                   <td

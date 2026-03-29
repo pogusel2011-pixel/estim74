@@ -55,6 +55,8 @@ export interface DVFStats {
   excludedCount?: number;
   /** Données de pression de marché affiché/signé — undefined si indisponible */
   marketPressure?: MarketPressureData;
+  /** true si toutes les statistiques (médiane, moyenne, Q1, Q3…) sont en valeur indexée 2025 */
+  isIndexed?: boolean;
 }
 
 export interface DVFComparable {
@@ -66,6 +68,8 @@ export interface DVFComparable {
   surface: number;
   price: number;
   pricePsm: number;
+  /** Prix/m² indexé en valeur 2025 (indice notaires Haute-Savoie) — undefined pour anciennes analyses */
+  indexedPricePsm?: number;
   rooms?: number;
   landSurface?: number;
   distanceM?: number;

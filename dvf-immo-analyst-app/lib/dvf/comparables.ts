@@ -1,5 +1,6 @@
 import { DVFMutation, DVFComparable } from "@/types/dvf";
 import { BUSINESS_RULES } from "@/lib/rules/business-rules";
+import { applyTemporalIndex } from "./temporal-index";
 
 /** Nombre de "top comparables" à identifier (référence BUSINESS_RULES) */
 const TOP_N = BUSINESS_RULES.TOP_COMPARABLES_COUNT.value;
@@ -37,10 +38,10 @@ export function scoreComparable(
   }
 
   return (
-    distScore   * 0.40 +
-    surfScore   * 0.30 +
+    distScore    * 0.40 +
+    surfScore    * 0.30 +
     recencyScore * 0.20 +
-    roomScore   * 0.10
+    roomScore    * 0.10
   );
 }
 
@@ -60,6 +61,10 @@ export function toComparables(
         { surface: subjectSurface, rooms: subjectRooms }
       );
 
+      // Indexation temporelle : ramène le prix/m² à la valeur équivalente 2025
+      const saleYear = new Date(m.date_mutation).getFullYear();
+      const indexedPricePsm = applyTemporalIndex(m.prix_m2!, saleYear);
+
       return {
         id: m.id_mutation,
         date: m.date_mutation,
@@ -69,6 +74,7 @@ export function toComparables(
         surface,
         price: m.valeur_fonciere,
         pricePsm: m.prix_m2!,
+        indexedPricePsm,
         rooms: m.nombre_pieces_principales,
         landSurface: m.surface_terrain,
         distanceM: m.distance_m,

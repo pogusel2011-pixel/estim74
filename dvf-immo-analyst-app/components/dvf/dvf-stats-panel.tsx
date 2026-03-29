@@ -2,7 +2,7 @@ import { DVFStats, MarketPressureData } from "@/types/dvf";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatPsm, formatDate } from "@/lib/utils";
-import { Database } from "lucide-react";
+import { Database, TrendingUp } from "lucide-react";
 
 interface Props {
   stats?: DVFStats | null;
@@ -80,9 +80,15 @@ export function DVFStatsPanel({ stats, sampleSize, perimeterKm, requestedRadiusK
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="text-sm flex items-center gap-2">
-          <Database className="h-4 w-4 text-primary" />
+        <CardTitle className="text-sm flex items-center gap-2 flex-wrap">
+          <Database className="h-4 w-4 text-primary shrink-0" />
           Statistiques DVF
+          {stats.isIndexed && (
+            <Badge variant="outline" className="text-xs font-normal text-emerald-700 border-emerald-400 bg-emerald-50 gap-1">
+              <TrendingUp className="h-2.5 w-2.5" />
+              Prix indexés 2025
+            </Badge>
+          )}
           {wasExpanded && (
             <Badge variant="outline" className="ml-auto text-xs font-normal text-amber-600 border-amber-400">
               Rayon élargi à {perimeterKm} km
