@@ -94,3 +94,16 @@ export interface DVFFilters {
   monthsBack: number;
   excludeOutliers: boolean;
 }
+
+/** Benchmark DVF départemental Haute-Savoie (74) via immoapi.app/v1/stats */
+export interface DeptBenchmark {
+  codeDepement: "74";
+  /** Libellé du type de bien filtré : "Appartement", "Maison", "Tous types" */
+  typeLocal: string;
+  /** Médiane €/m² pour le département et le type de bien */
+  medianPsm: number;
+  /** Évolution annuelle en % (positif = hausse) — undefined si non disponible */
+  evolutionPct?: number;
+  /** Nombre total de transactions sur la période considérée */
+  totalTransactions?: number;
+}

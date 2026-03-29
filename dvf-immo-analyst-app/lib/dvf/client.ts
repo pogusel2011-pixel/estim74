@@ -6,13 +6,13 @@ const MIN_SAMPLES = BUSINESS_RULES.MIN_SAMPLE_SIZE.value;
 const EXPANSION_STEP_KM = BUSINESS_RULES.GEO_RADIUS_EXPANSION_STEP.value;
 const MAX_RADIUS_KM = BUSINESS_RULES.GEO_RADIUS_MAX.value;
 
-const IMMOAPI_BASE = "https://immoapi.app/api";
+const IMMOAPI_BASE = "https://immoapi.app/v1";
 const IMMOAPI_TIMEOUT_MS = 10000;
 const IMMOAPI_MAX_PER_PAGE = 100;
 const IMMOAPI_MAX_PAGES = 3; // cap à 300 résultats par appel
 
 /**
- * Mappe un enregistrement brut de l'API immoapi.app/api/mutations/nearby vers DVFMutation.
+ * Mappe un enregistrement brut de l'API immoapi.app/v1/mutations/nearby vers DVFMutation.
  *
  * Différences API vs documentation officielle (constatées à l'usage) :
  *  - response wrapper : `data` (pas `mutations`)
@@ -78,7 +78,7 @@ function mapImmoApiRecord(raw: Record<string, unknown>): DVFMutation {
 }
 
 /**
- * Appel à l'API immoapi.app/api/mutations/nearby — source live complémentaire au CSV.
+ * Appel à l'API immoapi.app/v1/mutations/nearby — source live complémentaire au CSV.
  * Gère la pagination (max IMMOAPI_MAX_PAGES × 100 résultats).
  * Filtre client-side par date (monthsBack).
  * Fallback silencieux sur erreur/timeout/clé absente.
@@ -90,9 +90,9 @@ export async function fetchDVFFromAPI(
   monthsBack = 18,
   typeLocal?: string
 ): Promise<DVFMutation[]> {
-  const apiKey = process.env.IMMO_API_KEY;
+  const apiKey = process.env.MOTEURIMMO_API_KEY;
   if (!apiKey) {
-    console.warn("[DVF Live] IMMO_API_KEY absent — skip immoapi.app");
+    console.warn("[DVF Live] MOTEURIMMO_API_KEY absent — skip immoapi.app");
     return [];
   }
 
@@ -174,9 +174,9 @@ export async function fetchDVFFromAPI(
 /**
  * Point d'entrée principal :
  * 1. Charge les mutations depuis le CSV local (source prioritaire, 2014-2024)
- * 2. Appelle immoapi.app pour les données récentes (complémentaire)
- * 3. Fusionne + déduplique
- * 4. Auto-expand le rayon par pas de 0.5 km (jusqu'à 5 km) si < 5 transactions
+ * 2. Si CSV < 5 résultats, appelle immoapi.app comme fallback
+ * 3. Fusion + déduplique les sources
+ * 4. Auto-expand le rayon par pas de 0.5 km (jusqu'à 5 km) si encore < 5 transactions
  *
  * @param city       Nom de la commune — active le filtre INSEE secondaire
  * @param postalCode Code postal — précise la recherche INSEE
@@ -216,6 +216,13 @@ export async function getDVFMutations(
   }
 }
 
+/**
+ * Stratégie CSV-first à un rayon donné :
+ * 1. Interroge le CSV local (données 2014-2024, source fiable)
+ * 2. Si CSV ≥ MIN_SAMPLES → retourne CSV uniquement (rapide, pas d'appel API)
+ * 3. Si CSV insuffisant → appelle immoapi.app comme complément
+ * 4. Fusionne et déduplique les deux sources
+ */
 async function _fetchAtRadius(
   lat: number,
   lng: number,
@@ -225,11 +232,21 @@ async function _fetchAtRadius(
   city?: string,
   postalCode?: string,
 ): Promise<{ mutations: DVFMutation[]; source: "csv" | "api" | "mixed" }> {
+  // Étape 1 : CSV local (priorité absolue)
   const csvRaw = await loadCsvMutations(lat, lng, radiusKm, monthsBack, propertyTypes, city, postalCode);
   const csvMutations: DVFMutation[] = csvRaw.map((m) => ({ ...m, _source: "csv" as const }));
 
+  // Étape 2 : CSV suffisant → on n'appelle pas l'API
+  if (csvMutations.length >= MIN_SAMPLES) {
+    return { mutations: csvMutations, source: "csv" };
+  }
+
+  // Étape 3 : CSV insuffisant → ImmoAPI comme fallback
+  console.log(
+    `[DVF] CSV insuffisant (${csvMutations.length} tx, rayon ${radiusKm} km) — interrogation immoapi.app`
+  );
   const typeLocal = propertyTypes?.[0];
-  const apiMutations = await fetchDVFFromAPI(lat, lng, radiusKm, 18, typeLocal);
+  const apiMutations = await fetchDVFFromAPI(lat, lng, radiusKm, monthsBack, typeLocal);
 
   if (csvMutations.length === 0 && apiMutations.length === 0) {
     return { mutations: [], source: "api" };

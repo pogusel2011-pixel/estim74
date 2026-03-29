@@ -60,6 +60,7 @@ dvf-immo-analyst-app/
 ## Environment Variables
 - `DATABASE_URL` — auto-configured by Replit PostgreSQL
 - `OPENAI_API_KEY` — optional; app falls back to rule-based analysis if absent
+- `MOTEURIMMO_API_KEY` — immoapi.app API key; used by `lib/dvf/client.ts` (live mutations) and `lib/dvf/dept-stats.ts` (/v1/stats benchmark)
 - `NEXT_PUBLIC_APP_URL` — optional; defaults to `http://localhost:5000`
 
 ## Audit Recette — Adjustments Engine (Estim74 Spec)
@@ -100,6 +101,25 @@ Implemented in `lib/valuation/adjustments.ts` and aligned in `lib/mapping/energy
 - **Table**: top comparables en fond bleu + badge "★ Comparable clé" en première colonne ; résumé dans le header (badge avec comptage)
 - **Confidence**: `lib/valuation/confidence.ts` utilise les surfaces réelles des top comparables pour `surfaceMatch` (plus de valeur fixe à 0.7)
 - **Propagation**: `rooms` passé à `toComparables()` dans estimate route, resimulate route, analyses/[id]/page, print/page
+
+## V3 Features
+
+### Temporal Indexation (Notaires 74)
+- `lib/dvf/temporal-index.ts` — index table 2014-2025 (base 100=2014), `applyTemporalIndex(pricePsm, year)` brings prices to 2025 equivalents
+- `computeDVFStats()` now uses indexed PSMs → medianPsm/meanPsm/Q1/Q3 all in 2025 values; `DVFStats.isIndexed = true`
+- `DVFComparable.indexedPricePsm` — 2025-indexed price per m² shown in the comparables table (original raw in tooltip)
+- `DVFStatsPanel` shows "Prix indexés 2025" emerald badge when `stats.isIndexed === true`
+
+### ImmoAPI CSV-First Strategy
+- `lib/dvf/client.ts` — API base changed to `https://immoapi.app/v1`; env var `MOTEURIMMO_API_KEY`
+- `_fetchAtRadius()` now tries CSV first; ImmoAPI is called only when CSV returns < 5 results
+- Expansion loop (0.5km steps up to 5km) iterates: CSV → if insufficient, ImmoAPI → if still insufficient, expand radius
+
+### Département Benchmark Panel
+- `lib/dvf/dept-stats.ts` — calls `GET /v1/stats?code_departement=74&type_local=` with 1h cache
+- `DeptBenchmark` type in `types/dvf.ts` — medianPsm, evolutionPct, totalTransactions
+- `components/dvf/dept-benchmark-panel.tsx` — shows dept median, annual evolution %, gap vs subject property (above/below %)
+- Integrated in the "Marché" tab of `app/analyses/[id]/page.tsx`; falls back silently if API unavailable
 
 ## Notes
 - First page load after server restart takes ~10s (CSV load); subsequent loads ~50ms

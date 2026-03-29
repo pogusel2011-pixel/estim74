@@ -15,6 +15,7 @@ import { DVFRecentSalesPanel } from "@/components/listings/dvf-recent-sales-pane
 import { MarketReading } from "@/components/analysis/market-reading";
 import { NotairesPanel } from "@/components/analysis/notaires-panel";
 import { PerimeterPanel } from "@/components/analysis/perimeter-panel";
+import { DeptBenchmarkPanel } from "@/components/dvf/dept-benchmark-panel";
 import { GPTActionsPanel } from "@/components/gpt/gpt-actions-panel";
 import { ChatGPTButton } from "@/components/gpt/chatgpt-button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -27,6 +28,7 @@ import { isApiKeyConfigured } from "@/lib/moteurimmo/search";
 import { computeConfidence } from "@/lib/valuation/confidence";
 import { buildChatGPTPrompt } from "@/lib/gpt/chatgpt-prompt-builder";
 import { computeMarketPressure } from "@/lib/moteurimmo/qualitative";
+import { fetchDeptStats } from "@/lib/dvf/dept-stats";
 import { DVFStats, DVFComparable } from "@/types/dvf";
 import { ActiveListing } from "@/types/listing";
 import { Adjustment, ConfidenceFactors } from "@/types/valuation";
@@ -129,6 +131,9 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
     const mp = computeMarketPressure(dvfStats, safeListings as ActiveListing[]);
     if (mp) dvfStats.marketPressure = mp;
   }
+
+  // Benchmark départemental 74 — récupéré en parallèle, fallback silencieux si API indisponible
+  const deptBenchmark = await fetchDeptStats(serialized.propertyType as string | null).catch(() => null);
 
   // Calcul des facteurs de confiance (4 composantes) à partir des données disponibles
   const { factors: confidenceFactors } = computeConfidence(
@@ -257,6 +262,10 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
 
         <TabsContent value="market" className="space-y-4 mt-4">
           <MarketReading marketReading={safeMarketReading} />
+          <DeptBenchmarkPanel
+            benchmark={deptBenchmark}
+            subjectPsm={serialized.valuationPsm as number | null}
+          />
           {serialized.lat && serialized.lng && (
             <MarketTrendChart
               lat={serialized.lat}
