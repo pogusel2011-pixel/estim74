@@ -5,16 +5,25 @@ import { BUSINESS_RULES } from "@/lib/rules/business-rules";
 const MIN_SAMPLES = BUSINESS_RULES.MIN_SAMPLE_SIZE.value;
 const EXPANSION_STEP_KM = BUSINESS_RULES.GEO_RADIUS_EXPANSION_STEP.value;
 const MAX_RADIUS_KM = BUSINESS_RULES.GEO_RADIUS_MAX.value;
-const DVF_API_BASE = process.env.DVF_API_URL ?? "https://api.cquest.org/dvf";
-const DVF_API_TIMEOUT_MS = 8000;
+
+const IMMOAPI_BASE = "https://immoapi.app/api";
+const IMMOAPI_TIMEOUT_MS = 10000;
+const IMMOAPI_MAX_PER_PAGE = 100;
+const IMMOAPI_MAX_PAGES = 3; // cap à 300 résultats par appel
 
 /**
- * Mappe un objet brut de l'API cquest.org vers notre type DVFMutation interne.
- * L'API renvoie des champs identiques au format DVF officiel sauf :
- *  - `distance`  → distance_m (en mètres depuis le point de requête)
- *  - `valeur_fonciere` peut être une chaîne avec virgule décimale
+ * Mappe un enregistrement brut de l'API immoapi.app/api/mutations/nearby vers DVFMutation.
+ *
+ * Différences API vs documentation officielle (constatées à l'usage) :
+ *  - response wrapper : `data` (pas `mutations`)
+ *  - radius param     : en km (pas en mètres)
+ *  - distance         : `distance_km` → à ×1000 pour obtenir distance_m
+ *  - nom_commune      : champ `commune`
+ *  - latitude/lon     : strings décimales
+ *  - valeur_fonciere  : string décimale
+ *  - prix_m2          : non fourni → calculé ici si surface disponible
  */
-function mapApiRecord(raw: Record<string, unknown>): DVFMutation {
+function mapImmoApiRecord(raw: Record<string, unknown>): DVFMutation {
   const parseNum = (v: unknown): number => {
     if (typeof v === "number") return v;
     if (typeof v === "string") return parseFloat(v.replace(",", ".")) || 0;
@@ -26,15 +35,33 @@ function mapApiRecord(raw: Record<string, unknown>): DVFMutation {
     return isNaN(n) ? undefined : n;
   };
 
+  const valeur = parseNum(raw.valeur_fonciere);
+  const surface =
+    parseNumOpt(raw.surface_reelle_bati) ??
+    parseNumOpt(raw.lot1_surface_carrez) ??
+    parseNumOpt(raw.surface_terrain);
+  const prixM2 =
+    surface && surface > 0 && valeur > 0
+      ? Math.round(valeur / surface)
+      : undefined;
+
+  // distance_km → distance_m
+  const distKm = parseNumOpt(raw.distance_km);
+  const distanceM = distKm != null ? Math.round(distKm * 1000) : undefined;
+
+  // date_mutation peut contenir un suffixe ISO (T00:00:00.000Z) — on tronque à YYYY-MM-DD
+  const rawDate = String(raw.date_mutation ?? "");
+  const dateMutation = rawDate.slice(0, 10);
+
   return {
     id_mutation: String(raw.id_mutation ?? raw.id ?? ""),
-    date_mutation: String(raw.date_mutation ?? ""),
+    date_mutation: dateMutation,
     nature_mutation: String(raw.nature_mutation ?? "Vente"),
-    valeur_fonciere: parseNum(raw.valeur_fonciere),
+    valeur_fonciere: valeur,
     adresse_numero: raw.adresse_numero ? String(raw.adresse_numero) : undefined,
     adresse_nom_voie: raw.adresse_nom_voie ? String(raw.adresse_nom_voie) : undefined,
     code_postal: raw.code_postal ? String(raw.code_postal) : undefined,
-    nom_commune: String(raw.nom_commune ?? ""),
+    nom_commune: String(raw.commune ?? raw.nom_commune ?? ""),
     code_commune: String(raw.code_commune ?? ""),
     code_departement: String(raw.code_departement ?? "74"),
     type_local: raw.type_local ? String(raw.type_local) : undefined,
@@ -42,65 +69,103 @@ function mapApiRecord(raw: Record<string, unknown>): DVFMutation {
     lot1_surface_carrez: parseNumOpt(raw.lot1_surface_carrez),
     nombre_pieces_principales: parseNumOpt(raw.nombre_pieces_principales),
     surface_terrain: parseNumOpt(raw.surface_terrain),
-    lat: parseNumOpt(raw.lat),
-    lon: parseNumOpt(raw.lon),
-    // L'API renvoie "distance" (mètres), on le mappe vers distance_m
-    distance_m: parseNumOpt(raw.distance ?? raw.distance_m),
+    lat: parseNumOpt(raw.latitude),
+    lon: parseNumOpt(raw.longitude),
+    distance_m: distanceM,
+    prix_m2: prixM2,
     _source: "live",
   };
 }
 
 /**
- * Appel à l'API cquest.org/dvf — source temps réel complémentaire au CSV.
- * Filtre par type_local si fourni. Fallback silencieux sur erreur/timeout.
+ * Appel à l'API immoapi.app/api/mutations/nearby — source live complémentaire au CSV.
+ * Gère la pagination (max IMMOAPI_MAX_PAGES × 100 résultats).
+ * Filtre client-side par date (monthsBack).
+ * Fallback silencieux sur erreur/timeout/clé absente.
  */
 export async function fetchDVFFromAPI(
   lat: number,
   lng: number,
   radiusKm: number,
-  monthsBack = 24,
+  monthsBack = 18,
   typeLocal?: string
 ): Promise<DVFMutation[]> {
+  const apiKey = process.env.IMMO_API_KEY;
+  if (!apiKey) {
+    console.warn("[DVF Live] IMMO_API_KEY absent — skip immoapi.app");
+    return [];
+  }
+
   const dateMin = new Date();
   dateMin.setMonth(dateMin.getMonth() - monthsBack);
-  const dateStr = dateMin.toISOString().split("T")[0];
 
-  const params: Record<string, string> = {
-    lat: String(lat),
-    lon: String(lng),
-    dist: String(Math.round(radiusKm * 1000)),
-    nature_mutation: "Vente",
-    date_min: dateStr,
-  };
-  if (typeLocal) params.type_local = typeLocal;
+  // Années à interroger selon monthsBack
+  const currentYear = new Date().getFullYear();
+  const minYear = dateMin.getFullYear();
+  const years: number[] = [];
+  for (let y = minYear; y <= currentYear; y++) years.push(y);
 
-  const url = `${DVF_API_BASE}?${new URLSearchParams(params)}`;
+  const allMutations: DVFMutation[] = [];
 
   try {
-    const res = await fetch(url, {
-      signal: AbortSignal.timeout(DVF_API_TIMEOUT_MS),
-      headers: { Accept: "application/json" },
-    });
+    for (const annee of years) {
+      let page = 1;
+      let hasMore = true;
 
-    if (!res.ok) {
-      console.warn(`[DVF Live] API ${res.status}: ${url}`);
-      return [];
+      while (hasMore && page <= IMMOAPI_MAX_PAGES) {
+        const params: Record<string, string> = {
+          lat: String(lat),
+          lng: String(lng),
+          radius: String(radiusKm), // API attend des km
+          annee: String(annee),
+          per_page: String(IMMOAPI_MAX_PER_PAGE),
+          page: String(page),
+        };
+        if (typeLocal) params.type_local = typeLocal;
+
+        const url = `${IMMOAPI_BASE}/mutations/nearby?${new URLSearchParams(params)}`;
+
+        const res = await fetch(url, {
+          signal: AbortSignal.timeout(IMMOAPI_TIMEOUT_MS),
+          headers: {
+            Accept: "application/json",
+            Authorization: `Bearer ${apiKey}`,
+          },
+        });
+
+        if (!res.ok) {
+          console.warn(`[DVF Live] immoapi.app ${res.status} (année ${annee}, page ${page})`);
+          break;
+        }
+
+        const data = await res.json();
+        // Response wrapper : `data` (champ réel, différent de la doc qui dit `mutations`)
+        const raw: Record<string, unknown>[] = data.data ?? data.mutations ?? data.results ?? [];
+
+        const mapped = raw
+          .map((r) => mapImmoApiRecord(r))
+          .filter((m) => {
+            if (!m.valeur_fonciere || !m.date_mutation) return false;
+            return new Date(m.date_mutation) >= dateMin;
+          });
+
+        allMutations.push(...mapped);
+
+        hasMore = raw.length === IMMOAPI_MAX_PER_PAGE;
+        page++;
+      }
     }
 
-    const data = await res.json();
-    const raw: Record<string, unknown>[] = data.resultats ?? data.features ?? data.results ?? [];
-
-    const mapped = raw
-      .map((r) => mapApiRecord(r))
-      .filter((m) => m.valeur_fonciere > 0 && m.date_mutation);
-
-    console.log(`[DVF Live] ${mapped.length} transactions (rayon ${radiusKm} km, type: ${typeLocal ?? "tous"})`);
-    return mapped;
+    console.log(
+      `[DVF Live] immoapi.app — ${allMutations.length} transactions ` +
+      `(rayon ${radiusKm} km, ${years.join("/")}${typeLocal ? `, type: ${typeLocal}` : ""})`
+    );
+    return allMutations;
   } catch (err) {
     if ((err as Error).name === "TimeoutError") {
-      console.warn("[DVF Live] Timeout — fallback CSV uniquement");
+      console.warn("[DVF Live] Timeout immoapi.app — fallback CSV uniquement");
     } else {
-      console.warn("[DVF Live] Erreur:", (err as Error).message);
+      console.warn("[DVF Live] Erreur immoapi.app:", (err as Error).message);
     }
     return [];
   }
@@ -109,11 +174,11 @@ export async function fetchDVFFromAPI(
 /**
  * Point d'entrée principal :
  * 1. Charge les mutations depuis le CSV local (source prioritaire, 2014-2024)
- * 2. Appelle l'API cquest.org pour les données récentes (complémentaire)
+ * 2. Appelle immoapi.app pour les données récentes (complémentaire)
  * 3. Fusionne + déduplique
  * 4. Auto-expand le rayon par pas de 0.5 km (jusqu'à 5 km) si < 5 transactions
  *
- * @param city       Nom de la commune — active le filtre INSEE secondaire (mutations sans coords)
+ * @param city       Nom de la commune — active le filtre INSEE secondaire
  * @param postalCode Code postal — précise la recherche INSEE
  */
 export async function getDVFMutations(
@@ -160,12 +225,10 @@ async function _fetchAtRadius(
   city?: string,
   postalCode?: string,
 ): Promise<{ mutations: DVFMutation[]; source: "csv" | "api" | "mixed" }> {
-  // CSV local en priorité — on marque chaque mutation (+ filtre INSEE secondaire si city fourni)
   const csvRaw = await loadCsvMutations(lat, lng, radiusKm, monthsBack, propertyTypes, city, postalCode);
   const csvMutations: DVFMutation[] = csvRaw.map((m) => ({ ...m, _source: "csv" as const }));
 
-  // API Live en parallèle (on convertit le premier type DVF si disponible)
-  const typeLocal = propertyTypes?.[0]; // ex: "Appartement", "Maison"
+  const typeLocal = propertyTypes?.[0];
   const apiMutations = await fetchDVFFromAPI(lat, lng, radiusKm, 18, typeLocal);
 
   if (csvMutations.length === 0 && apiMutations.length === 0) {
@@ -187,7 +250,6 @@ async function _fetchAtRadius(
 function deduplicateMutations(mutations: DVFMutation[]): DVFMutation[] {
   const seen = new Set<string>();
   return mutations.filter((m) => {
-    // Clé de déduplication : date + valeur + rue (insensible à la casse)
     const key = m.id_mutation
       ? m.id_mutation
       : `${m.date_mutation}|${m.valeur_fonciere}|${(m.adresse_nom_voie ?? "").toLowerCase()}`;
