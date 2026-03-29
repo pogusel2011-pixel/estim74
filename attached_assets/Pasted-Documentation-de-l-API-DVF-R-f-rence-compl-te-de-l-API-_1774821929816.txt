@@ -1,0 +1,155 @@
+Documentation de l'API DVF 
+Référence complète de l'API DVF pour accéder aux données de transactions immobilières en France. Tous les endpoints, paramètres et exemples de réponses.
+URL de base
+https://immoapi.app/v1
+Authentification
+Toutes les requêtes doivent inclure un header Authorization avec votre clé API au format Bearer token.
+Authorization: Bearer YOUR_API_KEY
+Obtenez votre clé API en créant un compte sur Immo API. La clé est disponible immédiatement après inscription dans votre tableau de bord.
+Limites de requêtes
+Les limites varient selon votre plan :
+Plan	Limite	Fenêtre
+Starter	1 000 requêtes	Par jour
+Pro	Illimité	-
+Les headers de réponse incluent X-RateLimit-Remaining et X-RateLimit-Reset pour suivre votre consommation.
+GET
+/v1/mutations
+Recherchez des transactions immobilières (mutations) dans la base DVF. Filtrez par commune, département, type de bien, fourchette de prix et période.
+Paramètres
+Paramètre	Type	Statut	Description
+code_commune	string	optionnel	Code INSEE de la commune (ex: 75056 pour Paris)
+code_departement	string	optionnel	Code du département (ex: 75, 69, 13)
+type_local	string	optionnel	Type de bien : Appartement, Maison, Local industriel, Dépendance
+annee	integer	optionnel	Année de la transaction (ex: 2024)
+prix_min	integer	optionnel	Prix minimum en euros
+prix_max	integer	optionnel	Prix maximum en euros
+surface_min	integer	optionnel	Surface minimale en m2
+surface_max	integer	optionnel	Surface maximale en m2
+page	integer	optionnel	Numéro de page (défaut : 1)
+per_page	integer	optionnel	Résultats par page, max 100 (défaut : 20)
+Exemple de requête
+curl "https://immoapi.app/v1/mutations?code_commune=75056&type_local=Appartement&annee=2024&prix_min=200000&prix_max=600000" \
+  -H "Authorization: Bearer YOUR_API_KEY"
+Exemple de réponse
+{
+  "total": 842,
+  "page": 1,
+  "per_page": 20,
+  "mutations": [
+    {
+      "id": "dvf-2024-75056-00142",
+      "date_mutation": "2024-03-15",
+      "nature_mutation": "Vente",
+      "valeur_fonciere": 485000,
+      "code_commune": "75056",
+      "nom_commune": "Paris",
+      "code_departement": "75",
+      "adresse": "12 Rue de Rivoli, 75001 Paris",
+      "code_postal": "75001",
+      "type_local": "Appartement",
+      "surface_reelle_bati": 65,
+      "nombre_pieces": 3,
+      "surface_terrain": null,
+      "prix_m2": 7461,
+      "longitude": 2.3488,
+      "latitude": 48.8566
+    }
+  ]
+}
+GET
+/v1/mutations/nearby
+Recherchez les transactions immobilières à proximité d'un point géographique (latitude / longitude). Idéal pour trouver des comparables dans un quartier.
+Paramètres
+Paramètre	Type	Statut	Description
+lat	float	requis	Latitude du point central
+lng	float	requis	Longitude du point central
+radius	integer	optionnel	Rayon de recherche en mètres (défaut : 1000, max : 5000)
+type_local	string	optionnel	Type de bien : Appartement, Maison
+annee	integer	optionnel	Année de la transaction
+page	integer	optionnel	Numéro de page (défaut : 1)
+per_page	integer	optionnel	Résultats par page, max 100 (défaut : 20)
+Exemple de requête
+curl "https://immoapi.app/v1/mutations/nearby?lat=48.8566&lng=2.3522&radius=500&type_local=Appartement" \
+  -H "Authorization: Bearer YOUR_API_KEY"
+Exemple de réponse
+{
+  "total": 38,
+  "radius_m": 500,
+  "center": {
+    "lat": 48.8566,
+    "lng": 2.3522
+  },
+  "mutations": [
+    {
+      "id": "dvf-2024-75056-00891",
+      "date_mutation": "2024-02-20",
+      "valeur_fonciere": 520000,
+      "adresse": "5 Place du Chatelet, 75001 Paris",
+      "type_local": "Appartement",
+      "surface_reelle_bati": 55,
+      "prix_m2": 9454,
+      "distance_m": 120
+    }
+  ]
+}
+GET
+/v1/stats
+Obtenez des statistiques agrégées sur les transactions immobilières : prix médian et moyen au m², volume de transactions, évolution annuelle. Filtrez par zone géographique et période.
+
+
+
+
+
+
+
+Paramètres
+Paramètre	Type	Statut	Description
+code_commune	string	optionnel	Code INSEE de la commune
+code_departement	string	optionnel	Code du département
+code_region	string	optionnel	Code de la région
+annee	integer	optionnel	Année (défaut : dernière année disponible)
+type_local	string	optionnel	Type de bien : Appartement, Maison
+Exemple de requête
+curl "https://immoapi.app/v1/stats?code_departement=75&annee=2024&type_local=Appartement" \
+  -H "Authorization: Bearer YOUR_API_KEY"
+Exemple de réponse
+{
+  "code_departement": "75",
+  "nom_departement": "Paris",
+  "annee": 2024,
+  "type_local": "Appartement",
+  "nombre_transactions": 28100,
+  "prix_median_m2": 10250,
+  "prix_moyen_m2": 11340,
+  "surface_moyenne": 52,
+  "valeur_fonciere_mediane": 415000,
+  "evolution_annuelle": -2.3,
+  "repartition_pieces": {
+    "1": 5200,
+    "2": 8900,
+    "3": 7800,
+    "4": 4100,
+    "5+": 2100
+  },
+  "prix_m2_par_trimestre": {
+    "T1": 10400,
+    "T2": 10300,
+    "T3": 10150,
+    "T4": 10100
+  }
+}
+Codes d'erreur
+Code HTTP	Signification	Description
+400	Bad Request	Paramètres invalides ou manquants
+401	Unauthorized	Clé API manquante ou invalide
+429	Too Many Requests	Limite de requêtes atteinte
+500	Internal Server Error	Erreur serveur, réessayez plus tard
+{
+  "error": {
+    "code": 401,
+    "message": "Clé API invalide ou manquante",
+    "detail": "Vérifiez que le header Authorization contient un Bearer token valide."
+  }
+}
+À propos de la documentation Immo API
+Cette documentation couvre l'ensemble des endpoints de l'API DVF. L'API permet d'accéder aux données officielles de transactions immobilières en France issues des Demandes de Valeurs Foncières (DVF). Que vous construisiez un outil d'estimation, un tableau de bord analytique ou une application immobilière, cette documentation vous guide pas à pas dans l'intégration de l'API de transactions immobilières.
