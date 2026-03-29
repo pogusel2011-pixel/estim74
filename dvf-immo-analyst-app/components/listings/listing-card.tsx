@@ -3,7 +3,7 @@ import { ActiveListing } from "@/types/listing";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatPrice, formatPsm } from "@/lib/utils";
-import { ExternalLink, Home, Ruler, MapPin, Building2 } from "lucide-react";
+import { ExternalLink, Home, Ruler, MapPin, Building2, AlertTriangle } from "lucide-react";
 import { DPE_COLORS } from "@/lib/constants";
 
 interface Props { listing: ActiveListing; }
@@ -15,7 +15,17 @@ function formatDistance(meters: number): string {
 
 export function ListingCard({ listing }: Props) {
   return (
-    <Card className="hover:shadow-md transition-shadow overflow-hidden flex flex-col">
+    <Card className={[
+      "hover:shadow-md transition-shadow overflow-hidden flex flex-col",
+      listing.outlier ? "border-orange-300 bg-orange-50/30" : "",
+    ].join(" ")}>
+      {/* Bannière outlier */}
+      {listing.outlier && (
+        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-100 border-b border-orange-200 text-orange-700 text-xs">
+          <AlertTriangle className="h-3 w-3 shrink-0" />
+          <span>Annonce exclue du calcul — prix/m² aberrant</span>
+        </div>
+      )}
       {/* Photo */}
       {listing.pictureUrl ? (
         <div className="relative h-36 w-full bg-muted overflow-hidden shrink-0">

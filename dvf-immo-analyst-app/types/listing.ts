@@ -25,6 +25,10 @@ export interface ActiveListing {
   lng?: number;
   distance?: number;
   publisher?: { name?: string; phone?: string };
+  /** true si l'annonce est détectée comme valeur aberrante (IQR×2 ou déviation médiane ±40%) */
+  outlier?: boolean;
+  /** Raison de l'exclusion : "iqr" ou "median" */
+  outlierReason?: "iqr" | "median";
 }
 
 export interface QualitativeComparison {

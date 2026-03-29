@@ -57,6 +57,8 @@ export interface DVFStats {
   marketPressure?: MarketPressureData;
   /** true si toutes les statistiques (médiane, moyenne, Q1, Q3…) sont en valeur indexée 2025 */
   isIndexed?: boolean;
+  /** Moyenne pondérée €/m² indexée 2025 (poids : distance × surface × récence) */
+  weightedAvgPsm?: number;
 }
 
 export interface DVFComparable {

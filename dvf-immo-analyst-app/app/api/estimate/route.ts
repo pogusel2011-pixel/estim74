@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { estimateRequestSchema } from "@/lib/validation/estimate";
 import { getDVFMutations } from "@/lib/dvf/client";
 import { computePrixM2, markOutliers } from "@/lib/dvf/outliers";
+import { markListingOutliers } from "@/lib/listings/outliers";
 import { computeMarketPressure } from "@/lib/moteurimmo/qualitative";
 import { computeDVFStats } from "@/lib/dvf/stats";
 import { toComparables } from "@/lib/dvf/comparables";
@@ -75,7 +76,7 @@ export async function POST(req: Request) {
       : enrichedMutations.filter((m) => !m.outlier); // stats toujours sur clean
     const excludedCount = enrichedMutations.length - cleanMutations.length;
 
-    const dvfStats = computeDVFStats(cleanMutations);
+    const dvfStats = computeDVFStats(cleanMutations, property.surface);
     if (dvfStats) {
       dvfStats.source = source;
       dvfStats.excludedCount = excludedCount;
@@ -109,7 +110,7 @@ export async function POST(req: Request) {
     }
 
     // 5. Annonces actives (via MoteurImmo avec code INSEE + coords du sujet)
-    const listings = includeListings
+    const rawListings = includeListings
       ? await findActiveListings(propertyWithGeo, {
           inseeCode: communeCode,
           lat,
@@ -117,14 +118,24 @@ export async function POST(req: Request) {
         })
       : [];
 
+    // Détection outliers annonces (IQR×2 puis médiane ±40%) — marquées mais conservées
+    const listings = markListingOutliers(rawListings);
+    const cleanListings = listings.filter((l) => !l.outlier);
+    const listingsOutlierCount = listings.length - cleanListings.length;
+    if (listingsOutlierCount > 0) {
+      console.log(`[estimate] Annonces outliers: ${listingsOutlierCount}/${listings.length} exclues du calcul`);
+    }
+
     // 6. Pression de marché affiché/signé (méthode pro) — enrichit dvfStats avant la valorisation
-    const marketPressure = computeMarketPressure(dvfStats ?? null, listings);
+    // Utilise uniquement les annonces retenues (sans outliers)
+    const marketPressure = computeMarketPressure(dvfStats ?? null, cleanListings);
     if (dvfStats && marketPressure) {
       dvfStats.marketPressure = marketPressure;
     }
 
     // 7. Valorisation (applique marketPressure depuis dvfStats.marketPressure)
-    const valuation = computeValuation(propertyWithGeo, dvfStats ?? null, listings, dvfComparables);
+    // Utilise uniquement les annonces retenues pour le calcul
+    const valuation = computeValuation(propertyWithGeo, dvfStats ?? null, cleanListings, dvfComparables);
 
     // 8. Contexte marché Notaires
     const marketReading = await fetchNotairesMarket(property.postalCode, property.propertyType);

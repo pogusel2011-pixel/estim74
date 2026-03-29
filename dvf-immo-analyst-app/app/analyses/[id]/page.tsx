@@ -18,9 +18,11 @@ import { PerimeterPanel } from "@/components/analysis/perimeter-panel";
 import { DeptBenchmarkPanel } from "@/components/dvf/dept-benchmark-panel";
 import { GPTActionsPanel } from "@/components/gpt/gpt-actions-panel";
 import { ChatGPTButton } from "@/components/gpt/chatgpt-button";
+import { MethodeCalculPanel } from "@/components/analysis/methode-calcul-panel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getDVFMutations } from "@/lib/dvf/client";
 import { computePrixM2, markOutliers } from "@/lib/dvf/outliers";
+import { markListingOutliers } from "@/lib/listings/outliers";
 import { computeDVFStats } from "@/lib/dvf/stats";
 import { toComparables } from "@/lib/dvf/comparables";
 import { propertyTypeToDvfTypes } from "@/lib/mapping/property-type";
@@ -80,7 +82,9 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
   }
 
   // Defensive reads of all Json? fields — handle null, non-array, JSON-string legacy formats
-  const safeListings = safeJsonArray(serialized.listings);
+  const rawListings = safeJsonArray(serialized.listings);
+  // Applique le marquage outlier côté page aussi (pour les analyses antérieures à la v2)
+  const safeListings = markListingOutliers(rawListings as ActiveListing[]) as ActiveListing[];
   const safeDvfComparables = safeJsonArray<DVFComparable>(serialized.dvfComparables);
   const safeGptOutputs = safeJsonArray(serialized.gptOutputs);
   const safeAdjustments = safeJsonArray(serialized.adjustments);
@@ -110,7 +114,7 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
       let enriched = computePrixM2(mutations);
       enriched = markOutliers(enriched);
       const cleanEnriched = enriched.filter((m) => !m.outlier);
-      dvfStats = computeDVFStats(cleanEnriched);
+      dvfStats = computeDVFStats(cleanEnriched, serialized.surface as number | undefined);
       if (dvfStats) {
         dvfStats.source = source;
         dvfStats.excludedCount = enriched.length - cleanEnriched.length;
@@ -127,8 +131,10 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
 
   // Enrichir dvfStats avec la pression de marché si listings disponibles
   // (pour analyses stockées dont dvfStats ne contient pas encore marketPressure)
-  if (dvfStats && !dvfStats.marketPressure && safeListings.length > 0) {
-    const mp = computeMarketPressure(dvfStats, safeListings as ActiveListing[]);
+  // N'utilise que les annonces retenues (sans outliers) pour le calcul
+  const cleanSafeListings = safeListings.filter((l) => !l.outlier);
+  if (dvfStats && !dvfStats.marketPressure && cleanSafeListings.length > 0) {
+    const mp = computeMarketPressure(dvfStats, cleanSafeListings);
     if (mp) dvfStats.marketPressure = mp;
   }
 
@@ -227,10 +233,11 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
 
       {/* Tabs secondaires */}
       <Tabs defaultValue="dvf" className="w-full">
-        <TabsList className="grid grid-cols-4 w-full max-w-xl">
+        <TabsList className="grid grid-cols-5 w-full max-w-2xl">
           <TabsTrigger value="dvf">DVF</TabsTrigger>
           <TabsTrigger value="listings">Annonces</TabsTrigger>
           <TabsTrigger value="market">Marché</TabsTrigger>
+          <TabsTrigger value="methode">Méthode</TabsTrigger>
           <TabsTrigger value="gpt">IA</TabsTrigger>
         </TabsList>
 
@@ -277,6 +284,19 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
           <NotairesPanel
             city={serialized.city as string | null}
             propertyType={serialized.propertyType as string | null}
+          />
+        </TabsContent>
+
+        <TabsContent value="methode" className="space-y-4 mt-4">
+          <MethodeCalculPanel
+            dvfStats={dvfStats}
+            listings={safeListings}
+            adjustments={safeAdjustments as Adjustment[]}
+            surface={serialized.surface as number}
+            valuationPsm={serialized.valuationPsm as number}
+            valuationLow={serialized.valuationLow as number}
+            valuationHigh={serialized.valuationHigh as number}
+            valuationMid={serialized.valuationMid as number}
           />
         </TabsContent>
 

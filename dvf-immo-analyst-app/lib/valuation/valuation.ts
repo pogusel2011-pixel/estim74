@@ -37,8 +37,10 @@ export function computeValuation(
   let isIndicative = false;
 
   if (dvfStats && dvfStats.count >= 5) {
+    // Priorité à la moyenne pondérée si disponible, sinon médiane
+    const dvfReferencePsm = dvfStats.weightedAvgPsm ?? dvfStats.medianPsm;
     // Appliquer la pression de marché sur le PSM de base DVF
-    basePsm = Math.round(dvfStats.medianPsm * (1 + marketPressureAdj));
+    basePsm = Math.round(dvfReferencePsm * (1 + marketPressureAdj));
     dvfWeight = 0.7;
     method = "dvf_stats";
     if (marketPressureAdj !== 0) {
@@ -53,8 +55,9 @@ export function computeValuation(
     listingsWeight = 0.7;
     method = "comparables";
   } else if (dvfStats && dvfStats.count > 0 && listings.length > 0) {
+    const dvfReferencePsm = dvfStats.weightedAvgPsm ?? dvfStats.medianPsm;
     const listingsPsm = listings.reduce((s, l) => s + l.pricePsm, 0) / listings.length;
-    basePsm = Math.round(dvfStats.medianPsm * (1 + marketPressureAdj) * 0.7 + listingsPsm * 0.96 * 0.3);
+    basePsm = Math.round(dvfReferencePsm * (1 + marketPressureAdj) * 0.7 + listingsPsm * 0.96 * 0.3);
     dvfWeight = 0.7;
     listingsWeight = 0.3;
     method = "mixed";

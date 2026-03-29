@@ -2,7 +2,7 @@ import { ActiveListing } from "@/types/listing";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ListingCard } from "./listing-card";
-import { Search, WifiOff } from "lucide-react";
+import { Search, WifiOff, AlertTriangle } from "lucide-react";
 
 interface Props {
   listings: ActiveListing[];
@@ -11,6 +11,8 @@ interface Props {
 
 export function ActiveListingsPanel({ listings, apiAvailable = true }: Props) {
   const hasListings = listings.length > 0;
+  const outlierCount = listings.filter((l) => l.outlier).length;
+  const cleanCount = listings.length - outlierCount;
 
   return (
     <Card>
@@ -24,9 +26,17 @@ export function ActiveListingsPanel({ listings, apiAvailable = true }: Props) {
               API non configurée
             </Badge>
           ) : hasListings ? (
-            <Badge className="gap-1 font-normal text-xs bg-green-600 hover:bg-green-600 text-white">
-              Marché actif — {listings.length} annonce{listings.length > 1 ? "s" : ""}
-            </Badge>
+            <>
+              <Badge className="gap-1 font-normal text-xs bg-green-600 hover:bg-green-600 text-white">
+                Marché actif — {cleanCount} annonce{cleanCount > 1 ? "s" : ""} retenue{cleanCount > 1 ? "s" : ""}
+              </Badge>
+              {outlierCount > 0 && (
+                <Badge variant="outline" className="gap-1 font-normal text-xs text-orange-600 border-orange-300">
+                  <AlertTriangle className="h-3 w-3" />
+                  {outlierCount} exclue{outlierCount > 1 ? "s" : ""}
+                </Badge>
+              )}
+            </>
           ) : (
             <Badge variant="secondary" className="font-normal text-xs">
               Aucune annonce comparable

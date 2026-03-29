@@ -61,10 +61,13 @@ export function DVFStatsPanel({ stats, sampleSize, perimeterKm, requestedRadiusK
       ? `${retainedCount} retenue${retainedCount > 1 ? "s" : ""} / ${excludedCount} exclue${excludedCount > 1 ? "s" : ""} ⚠️`
       : String(retainedCount);
 
-  const rows = [
+  const rows: { label: string; value: string; highlight?: boolean }[] = [
     { label: "Transactions", value: transactionsValue },
     { label: "Médiane €/m²", value: formatPsm(stats.medianPsm) },
-    { label: "Moyenne €/m²", value: formatPsm(stats.meanPsm) },
+    ...(stats.weightedAvgPsm != null
+      ? [{ label: "Moy. pondérée €/m²", value: formatPsm(stats.weightedAvgPsm), highlight: true }]
+      : []),
+    { label: "Moyenne simple €/m²", value: formatPsm(stats.meanPsm) },
     { label: "Q1 – Q3", value: formatPsm(stats.p25Psm) + " – " + formatPsm(stats.p75Psm) },
     { label: "Min – Max", value: formatPsm(stats.minPsm) + " – " + formatPsm(stats.maxPsm) },
     { label: "Période", value: formatDate(stats.oldestDate) + " – " + formatDate(stats.newestDate) },
@@ -98,11 +101,21 @@ export function DVFStatsPanel({ stats, sampleSize, perimeterKm, requestedRadiusK
       </CardHeader>
       <CardContent>
         <dl className="space-y-2">
-          {rows.map(({ label, value }) => (
-            <div key={label} className="flex justify-between text-sm gap-2">
-              <dt className="text-muted-foreground shrink-0">{label}</dt>
+          {rows.map(({ label, value, highlight }) => (
+            <div
+              key={label}
+              className={[
+                "flex justify-between text-sm gap-2",
+                highlight ? "bg-primary/5 -mx-1 px-1 py-0.5 rounded" : "",
+              ].join(" ")}
+            >
+              <dt className={["shrink-0", highlight ? "text-primary font-medium" : "text-muted-foreground"].join(" ")}>
+                {label}
+                {highlight && <span className="ml-1 text-xs font-normal text-primary/70">(retenu)</span>}
+              </dt>
               <dd className={[
                 "font-medium text-right",
+                highlight ? "text-primary" : "",
                 label === "Transactions" && excludedCount && excludedCount > 0
                   ? "text-orange-600"
                   : "",
