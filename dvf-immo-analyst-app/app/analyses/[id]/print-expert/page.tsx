@@ -7,6 +7,7 @@ import { computePrixM2, removeOutliers } from "@/lib/dvf/outliers";
 import { computeDVFStats } from "@/lib/dvf/stats";
 import { toComparables } from "@/lib/dvf/comparables";
 import { propertyTypeToDvfTypes } from "@/lib/mapping/property-type";
+import { PropertyType } from "@/types/property";
 import { markListingOutliers } from "@/lib/listings/outliers";
 import { percentile, formatPrice, formatPsm, formatDate, formatDateShort } from "@/lib/utils";
 import { PROPERTY_TYPE_LABELS, CONDITION_LABELS, DPE_COLORS, CONFIDENCE_COLORS } from "@/lib/constants";
@@ -72,7 +73,7 @@ export default async function PrintExpertPage({
 
   if (!dvfStats && a.lat && a.lng) {
     try {
-      const dvfTypes = propertyTypeToDvfTypes(a.propertyType as string);
+      const dvfTypes = propertyTypeToDvfTypes(a.propertyType as PropertyType);
       const reqRadius = (a.perimeterKm as number) ?? 0.5;
       const monthsBack = (a.dvfPeriodMonths as number) ?? 24;
       const { mutations, source, radiusKm: fr } = await getDVFMutations(a.lat as number, a.lng as number, reqRadius, monthsBack, dvfTypes);
@@ -245,20 +246,20 @@ export default async function PrintExpertPage({
             </div>
             <div className="cover-meta">
               <span>{a.surface as number} m²</span>
-              {a.rooms && <span>{a.rooms as number} pièces</span>}
-              {a.yearBuilt && <span>Construit en {a.yearBuilt as number}</span>}
-              {conditionLabel && <span>{conditionLabel}</span>}
+              {!!a.rooms && <span>{a.rooms as number} pièces</span>}
+              {!!a.yearBuilt && <span>Construit en {a.yearBuilt as number}</span>}
+              {!!conditionLabel && <span>{conditionLabel}</span>}
             </div>
             <div className="cover-chips">
-              {a.dpeLetter && (
+              {!!a.dpeLetter && (
                 <span className="cover-chip" style={{ borderColor: dpeColor! + "90" }}>DPE {a.dpeLetter as string}</span>
               )}
-              {a.hasParking && <span className="cover-chip">Parking</span>}
-              {a.hasGarage && <span className="cover-chip">Garage</span>}
-              {a.hasBalcony && <span className="cover-chip">Balcon</span>}
-              {a.hasTerrace && <span className="cover-chip">Terrasse</span>}
-              {a.hasPool && <span className="cover-chip">Piscine</span>}
-              {a.hasElevator && <span className="cover-chip">Ascenseur</span>}
+              {!!a.hasParking && <span className="cover-chip">Parking</span>}
+              {!!a.hasGarage && <span className="cover-chip">Garage</span>}
+              {!!a.hasBalcony && <span className="cover-chip">Balcon</span>}
+              {!!a.hasTerrace && <span className="cover-chip">Terrasse</span>}
+              {!!a.hasPool && <span className="cover-chip">Piscine</span>}
+              {!!a.hasElevator && <span className="cover-chip">Ascenseur</span>}
             </div>
             <div className="cover-footer-row">
               <div>
@@ -295,7 +296,7 @@ export default async function PrintExpertPage({
                     <div className={`estim-box ${isIndicative ? "amber" : "main"}`}>
                       <div className={`estim-label ${isIndicative ? "amber" : "main"}`}>Estimation centrale</div>
                       <div className={`estim-price ${isIndicative ? "amber" : "main"}`}>{formatPrice(a.valuationMid as number)}</div>
-                      {a.valuationPsm && <div className={`estim-psm ${isIndicative ? "" : "main"}`}>{formatPsm(a.valuationPsm as number)}</div>}
+                      {!!a.valuationPsm && <div className={`estim-psm ${isIndicative ? "" : "main"}`}>{formatPsm(a.valuationPsm as number)}</div>}
                     </div>
                     <div className="estim-box">
                       <div className="estim-label">Fourchette haute</div>
@@ -303,7 +304,7 @@ export default async function PrintExpertPage({
                     </div>
                   </div>
                   <div className="chips-row">
-                    {a.confidence != null && a.confidenceLabel && (
+                    {a.confidence != null && !!a.confidenceLabel && (
                       <span className="chip" style={{ borderColor: CONFIDENCE_COLORS[a.confidenceLabel as string] ?? "#E5E7EB", color: CONFIDENCE_COLORS[a.confidenceLabel as string] ?? "#374151" }}>
                         Fiabilité : {a.confidenceLabel as string} ({Math.round((a.confidence as number) * 100)}/100)
                       </span>

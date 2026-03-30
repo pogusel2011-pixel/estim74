@@ -7,6 +7,7 @@ import { computePrixM2, removeOutliers } from "@/lib/dvf/outliers";
 import { computeDVFStats } from "@/lib/dvf/stats";
 import { toComparables } from "@/lib/dvf/comparables";
 import { propertyTypeToDvfTypes } from "@/lib/mapping/property-type";
+import { PropertyType } from "@/types/property";
 import { percentile, formatPrice, formatPsm, formatDate, formatDateShort } from "@/lib/utils";
 import { PROPERTY_TYPE_LABELS, CONDITION_LABELS, DPE_COLORS, CONFIDENCE_COLORS } from "@/lib/constants";
 import { DVFStats, DVFComparable } from "@/types/dvf";
@@ -89,7 +90,7 @@ export default async function PrintPage({
 
   if (!dvfStats && a.lat && a.lng) {
     try {
-      const dvfTypes = propertyTypeToDvfTypes(a.propertyType as string);
+      const dvfTypes = propertyTypeToDvfTypes(a.propertyType as PropertyType);
       const reqRadius = (a.perimeterKm as number) ?? 0.5;
       const monthsBack = (a.dvfPeriodMonths as number) ?? 24;
       const { mutations, source, radiusKm: finalRadius } = await getDVFMutations(
@@ -248,25 +249,25 @@ export default async function PrintPage({
             <div style={{ display: "flex", flexWrap: "wrap", gap: "8px 20px", marginTop: 6, fontSize: "8.5pt", color: "#475569" }}>
               <span><strong style={{ color: "#111" }}>Type</strong> : {propertyLabel}</span>
               <span><strong style={{ color: "#111" }}>Surface</strong> : {a.surface as number} m²</span>
-              {a.rooms && <span><strong style={{ color: "#111" }}>Pièces</strong> : {a.rooms as number}</span>}
-              {a.bedrooms && <span><strong style={{ color: "#111" }}>Chambres</strong> : {a.bedrooms as number}</span>}
+              {!!a.rooms && <span><strong style={{ color: "#111" }}>Pièces</strong> : {a.rooms as number}</span>}
+              {!!a.bedrooms && <span><strong style={{ color: "#111" }}>Chambres</strong> : {a.bedrooms as number}</span>}
               {a.floor != null && <span><strong style={{ color: "#111" }}>Étage</strong> : {a.floor as number}{a.totalFloors ? `/${a.totalFloors}` : ""}</span>}
-              {a.yearBuilt && <span><strong style={{ color: "#111" }}>Construction</strong> : {a.yearBuilt as number}</span>}
-              {conditionLabel && <span><strong style={{ color: "#111" }}>État</strong> : {conditionLabel}</span>}
+              {!!a.yearBuilt && <span><strong style={{ color: "#111" }}>Construction</strong> : {a.yearBuilt as number}</span>}
+              {!!conditionLabel && <span><strong style={{ color: "#111" }}>État</strong> : {conditionLabel}</span>}
               <span><strong style={{ color: "#111" }}>Date</strong> : {formatDate(a.createdAt as string)}</span>
             </div>
             <div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
-              {a.dpeLetter && (
+              {!!a.dpeLetter && (
                 <span className="badge" style={{ borderColor: dpeColor!, color: dpeColor!, backgroundColor: dpeColor! + "18" }}>
                   DPE {a.dpeLetter as string}
                 </span>
               )}
-              {a.hasParking && <span className="badge" style={{ borderColor: "#94a3b8", color: "#475569" }}>Parking</span>}
-              {a.hasGarage && <span className="badge" style={{ borderColor: "#94a3b8", color: "#475569" }}>Garage</span>}
-              {a.hasBalcony && <span className="badge" style={{ borderColor: "#94a3b8", color: "#475569" }}>Balcon</span>}
-              {a.hasTerrace && <span className="badge" style={{ borderColor: "#94a3b8", color: "#475569" }}>Terrasse</span>}
-              {a.hasPool && <span className="badge" style={{ borderColor: "#94a3b8", color: "#475569" }}>Piscine</span>}
-              {a.hasElevator && <span className="badge" style={{ borderColor: "#94a3b8", color: "#475569" }}>Ascenseur</span>}
+              {!!a.hasParking && <span className="badge" style={{ borderColor: "#94a3b8", color: "#475569" }}>Parking</span>}
+              {!!a.hasGarage && <span className="badge" style={{ borderColor: "#94a3b8", color: "#475569" }}>Garage</span>}
+              {!!a.hasBalcony && <span className="badge" style={{ borderColor: "#94a3b8", color: "#475569" }}>Balcon</span>}
+              {!!a.hasTerrace && <span className="badge" style={{ borderColor: "#94a3b8", color: "#475569" }}>Terrasse</span>}
+              {!!a.hasPool && <span className="badge" style={{ borderColor: "#94a3b8", color: "#475569" }}>Piscine</span>}
+              {!!a.hasElevator && <span className="badge" style={{ borderColor: "#94a3b8", color: "#475569" }}>Ascenseur</span>}
             </div>
           </div>
 
@@ -291,7 +292,7 @@ export default async function PrintPage({
                   <div className={`price-box ${isIndicative ? "amber" : "main"}`}>
                     <div className="label" style={{ color: isIndicative ? "#92400e" : "#1e40af" }}>Estimation centrale</div>
                     <div className={`val ${isIndicative ? "amber" : ""}`}>{formatPrice(a.valuationMid as number)}</div>
-                    {a.valuationPsm && <div className="sub">{formatPsm(a.valuationPsm as number)}</div>}
+                    {!!a.valuationPsm && <div className="sub">{formatPsm(a.valuationPsm as number)}</div>}
                   </div>
                   <div className="price-box">
                     <div className="label">Haute</div>
@@ -300,7 +301,7 @@ export default async function PrintPage({
                 </div>
 
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
-                  {a.confidence != null && a.confidenceLabel && (
+                  {a.confidence != null && !!a.confidenceLabel && (
                     <span className="badge" style={{ borderColor: confidenceColor!, color: confidenceColor!, backgroundColor: confidenceColor! + "18" }}>
                       Fiabilité : {a.confidenceLabel as string} ({Math.round((a.confidence as number) * 100)}%)
                     </span>

@@ -15,7 +15,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     const refId = params.id.slice(0, 8).toUpperCase();
     const pdfBytes = await buildClientPdf(a, refId, { includeListingPrice });
 
-    return new NextResponse(pdfBytes, {
+    return new NextResponse(Buffer.from(pdfBytes), {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",

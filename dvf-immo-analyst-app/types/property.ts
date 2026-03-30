@@ -6,9 +6,9 @@ export type Orientation = "N" | "NE" | "E" | "SE" | "S" | "SO" | "O" | "NO";
 
 export interface PropertyInput {
   // Localisation
-  address: string;
-  postalCode: string;
-  city: string;
+  address?: string;
+  postalCode?: string;
+  city?: string;
   lat?: number;
   lng?: number;
   irisCode?: string;

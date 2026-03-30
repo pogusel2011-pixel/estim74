@@ -13,7 +13,7 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
     const refId = params.id.slice(0, 8).toUpperCase();
     const pdfBytes = await buildExpertPdf(a, refId);
 
-    return new NextResponse(pdfBytes, {
+    return new NextResponse(Buffer.from(pdfBytes), {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",

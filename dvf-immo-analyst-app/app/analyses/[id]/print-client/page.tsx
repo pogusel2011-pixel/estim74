@@ -230,11 +230,11 @@ export default async function PrintClientPage({
               </div>
               <div className="cover-chips">
                 <span className="cover-chip">{a.surface as number} m²</span>
-                {a.rooms && <span className="cover-chip">{a.rooms as number} pièces</span>}
-                {a.bedrooms && <span className="cover-chip">{a.bedrooms as number} chambres</span>}
-                {a.yearBuilt && <span className="cover-chip">Construit en {a.yearBuilt as number}</span>}
-                {conditionLabel && <span className="cover-chip">{conditionLabel}</span>}
-                {a.dpeLetter && (
+                {!!a.rooms && <span className="cover-chip">{a.rooms as number} pièces</span>}
+                {!!a.bedrooms && <span className="cover-chip">{a.bedrooms as number} chambres</span>}
+                {!!a.yearBuilt && <span className="cover-chip">Construit en {a.yearBuilt as number}</span>}
+                {!!conditionLabel && <span className="cover-chip">{conditionLabel}</span>}
+                {!!a.dpeLetter && (
                   <span className="cover-chip" style={{ borderColor: dpeColor! + "80" }}>DPE {a.dpeLetter as string}</span>
                 )}
               </div>
@@ -270,7 +270,7 @@ export default async function PrintClientPage({
                   <div className={`estim-box${isIndicative ? " amber" : ""}`}>
                     <div className={`estim-label${isIndicative ? " amber" : ""}`}>Estimation centrale</div>
                     <div className={`estim-price${isIndicative ? " amber" : ""}`}>{formatPrice(a.valuationMid as number)}</div>
-                    {a.valuationPsm && <div className={`estim-psm${isIndicative ? " amber" : ""}`}>{formatPsm(a.valuationPsm as number)}</div>}
+                    {!!a.valuationPsm && <div className={`estim-psm${isIndicative ? " amber" : ""}`}>{formatPsm(a.valuationPsm as number)}</div>}
                   </div>
                   <div className="range-row">
                     <div className="range-box">

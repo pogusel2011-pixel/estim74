@@ -5,7 +5,7 @@ import { computePrixM2, removeOutliers } from "@/lib/dvf/outliers";
 import { computeDVFStats } from "@/lib/dvf/stats";
 import { toComparables } from "@/lib/dvf/comparables";
 import { propertyTypeToDvfTypes } from "@/lib/mapping/property-type";
-import { PropertyType } from "@/types/property";
+import { PropertyType, Condition } from "@/types/property";
 import { findActiveListings } from "@/lib/moteurimmo/search";
 import { computeValuation } from "@/lib/valuation/valuation";
 import { fetchNotairesMarket } from "@/lib/notaires/market-check";
@@ -179,7 +179,7 @@ export async function POST(
         lat,
         lng,
         communeCode: communeCode ?? null,
-        propertyType: property.propertyType as string,
+        propertyType: property.propertyType as PropertyType,
         surface: property.surface as number,
         rooms: property.rooms as number ?? null,
         bedrooms: property.bedrooms as number ?? null,
@@ -187,7 +187,7 @@ export async function POST(
         totalFloors: property.totalFloors as number ?? null,
         landSurface: property.landSurface as number ?? null,
         yearBuilt: property.yearBuilt as number ?? null,
-        condition: property.condition as string,
+        condition: property.condition as Condition,
         dpeLetter: property.dpeLetter as string ?? null,
         hasParking: property.hasParking as boolean,
         hasGarage: property.hasGarage as boolean,

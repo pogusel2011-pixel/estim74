@@ -38,6 +38,7 @@ import { ActiveListing } from "@/types/listing";
 import { Adjustment, ConfidenceFactors } from "@/types/valuation";
 import { GPTOutput } from "@/types/gpt";
 import { MarketReading as MarketReadingType } from "@/types/analysis";
+import { PropertyType } from "@/types/property";
 
 export const dynamic = "force-dynamic";
 
@@ -103,7 +104,7 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
 
   if (!dvfStats && serialized.lat && serialized.lng) {
     try {
-      const dvfTypes = propertyTypeToDvfTypes(serialized.propertyType as string);
+      const dvfTypes = propertyTypeToDvfTypes(serialized.propertyType as PropertyType);
       const requestedRadius = (serialized.perimeterKm as number | null) ?? 0.5;
       const monthsBack = (serialized.dvfPeriodMonths as number | null) ?? 24;
       const { mutations, source, radiusKm: finalRadius } = await getDVFMutations(
