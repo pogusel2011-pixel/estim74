@@ -6,6 +6,20 @@ import { GPTDossier } from "@/types/gpt";
 import { PROPERTY_TYPE_LABELS, CONDITION_LABELS } from "@/lib/constants";
 import { formatPrice, formatPsm } from "@/lib/utils";
 
+const ORIENTATION_LABELS: Record<string, string> = {
+  N: "Nord", NE: "Nord-Est", E: "Est", SE: "Sud-Est",
+  S: "Sud", SO: "Sud-Ouest", O: "Ouest", NO: "Nord-Ouest",
+};
+
+const VIEW_LABELS: Record<string, string> = {
+  degagee: "Vue dégagée",
+  lac: "Vue lac / mer",
+  montagne: "Vue montagne",
+  jardin: "Vue jardin",
+  rue: "Vue sur rue",
+  cour: "Vue sur cour",
+};
+
 export function buildGPTDossier(
   property: PropertyInput,
   valuation: ValuationResult,
@@ -33,8 +47,8 @@ export function buildGPTDossier(
         property.hasCellar && "Cave",
         property.hasElevator && "Ascenseur",
       ].filter(Boolean),
-      orientation: property.orientation,
-      vue: property.view,
+      orientation: property.orientation ? (ORIENTATION_LABELS[property.orientation] ?? property.orientation) : undefined,
+      vue: property.view ? (VIEW_LABELS[property.view] ?? property.view) : undefined,
     },
     valuation: {
       fourchetteBasse: formatPrice(valuation.low),
