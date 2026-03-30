@@ -54,7 +54,9 @@ export function toComparables(
     .filter((m) => m.prix_m2 != null && m.valeur_fonciere > 0)
     .map((m): DVFComparable => {
       const surface = m.surface_reelle_bati ?? m.surface_terrain ?? 0;
-      const adresse = [m.adresse_numero, m.adresse_nom_voie].filter(Boolean).join(" ");
+      const adresseRaw = [m.adresse_numero, m.adresse_nom_voie].filter(Boolean).join(" ");
+      // Normalise "30AVENUE" → "30 AVENUE" (cas CSV où numéro et voie sont collés)
+      const adresse = adresseRaw.replace(/^(\d+[A-Za-z]?)([A-Za-zÀ-ÖØ-öø-ÿ])/, "$1 $2");
 
       const score = scoreComparable(
         { surface, distanceM: m.distance_m, date: m.date_mutation, rooms: m.nombre_pieces_principales },
@@ -83,6 +85,8 @@ export function toComparables(
         topComparable: false, // set below
         source: m._source ?? "csv",
         outlier: m.outlier ?? false,
+        lat: m.lat,
+        lng: m.lon, // DVFMutation uses `lon`, DVFComparable uses `lng`
       };
     })
     .sort((a, b) => (b.score ?? 0) - (a.score ?? 0));

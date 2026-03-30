@@ -209,11 +209,11 @@ export const BUSINESS_RULES = {
 
   // ── Détection des valeurs aberrantes DVF (outliers) ───────────────────────
   OUTLIER_IQR_FACTOR: {
-    id: "RULE_OUTLIER_IQR_FACTOR_V1",
-    value: 2.0,
+    id: "RULE_OUTLIER_IQR_FACTOR_V2",
+    value: 1.5,
     unit: "×IQR",
-    description: "Facteur IQR pour la détection des outliers DVF : Q1 - 2×IQR / Q3 + 2×IQR",
-    version: "V1",
+    description: "Facteur IQR pour la détection des outliers DVF : Q1 - 1.5×IQR / Q3 + 1.5×IQR (Tukey fence standard). Valeur 2.0 trop permissive sur les petits datasets — des transactions à 40% sous la médiane passaient le filtre.",
+    version: "V2",
   },
   OUTLIER_MEDIAN_DEVIATION: {
     id: "RULE_OUTLIER_MEDIAN_DEV_V1",

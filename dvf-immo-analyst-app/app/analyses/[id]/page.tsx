@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, MapPin } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
 import { ResimulateButton } from "@/components/analysis/resimulate-button";
@@ -14,7 +14,8 @@ import { ActiveListingsPanel } from "@/components/listings/active-listings-panel
 import { DVFRecentSalesPanel } from "@/components/listings/dvf-recent-sales-panel";
 import { MarketReading } from "@/components/analysis/market-reading";
 import { NotairesPanel } from "@/components/analysis/notaires-panel";
-import { PerimeterPanel } from "@/components/analysis/perimeter-panel";
+import { DVFComparablesMapDynamic } from "@/components/dvf/dvf-comparables-map-dynamic";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DeptBenchmarkPanel } from "@/components/dvf/dept-benchmark-panel";
 import { GPTActionsPanel } from "@/components/gpt/gpt-actions-panel";
 import { ChatGPTButton } from "@/components/gpt/chatgpt-button";
@@ -259,7 +260,30 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
               requestedRadiusKm={requestedRadiusKm}
             />
             <div className="lg:col-span-2">
-              <PerimeterPanel lat={serialized.lat} lng={serialized.lng} perimeterKm={perimeterKm} />
+              {serialized.lat && serialized.lng ? (
+                <Card className="flex-1 h-full">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <MapPin className="h-4 w-4 text-primary" />
+                      Transactions comparables{perimeterKm ? ` • Périmètre ${perimeterKm} km` : ""}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-3" style={{ height: 310 }}>
+                    <DVFComparablesMapDynamic
+                      comparables={dvfComparables}
+                      subjectLat={serialized.lat as number}
+                      subjectLng={serialized.lng as number}
+                      perimeterKm={perimeterKm}
+                    />
+                  </CardContent>
+                </Card>
+              ) : (
+                <Card className="flex-1">
+                  <CardContent className="pt-6 text-center text-sm text-muted-foreground">
+                    Coordonnées non disponibles
+                  </CardContent>
+                </Card>
+              )}
             </div>
           </div>
           <DVFComparablesTable

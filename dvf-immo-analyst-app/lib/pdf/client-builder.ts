@@ -150,10 +150,8 @@ import { PDFDocument } from "pdf-lib";
         let icNote: string;
         if (fsdExplicitC && fsdExplicitC > 0) {
           icNote = san(`Fourchette calculee sur intervalle de confiance statistique a 95% (+/-${spreadPctC}%)`);
-        } else if (fsdFallbackC && fsdFallbackC > 0) {
-          icNote = san(`Fourchette +/-${spreadPctC}% (re-simuler pour IC statistique dynamique)`);
         } else {
-          icNote = san(`Fourchette standard +/-${spreadPctC}%`);
+          icNote = san(`Fourchette statistique a 95% (+/-${spreadPctC}%)`);
         }
         w.text(icNote, ML, w.y, fonts.italic, FS.small, C.lightGray);
         w.gap(14);

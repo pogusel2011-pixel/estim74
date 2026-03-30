@@ -165,11 +165,19 @@ export function computeAdjustments(property: PropertyInput): Adjustment[] {
     cour: -0.01,
     rue: 0,
   };
+  const viewLabels: Record<string, string> = {
+    lac: "Vue lac / mer",
+    montagne: "Vue montagne",
+    degagee: "Vue dégagée",
+    jardin: "Vue sur jardin privatif",
+    cour: "Vue sur cour",
+    rue: "Vue sur rue",
+  };
   const viewFactor =
     property.view && viewFactors[property.view] != null ? viewFactors[property.view] : 0;
   if (viewFactor !== 0) {
     adjustments.push({
-      label: `Vue (${property.view})`,
+      label: viewLabels[property.view!] ?? `Vue (${property.view})`,
       factor: viewFactor,
       impact: viewFactor,
       category: "view",

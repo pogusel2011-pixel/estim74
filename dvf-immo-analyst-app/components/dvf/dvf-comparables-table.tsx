@@ -127,7 +127,7 @@ export function DVFComparablesTable({ comparables, hasLiveData }: Props) {
             <tbody>
               {displayed.map((c, i) => (
                 <tr
-                  key={c.id ?? i}
+                  key={`${c.id ?? "c"}_${i}`}
                   className={[
                     "border-b last:border-0 transition-colors",
                     c.outlier

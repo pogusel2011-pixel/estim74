@@ -152,7 +152,9 @@ import { PDFDocument } from "pdf-lib";
     w.gap(4);
 
     if (adjustments.length > 0) {
-      const findAdj = (frag?: string, cat?: string): Adjustment | null => {
+      const findAdj = (frag?: string, cat?: string, catFrag?: string): Adjustment | null => {
+        // catFrag : cherche frag uniquement dans la catégorie cat (évite les faux positifs cross-catégorie)
+        if (catFrag && cat) return adjustments.find((x) => x.category === cat && x.label.toLowerCase().includes(catFrag.toLowerCase())) ?? null;
         if (frag) return adjustments.find((x) => x.label.toLowerCase().includes(frag.toLowerCase())) ?? null;
         if (cat) return adjustments.find((x) => x.category === cat) ?? null;
         return null;
@@ -169,7 +171,9 @@ import { PDFDocument } from "pdf-lib";
         { critere: "Piscine", adj: findAdj("piscine") },
         { critere: "Orientation", adj: findAdj(undefined, "orientation") },
         { critere: "Vue", adj: findAdj(undefined, "view") },
-        { critere: "Jardin / terrain", adj: findAdj("jardin") ?? findAdj("terrain") },
+        // Recherche "jardin" ou "terrain" uniquement dans la catégorie "features"
+        // pour ne pas capturer "Vue sur jardin privatif" (category="view")
+        { critere: "Jardin / terrain", adj: findAdj(undefined, "features", "jardin") ?? findAdj(undefined, "features", "terrain") },
       ];
       const adjRows = adjDefs.map(({ critere, adj }) => {
         if (!adj) return [critere, "-", "-", "-", "-", "-"];

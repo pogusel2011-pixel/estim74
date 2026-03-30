@@ -89,6 +89,10 @@ export interface DVFComparable {
   source?: "csv" | "live";
   /** true si la transaction est une valeur aberrante exclue du calcul de référence */
   outlier?: boolean;
+  /** Latitude du bien (coordonnées WGS84, issues du CSV DVF ou de l'API) */
+  lat?: number;
+  /** Longitude du bien (coordonnées WGS84, issues du CSV DVF ou de l'API) */
+  lng?: number;
 }
 
 export interface DVFFilters {
