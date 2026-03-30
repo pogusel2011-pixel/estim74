@@ -5,16 +5,27 @@ import { haversineDistance } from "@/lib/utils";
  * Normalise une annonce brute retournée par POST https://moteurimmo.fr/api/ads
  * vers notre type ActiveListing.
  *
- * Champs réels observés dans la réponse :
- *   reference, title, price, surface, rooms, bedrooms, floor,
- *   pricePerSquareMeter, landSurface, energyGrade, gasGrade,
- *   options (string[]), position ([lon,lat] | null),
- *   location { city, postalCode, inseeCode, coordinates:[lon,lat] },
- *   publisher { type, name, phone, email }, url, category, type,
- *   pictureUrl, pictureUrls[], lastEventDate
+ * Mapping officiel des champs MoteurImmo :
+ *   uniqueId         → id
+ *   title            → title
+ *   location.city    → city
+ *   location.postalCode → postalCode
+ *   category         → propertyType
+ *   surface          → surface
+ *   rooms            → rooms
+ *   price            → price
+ *   pricePerSquareMeter → pricePsm
+ *   description      → description
+ *   creationDate     → publishedAt
+ *   pictureUrls      → photos
+ *   options          → features (tableau de strings)
+ *   energyGrade      → dpe
+ *   position[1]      → lat   (position = [lng, lat])
+ *   position[0]      → lng
+ *   url              → url
  */
 export function normalizeMoteurImmoListing(
-  raw: any, // eslint-disable-line -- raw API response, shape varies per immoapi.app version
+  raw: any, // eslint-disable-line -- forme variable selon la version de l'API
   subjectLat?: number,
   subjectLng?: number
 ): ActiveListing | null {
@@ -22,21 +33,20 @@ export function normalizeMoteurImmoListing(
   const surface = Number(raw.surface ?? 0);
   if (!price || !surface) return null;
 
-  // Coordonnées : position [lon, lat] ou location.coordinates [lon, lat]
-  const coords: [number, number] | null =
+  // position = [lng, lat] (GeoJSON order)
+  const lat: number | undefined =
     Array.isArray(raw.position) && raw.position.length >= 2
-      ? raw.position
-      : Array.isArray(raw.location?.coordinates) && raw.location.coordinates.length >= 2
-      ? raw.location.coordinates
-      : null;
-
-  const listingLng = coords?.[0];
-  const listingLat = coords?.[1];
+      ? Number(raw.position[1])
+      : undefined;
+  const lng: number | undefined =
+    Array.isArray(raw.position) && raw.position.length >= 2
+      ? Number(raw.position[0])
+      : undefined;
 
   // Distance Haversine en mètres
   let distance: number | undefined;
-  if (subjectLat != null && subjectLng != null && listingLat != null && listingLng != null) {
-    distance = Math.round(haversineDistance(subjectLat, subjectLng, listingLat, listingLng));
+  if (subjectLat != null && subjectLng != null && lat != null && lng != null) {
+    distance = Math.round(haversineDistance(subjectLat, subjectLng, lat, lng));
   }
 
   const pricePsm = raw.pricePerSquareMeter
@@ -44,10 +54,8 @@ export function normalizeMoteurImmoListing(
     : Math.round(price / surface);
 
   const location = raw.location ?? {};
-  const publisher = raw.publisher ?? {};
 
-  // Options — l'API retourne un tableau de strings: ["hasGarage", "hasTerrace", ...]
-  const opts: string[] = Array.isArray(raw.options) ? raw.options : [];
+  // Options — tableau de strings : ["hasGarage", "hasTerrace", ...]
   const OPTION_LABELS: Record<string, string> = {
     hasGarage: "Garage",
     hasParking: "Parking",
@@ -62,6 +70,7 @@ export function normalizeMoteurImmoListing(
     hasPool: "Piscine",
     isNew: "Neuf",
   };
+  const opts: string[] = Array.isArray(raw.options) ? raw.options : [];
   const features: string[] = [];
   const seen = new Set<string>();
   for (const opt of opts) {
@@ -72,14 +81,15 @@ export function normalizeMoteurImmoListing(
     }
   }
 
+  const publisher = raw.publisher ?? {};
+
   return {
-    id: String(raw.reference ?? raw.adId ?? raw.id ?? Math.random()),
+    id: String(raw.uniqueId ?? raw.reference ?? raw.id ?? Math.random()),
     source: "MoteurImmo",
     url: raw.url,
     title: raw.title ?? "Annonce",
     city: location.city ?? raw.city ?? "",
     postalCode: location.postalCode ?? raw.postalCode,
-    inseeCode: location.inseeCode,
     propertyType: raw.category ?? raw.type ?? "",
     surface,
     rooms: raw.rooms != null ? Number(raw.rooms) : undefined,
@@ -88,14 +98,14 @@ export function normalizeMoteurImmoListing(
     price,
     pricePsm,
     description: raw.description,
-    publishedAt: raw.publicationDate ?? raw.lastEventDate,
+    publishedAt: raw.creationDate ?? raw.publicationDate ?? raw.lastEventDate,
     lastEventDate: raw.lastEventDate,
     photos: raw.pictureUrls ?? (raw.pictureUrl ? [raw.pictureUrl] : []),
-    pictureUrl: raw.pictureUrl ?? raw.pictureUrls?.[0],
+    pictureUrl: raw.pictureUrls?.[0] ?? raw.pictureUrl,
     features,
     dpe: raw.energyGrade ?? undefined,
-    lat: listingLat,
-    lng: listingLng,
+    lat,
+    lng,
     distance,
     publisher: {
       name: publisher.name,

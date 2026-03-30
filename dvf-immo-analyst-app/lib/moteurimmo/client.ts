@@ -4,20 +4,19 @@ import { normalizeMoteurImmoListing } from "./normalize";
 /**
  * API MoteurImmo — annonces actives à la vente.
  *
- * Endpoint : GET https://api.moteurimmo.fr/v1/annonces
- * Auth     : Header X-Api-Key: [MOTEURIMMO_API_KEY]
- * Params   : type_bien, code_postal, surface_min, surface_max,
- *            nb_pieces_min, nb_pieces_max, nb_resultats (max 20)
+ * Endpoint : POST https://moteurimmo.fr/api/ads
+ * Auth     : apiKey dans le corps JSON
+ * Réponse  : tableau d'annonces (voir normalizeMoteurImmoListing pour le mapping)
  */
 
-const API_BASE = "https://api.moteurimmo.fr/v1";
-const ANNONCES_ENDPOINT = `${API_BASE}/annonces`;
+const API_URL = "https://moteurimmo.fr/api/ads";
 const TIMEOUT_MS = 8000;
-const MAX_RESULTATS = 20;
 
-const TYPE_BIEN_MAP: Record<string, string> = {
-  APARTMENT: "appartement",
-  HOUSE: "maison",
+const CATEGORY_MAP: Record<string, string> = {
+  APARTMENT: "flat",
+  HOUSE: "house",
+  LAND: "land",
+  COMMERCIAL: "premises",
 };
 
 export interface MoteurImmoSearchParams {
@@ -45,33 +44,32 @@ export async function searchMoteurImmo(
     return [];
   }
 
-  const typeBien = TYPE_BIEN_MAP[params.propertyType];
-  if (!typeBien) {
+  const category = CATEGORY_MAP[params.propertyType];
+  if (!category) {
     return [];
   }
 
-  const qp: Record<string, string> = {
-    type_bien: typeBien,
-    code_postal: params.postalCode,
-    nb_resultats: String(Math.min(params.nbResultats ?? MAX_RESULTATS, MAX_RESULTATS)),
+  const body: Record<string, unknown> = {
+    apiKey,
+    types: ["sale"],
+    categories: [category],
+    locations: [{ postalCode: params.postalCode }],
+    maxLength: Math.min(params.nbResultats ?? 20, 20),
+    options: ["isNotSoldRented"],
   };
-  if (params.surfaceMin) qp.surface_min = String(params.surfaceMin);
-  if (params.surfaceMax) qp.surface_max = String(params.surfaceMax);
-  if (params.roomsMin != null) qp.nb_pieces_min = String(params.roomsMin);
-  if (params.roomsMax != null) qp.nb_pieces_max = String(params.roomsMax);
-
-  const url = `${ANNONCES_ENDPOINT}?${new URLSearchParams(qp)}`;
+  if (params.surfaceMin != null) body.surfaceMin = params.surfaceMin;
+  if (params.surfaceMax != null) body.surfaceMax = params.surfaceMax;
+  if (params.roomsMin != null) body.roomsMin = params.roomsMin;
+  if (params.roomsMax != null) body.roomsMax = params.roomsMax;
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
   try {
-    const res = await fetch(url, {
-      method: "GET",
-      headers: {
-        "Accept": "application/json",
-        "X-Api-Key": apiKey,
-      },
+    const res = await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
       signal: controller.signal,
     });
 
@@ -86,7 +84,7 @@ export async function searchMoteurImmo(
     const data = await res.json();
     const raw: unknown[] = Array.isArray(data)
       ? data
-      : (data.annonces ?? data.ads ?? data.results ?? data.data ?? []);
+      : (data.ads ?? data.results ?? data.data ?? []);
 
     const listings = raw
       .map((item) =>
@@ -95,7 +93,7 @@ export async function searchMoteurImmo(
       .filter(Boolean) as ActiveListing[];
 
     console.log(
-      `[MoteurImmo] ${listings.length} annonces (${typeBien}, CP ${params.postalCode})`
+      `[MoteurImmo] ${listings.length} annonces (${category}, CP ${params.postalCode})`
     );
 
     return listings;
