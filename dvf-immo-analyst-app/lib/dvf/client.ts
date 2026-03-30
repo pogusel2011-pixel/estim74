@@ -9,19 +9,25 @@ const MAX_RADIUS_KM = BUSINESS_RULES.GEO_RADIUS_MAX.value;
 const IMMOAPI_BASE = "https://immoapi.app/v1";
 const IMMOAPI_TIMEOUT_MS = 10000;
 const IMMOAPI_MAX_PER_PAGE = 100;
-const IMMOAPI_MAX_PAGES = 3; // cap à 300 résultats par appel
+const IMMOAPI_MAX_PAGES = 3;          // cap à 300 résultats par appel
+const IMMOAPI_RADIUS_MAX_M = 5000;    // API accepte au maximum 5 000 mètres
 
 /**
  * Mappe un enregistrement brut de l'API immoapi.app/v1/mutations/nearby vers DVFMutation.
  *
- * Différences API vs documentation officielle (constatées à l'usage) :
+ * Paramètres officiels de l'endpoint :
+ *  - radius     : entier en mètres (max 5 000 m)
+ *  - lat / lng  : float
+ *  - type_local : "Appartement" | "Maison"
+ *  - per_page   : integer (max 100)
+ *  - page       : integer (pagination)
+ *
+ * Champs de réponse observés :
  *  - response wrapper : `data` (pas `mutations`)
- *  - radius param     : en km (pas en mètres)
- *  - distance         : `distance_km` → à ×1000 pour obtenir distance_m
+ *  - distance         : `distance_km` → ×1000 pour distance_m
  *  - nom_commune      : champ `commune`
  *  - latitude/lon     : strings décimales
  *  - valeur_fonciere  : string décimale
- *  - prix_m2          : non fourni → calculé ici si surface disponible
  */
 function mapImmoApiRecord(raw: Record<string, unknown>): DVFMutation {
   const parseNum = (v: unknown): number => {
@@ -79,9 +85,16 @@ function mapImmoApiRecord(raw: Record<string, unknown>): DVFMutation {
 
 /**
  * Appel à l'API immoapi.app/v1/mutations/nearby — source live complémentaire au CSV.
+ *
+ * Paramètres API officiels :
+ *   lat (float), lng (float), radius (entier mètres, max 5 000),
+ *   type_local ("Appartement" | "Maison"), per_page (max 100), page
+ *
  * Gère la pagination (max IMMOAPI_MAX_PAGES × 100 résultats).
- * Filtre client-side par date (monthsBack).
+ * Filtre côté client par date (monthsBack).
  * Fallback silencieux sur erreur/timeout/clé absente.
+ *
+ * Clé d'authentification : IMMOAPI_KEY
  */
 export async function fetchDVFFromAPI(
   lat: number,
@@ -90,75 +103,69 @@ export async function fetchDVFFromAPI(
   monthsBack = 18,
   typeLocal?: string
 ): Promise<DVFMutation[]> {
-  const apiKey = process.env.MOTEURIMMO_API_KEY;
+  const apiKey = process.env.IMMOAPI_KEY;
   if (!apiKey) {
-    console.warn("[DVF Live] MOTEURIMMO_API_KEY absent — skip immoapi.app");
+    console.warn("[DVF Live] IMMOAPI_KEY absent — skip immoapi.app/v1/mutations/nearby");
     return [];
   }
+
+  // Convertir km → mètres entier, plafonné au maximum API
+  const radiusM = Math.min(Math.round(radiusKm * 1000), IMMOAPI_RADIUS_MAX_M);
 
   const dateMin = new Date();
   dateMin.setMonth(dateMin.getMonth() - monthsBack);
 
-  // Années à interroger selon monthsBack
-  const currentYear = new Date().getFullYear();
-  const minYear = dateMin.getFullYear();
-  const years: number[] = [];
-  for (let y = minYear; y <= currentYear; y++) years.push(y);
-
   const allMutations: DVFMutation[] = [];
 
   try {
-    for (const annee of years) {
-      let page = 1;
-      let hasMore = true;
+    let page = 1;
+    let hasMore = true;
 
-      while (hasMore && page <= IMMOAPI_MAX_PAGES) {
-        const params: Record<string, string> = {
-          lat: String(lat),
-          lng: String(lng),
-          radius: String(radiusKm), // API attend des km
-          annee: String(annee),
-          per_page: String(IMMOAPI_MAX_PER_PAGE),
-          page: String(page),
-        };
-        if (typeLocal) params.type_local = typeLocal;
+    while (hasMore && page <= IMMOAPI_MAX_PAGES) {
+      const params: Record<string, string> = {
+        lat: String(lat),
+        lng: String(lng),
+        radius: String(radiusM),
+        per_page: String(IMMOAPI_MAX_PER_PAGE),
+        page: String(page),
+      };
+      if (typeLocal) params.type_local = typeLocal;
 
-        const url = `${IMMOAPI_BASE}/mutations/nearby?${new URLSearchParams(params)}`;
+      const url = `${IMMOAPI_BASE}/mutations/nearby?${new URLSearchParams(params)}`;
 
-        const res = await fetch(url, {
-          signal: AbortSignal.timeout(IMMOAPI_TIMEOUT_MS),
-          headers: {
-            Accept: "application/json",
-            Authorization: `Bearer ${apiKey}`,
-          },
+      const res = await fetch(url, {
+        signal: AbortSignal.timeout(IMMOAPI_TIMEOUT_MS),
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+      });
+
+      if (!res.ok) {
+        console.warn(`[DVF Live] immoapi.app ${res.status} (page ${page}, rayon ${radiusM}m)`);
+        break;
+      }
+
+      const data = await res.json();
+      const raw: Record<string, unknown>[] =
+        data.data ?? data.mutations ?? data.results ?? [];
+
+      const mapped = raw
+        .map((r) => mapImmoApiRecord(r))
+        .filter((m) => {
+          if (!m.valeur_fonciere || !m.date_mutation) return false;
+          return new Date(m.date_mutation) >= dateMin;
         });
 
-        if (!res.ok) {
-          console.warn(`[DVF Live] immoapi.app ${res.status} (année ${annee}, page ${page})`);
-          break;
-        }
+      allMutations.push(...mapped);
 
-        const data = await res.json();
-        // Response wrapper : `data` (champ réel, différent de la doc qui dit `mutations`)
-        const raw: Record<string, unknown>[] = data.data ?? data.mutations ?? data.results ?? [];
-
-        const mapped = raw
-          .map((r) => mapImmoApiRecord(r))
-          .filter((m) => {
-            if (!m.valeur_fonciere || !m.date_mutation) return false;
-            return new Date(m.date_mutation) >= dateMin;
-          });
-
-        allMutations.push(...mapped);
-
-        hasMore = raw.length === IMMOAPI_MAX_PER_PAGE;
-        page++;
-      }
+      hasMore = raw.length === IMMOAPI_MAX_PER_PAGE;
+      page++;
     }
 
     console.log(
       `[DVF Live] immoapi.app — ${allMutations.length} transactions ` +
-      `(rayon ${radiusKm} km, ${years.join("/")}${typeLocal ? `, type: ${typeLocal}` : ""})`
+      `(rayon ${radiusM}m${typeLocal ? `, type: ${typeLocal}` : ""})`
     );
     return allMutations;
   } catch (err) {
