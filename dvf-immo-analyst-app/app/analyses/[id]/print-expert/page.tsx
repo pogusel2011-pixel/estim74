@@ -9,12 +9,7 @@ import { toComparables } from "@/lib/dvf/comparables";
 import { propertyTypeToDvfTypes } from "@/lib/mapping/property-type";
 import { markListingOutliers } from "@/lib/listings/outliers";
 import { percentile, formatPrice, formatPsm, formatDate, formatDateShort } from "@/lib/utils";
-import {
-  PROPERTY_TYPE_LABELS,
-  CONDITION_LABELS,
-  DPE_COLORS,
-  CONFIDENCE_COLORS,
-} from "@/lib/constants";
+import { PROPERTY_TYPE_LABELS, CONDITION_LABELS, DPE_COLORS, CONFIDENCE_COLORS } from "@/lib/constants";
 import { DVFStats, DVFComparable } from "@/types/dvf";
 import { ActiveListing } from "@/types/listing";
 import { Adjustment } from "@/types/valuation";
@@ -41,10 +36,9 @@ async function getTrendData(lat: number, lng: number, radiusKm: number, type?: s
     let trend: "hausse" | "baisse" | "stable" = "stable";
     let trendPct: number | null = null;
     if (yearlyStats.length >= 6) {
-      const recent3 = yearlyStats.slice(-3);
-      const prev3 = yearlyStats.slice(-6, -3);
-      const r = recent3.reduce((s, y) => s + y.medianPsm, 0) / 3;
-      const p = prev3.reduce((s, y) => s + y.medianPsm, 0) / 3;
+      const r3 = yearlyStats.slice(-3), p3 = yearlyStats.slice(-6, -3);
+      const r = r3.reduce((s, y) => s + y.medianPsm, 0) / 3;
+      const p = p3.reduce((s, y) => s + y.medianPsm, 0) / 3;
       trendPct = Math.round(((r - p) / p) * 1000) / 10;
       trend = trendPct > 3 ? "hausse" : trendPct < -3 ? "baisse" : "stable";
     }
@@ -81,11 +75,8 @@ export default async function PrintExpertPage({
       const dvfTypes = propertyTypeToDvfTypes(a.propertyType as string);
       const reqRadius = (a.perimeterKm as number) ?? 0.5;
       const monthsBack = (a.dvfPeriodMonths as number) ?? 24;
-      const { mutations, source, radiusKm: fr } = await getDVFMutations(
-        a.lat as number, a.lng as number, reqRadius, monthsBack, dvfTypes
-      );
-      requestedRadiusKm = reqRadius;
-      perimeterKm = fr;
+      const { mutations, source, radiusKm: fr } = await getDVFMutations(a.lat as number, a.lng as number, reqRadius, monthsBack, dvfTypes);
+      requestedRadiusKm = reqRadius; perimeterKm = fr;
       let enriched = computePrixM2(mutations);
       enriched = removeOutliers(enriched);
       dvfStats = computeDVFStats(enriched, a.surface as number);
@@ -101,31 +92,30 @@ export default async function PrintExpertPage({
 
   const propertyLabel = PROPERTY_TYPE_LABELS[a.propertyType as string] ?? (a.propertyType as string);
   const conditionLabel = a.condition ? CONDITION_LABELS[a.condition as string] : null;
-  const dpeColor = a.dpeLetter ? DPE_COLORS[a.dpeLetter as string] ?? "#6b7280" : null;
-  const confidenceColor = a.confidenceLabel ? CONFIDENCE_COLORS[a.confidenceLabel as string] ?? "#6b7280" : null;
+  const dpeColor = a.dpeLetter ? DPE_COLORS[a.dpeLetter as string] ?? "#6B7280" : null;
   const wasExpanded = requestedRadiusKm != null && perimeterKm != null && perimeterKm > requestedRadiusKm;
+  const isIndicative = a.confidenceLabel === "Indicative" || ((a.dvfSampleSize as number) != null && (a.dvfSampleSize as number) < 3);
   const adjustments = (a.adjustments as Adjustment[]) ?? [];
   const today = new Date().toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" });
   const maxTrendCount = trendData.yearlyStats.length > 0 ? Math.max(...trendData.yearlyStats.map((y) => y.count)) : 1;
+  const trendColor = trendData.trend === "hausse" ? "#16A34A" : trendData.trend === "baisse" ? "#DC2626" : "#6B7280";
+  const trendLabel = trendData.trend === "hausse" ? "En hausse" : trendData.trend === "baisse" ? "En baisse" : "Stable";
 
-  // ── Méthode & Calcul data ────────────────────────────────────────────────────
+  // Méthode & Calcul
   const dvfRetenues = dvfStats?.count ?? 0;
   const dvfExclus = dvfStats?.excludedCount ?? 0;
   const dvfBrutes = dvfRetenues + dvfExclus;
   const dvfPsmRef = dvfStats?.weightedAvgPsm ?? dvfStats?.medianPsm ?? 0;
   const marketPressureAdj = dvfStats?.marketPressure?.adjustment ?? 0;
   const dvfAdjPsm = Math.round(dvfPsmRef * (1 + marketPressureAdj));
-  const listingAvgPsm = cleanListings.length > 0
-    ? cleanListings.reduce((s, l) => s + l.pricePsm, 0) / cleanListings.length : 0;
+  const listingAvgPsm = cleanListings.length > 0 ? cleanListings.reduce((s, l) => s + l.pricePsm, 0) / cleanListings.length : 0;
   const listingAdjPsm = Math.round(listingAvgPsm * 0.96);
-
   let dvfWeight = 0, listingsWeight = 0;
   if (dvfRetenues >= 5 && cleanListings.length > 0) { dvfWeight = 0.70; listingsWeight = 0.30; }
-  else if (dvfRetenues >= 5) { dvfWeight = 1.0; listingsWeight = 0; }
-  else if (cleanListings.length >= 3) { dvfWeight = 0; listingsWeight = 1.0; }
+  else if (dvfRetenues >= 5) { dvfWeight = 1.0; }
+  else if (cleanListings.length >= 3) { listingsWeight = 1.0; }
   else if (dvfRetenues > 0 && cleanListings.length > 0) { dvfWeight = 0.70; listingsWeight = 0.30; }
-  else if (dvfRetenues > 0) { dvfWeight = 1.0; listingsWeight = 0; }
-
+  else if (dvfRetenues > 0) { dvfWeight = 1.0; }
   const basePsm = Math.round(dvfAdjPsm * dvfWeight + listingAdjPsm * listingsWeight);
 
   const findAdj = (cat: string[], frag?: string) => {
@@ -147,62 +137,98 @@ export default async function PrintExpertPage({
     { critere: "Jardin / terrain", adj: findAdj([], "jardin") ?? findAdj([], "terrain") },
   ];
   const totalAdjFactor = adjustments.reduce((s, a) => s + a.factor, 0);
-  const trendColor = trendData.trend === "hausse" ? "#16a34a" : trendData.trend === "baisse" ? "#dc2626" : "#6b7280";
-  const trendLabel = trendData.trend === "hausse" ? "En hausse" : trendData.trend === "baisse" ? "En baisse" : "Stable";
-  const isIndicative = a.confidenceLabel === "Indicative" || ((a.dvfSampleSize as number) != null && (a.dvfSampleSize as number) < 3);
   const retainedComparables = dvfComparables.filter((c) => !c.outlier);
+  const excludedCount = dvfComparables.filter((c) => c.outlier).length;
 
-  function pct(factor: number) { return (factor >= 0 ? "+" : "") + (factor * 100).toFixed(1) + "%" }
+  function pct(f: number) { return (f >= 0 ? "+" : "") + (f * 100).toFixed(1) + "%" }
 
   return (
     <>
       <PrintTrigger skip={skipPrint} />
       <style suppressHydrationWarning>{`
+        * { box-sizing: border-box; margin: 0; padding: 0; }
         @media screen {
-          .print-page { background:#f3f4f6; min-height:100vh; display:flex; justify-content:center; padding:24px 16px 48px; }
-          .print-sheet { background:#fff; width:210mm; box-shadow:0 4px 32px rgba(0,0,0,0.15); border-radius:4px; font-family:-apple-system,BlinkMacSystemFont,"Inter",sans-serif; font-size:9.5pt; color:#111; line-height:1.5; overflow:hidden; }
+          body { background: #F3F4F6; }
+          .print-page { min-height: 100vh; display: flex; justify-content: center; padding: 32px 16px 64px; }
+          .print-sheet { background: #fff; width: 210mm; box-shadow: 0 4px 40px rgba(0,0,0,0.12); border-radius: 6px; overflow: hidden; }
         }
         @media print {
-          .print-page { background:none; padding:0; }
-          .print-sheet { width:100%; box-shadow:none; border-radius:0; font-size:9pt; }
+          .print-page { background: none; padding: 0; }
+          .print-sheet { width: 100%; box-shadow: none; border-radius: 0; }
+          .page-break-hint { page-break-before: always; }
         }
-        .cover { background:#1e3a8a; color:#fff; padding:20mm 16mm 18mm; }
-        .cover-sub { font-size:7.5pt; color:#bfdbfe; letter-spacing:0.06em; text-transform:uppercase; margin-bottom:6px; }
-        .cover-title { font-size:20pt; font-weight:900; letter-spacing:-0.01em; margin:16px 0 10px; }
-        .cover-addr { font-size:13pt; font-weight:700; margin-bottom:4px; }
-        .cover-meta { font-size:8.5pt; color:#93c5fd; }
-        .cover-divider { border:none; border-top:1px solid rgba(255,255,255,0.2); margin:14px 0; }
-        .content { padding:14mm 16mm 14mm; }
-        .sh2 { font-size:9pt; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#1e40af; margin:0 0 8px; }
-        .section { margin-bottom:16px; }
-        .divider { border:none; border-top:1px solid #e2e8f0; margin:14px 0; }
-        table { width:100%; border-collapse:collapse; font-size:8.5pt; }
-        th { background:#f1f5f9; padding:5px 8px; text-align:left; font-weight:600; color:#475569; border-bottom:1px solid #e2e8f0; white-space:nowrap; }
-        td { padding:4px 8px; border-bottom:1px solid #f1f5f9; vertical-align:middle; }
-        tr:last-child td { border-bottom:none; }
-        .grid3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; }
-        .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-        .pbox { border:1px solid #e2e8f0; border-radius:6px; padding:8px 12px; }
-        .pbox-main { border-color:#93c5fd; background:#eff6ff; }
-        .pbox-amber { border-color:#fcd34d; background:#fffbeb; }
-        .label { font-size:7.5pt; color:#64748b; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:2px; }
-        .val { font-size:14pt; font-weight:700; color:#1e3a8a; }
-        .val-amber { color:#92400e; }
-        .sub { font-size:8pt; color:#64748b; }
-        .stat-row { display:flex; justify-content:space-between; padding:3px 0; border-bottom:1px dotted #e2e8f0; font-size:8.5pt; }
-        .stat-row:last-child { border-bottom:none; }
-        .stat-row .k { color:#64748b; }
-        .stat-row .v { font-weight:600; text-align:right; }
-        .badge { display:inline-flex; align-items:center; border:1px solid; border-radius:99px; padding:2px 8px; font-size:7.5pt; font-weight:600; }
-        .trend-bar-bg { background:#e2e8f0; border-radius:4px; height:6px; flex:1; overflow:hidden; }
-        .trend-bar-fill { height:100%; background:#3b82f6; border-radius:4px; }
-        .footer { margin-top:16px; padding-top:10px; border-top:1px solid #e2e8f0; display:flex; justify-content:space-between; font-size:7pt; color:#94a3b8; }
-        .section-letter { display:inline-flex; align-items:center; justify-content:center; width:18px; height:18px; border-radius:50%; background:#1e40af; color:#fff; font-size:7.5pt; font-weight:800; margin-right:6px; }
-        .green-row td { background:#f0fdf4; }
-        .orange-row td { background:#fff7ed; }
-        .blue-row td { background:#eff6ff; }
-        .gray-row td { background:#f8fafc; }
-        .pipeline-table td { padding:5px 8px; }
+        .print-sheet { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 13px; color: #111827; line-height: 1.6; }
+        /* COVER */
+        .cover {
+          background: linear-gradient(150deg, #1D4ED8 0%, #2563EB 55%, #3B82F6 100%);
+          color: #fff; padding: 20mm 18mm 18mm;
+          min-height: 200px;
+        }
+        .cover-eyebrow { font-size: 8px; letter-spacing: 0.15em; text-transform: uppercase; color: rgba(255,255,255,0.7); margin-bottom: 8px; font-weight: 600; }
+        .cover-rule { border: none; border-top: 1px solid rgba(255,255,255,0.25); margin: 16px 0; }
+        .cover-type { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: rgba(255,255,255,0.65); margin-bottom: 8px; }
+        .cover-title { font-size: 26px; font-weight: 900; letter-spacing: -0.02em; color: #fff; margin-bottom: 10px; }
+        .cover-address { font-size: 14px; font-weight: 700; color: rgba(255,255,255,0.95); margin-bottom: 8px; line-height: 1.4; word-wrap: break-word; overflow-wrap: break-word; }
+        .cover-meta { display: flex; gap: 14px; flex-wrap: wrap; font-size: 11px; color: rgba(255,255,255,0.75); margin-bottom: 14px; }
+        .cover-chips { display: flex; gap: 7px; flex-wrap: wrap; }
+        .cover-chip { border: 1px solid rgba(255,255,255,0.35); border-radius: 99px; padding: 3px 10px; font-size: 9px; color: rgba(255,255,255,0.9); white-space: nowrap; }
+        .cover-footer-row { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 18px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.2); }
+        .cover-date-label { font-size: 8px; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(255,255,255,0.6); margin-bottom: 2px; }
+        .cover-date-value { font-size: 12px; font-weight: 700; color: #fff; }
+        /* CONTENT LAYOUT */
+        .content { padding: 14mm 18mm 12mm; }
+        /* SECTION HEADER — visual page-break hint */
+        .section { margin-bottom: 24px; }
+        .section-break { margin-top: 32px; padding-top: 20px; border-top: 3px solid #2563EB; margin-bottom: 20px; }
+        .section-title { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #2563EB; margin-bottom: 12px; border-bottom: 1.5px solid #DBEAFE; padding-bottom: 5px; }
+        .divider { border: none; border-top: 1px solid #E5E7EB; margin: 20px 0; }
+        /* ESTIMATION */
+        .estim-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+        .estim-box { border: 1px solid #E5E7EB; border-radius: 8px; padding: 12px 14px; background: #F9FAFB; }
+        .estim-box.main { border-color: #BFDBFE; background: #EFF6FF; }
+        .estim-box.amber { border-color: #FCD34D; background: #FFFBEB; }
+        .estim-label { font-size: 8px; text-transform: uppercase; letter-spacing: 0.08em; color: #9CA3AF; margin-bottom: 5px; }
+        .estim-label.main { color: #2563EB; }
+        .estim-label.amber { color: #92400E; }
+        .estim-price { font-size: 18px; font-weight: 800; color: #374151; }
+        .estim-price.main { font-size: 22px; color: #1D4ED8; }
+        .estim-price.amber { font-size: 22px; color: #92400E; }
+        .estim-psm { font-size: 11px; color: #6B7280; margin-top: 3px; }
+        .estim-psm.main { color: #2563EB; font-weight: 600; }
+        .chips-row { display: flex; gap: 7px; flex-wrap: wrap; margin-top: 10px; }
+        .chip { display: inline-flex; border: 1px solid #E5E7EB; border-radius: 99px; padding: 3px 10px; font-size: 10px; font-weight: 600; color: #374151; white-space: nowrap; }
+        /* TABLES — common */
+        table { width: 100%; border-collapse: collapse; font-size: 11px; }
+        table.fixed { table-layout: fixed; }
+        th { background: #F8FAFC; padding: 7px 10px; text-align: left; font-weight: 600; color: #6B7280; border-bottom: 1.5px solid #E5E7EB; font-size: 9px; text-transform: uppercase; letter-spacing: 0.05em; overflow: hidden; word-wrap: break-word; }
+        td { padding: 7px 10px; border-bottom: 1px solid #F3F4F6; vertical-align: middle; overflow: hidden; word-wrap: break-word; overflow-wrap: break-word; }
+        tr:last-child td { border-bottom: none; }
+        .tr-green td { background: #F0FDF4; }
+        .tr-orange td { background: #FFF7ED; }
+        .tr-blue td { background: #EFF6FF; }
+        .tr-dark td { background: #1D4ED8; color: #fff; font-weight: 700; }
+        .tr-gray td { background: #F9FAFB; }
+        .tr-subhead td { background: #F1F5F9; font-weight: 600; font-size: 10px; color: #475569; border-bottom: 1.5px solid #E2E8F0; }
+        /* STAT ROW */
+        .stat-row { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px dotted #E5E7EB; font-size: 12px; }
+        .stat-row:last-child { border-bottom: none; }
+        .stat-k { color: #6B7280; }
+        .stat-v { font-weight: 600; color: #1F2937; text-align: right; }
+        /* SECTION LETTER BADGE */
+        .sec-badge { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 50%; background: #2563EB; color: #fff; font-size: 10px; font-weight: 800; flex-shrink: 0; margin-right: 8px; }
+        .sec-label { display: flex; align-items: center; font-size: 11px; font-weight: 700; color: #1F2937; margin-bottom: 10px; }
+        /* PIPELINE TABLE */
+        .pipeline td { padding: 8px 10px; }
+        /* TREND BAR */
+        .bar-bg { background: #E5E7EB; border-radius: 4px; height: 7px; overflow: hidden; }
+        .bar-fill { height: 100%; background: #2563EB; border-radius: 4px; }
+        /* STATUS BADGES */
+        .badge-ok { display: inline-block; background: #DCFCE7; color: #166534; border: 1px solid #BBF7D0; border-radius: 99px; padding: 1px 8px; font-size: 9px; font-weight: 700; white-space: nowrap; }
+        .badge-warn { display: inline-block; background: #FEF3C7; color: #92400E; border: 1px solid #FDE68A; border-radius: 99px; padding: 1px 8px; font-size: 9px; font-weight: 700; white-space: nowrap; }
+        .badge-iqr { display: inline-block; background: #FEE2E2; color: #991B1B; border: 1px solid #FECACA; border-radius: 99px; padding: 1px 8px; font-size: 9px; font-weight: 700; white-space: nowrap; }
+        /* FOOTER */
+        .footer { margin-top: 20px; padding-top: 12px; border-top: 1px solid #E5E7EB; display: flex; justify-content: space-between; font-size: 9px; color: #9CA3AF; }
+        .footer-legal { font-size: 8px; color: #D1D5DB; text-align: center; margin-top: 6px; }
       `}</style>
 
       <div className="print-page">
@@ -210,246 +236,239 @@ export default async function PrintExpertPage({
 
           {/* ── COVER ── */}
           <div className="cover">
-            <div className="cover-sub">ESTIM&apos;74 — Haute-Savoie (74) · Données DVF DGFiP 2014–2024</div>
-            <hr className="cover-divider" />
+            <div className="cover-eyebrow">ESTIM&apos;74 — Haute-Savoie (74) · Données DVF DGFiP 2014–2024</div>
+            <hr className="cover-rule" />
+            <div className="cover-type">Rapport d&apos;expertise · {propertyLabel}</div>
             <div className="cover-title">RAPPORT D&apos;EXPERTISE</div>
-            <div className="cover-addr">
+            <div className="cover-address">
               {[a.address, a.postalCode, a.city].filter(Boolean).join(", ") || "Adresse non renseignée"}
             </div>
-            <div className="cover-meta" style={{ marginTop: 6, display: "flex", gap: "20px", flexWrap: "wrap" }}>
-              <span>{propertyLabel}</span>
+            <div className="cover-meta">
               <span>{a.surface as number} m²</span>
               {a.rooms && <span>{a.rooms as number} pièces</span>}
               {a.yearBuilt && <span>Construit en {a.yearBuilt as number}</span>}
               {conditionLabel && <span>{conditionLabel}</span>}
             </div>
-            <hr className="cover-divider" />
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
+            <div className="cover-chips">
+              {a.dpeLetter && (
+                <span className="cover-chip" style={{ borderColor: dpeColor! + "90" }}>DPE {a.dpeLetter as string}</span>
+              )}
+              {a.hasParking && <span className="cover-chip">Parking</span>}
+              {a.hasGarage && <span className="cover-chip">Garage</span>}
+              {a.hasBalcony && <span className="cover-chip">Balcon</span>}
+              {a.hasTerrace && <span className="cover-chip">Terrasse</span>}
+              {a.hasPool && <span className="cover-chip">Piscine</span>}
+              {a.hasElevator && <span className="cover-chip">Ascenseur</span>}
+            </div>
+            <div className="cover-footer-row">
               <div>
-                <div style={{ fontSize: "8pt", color: "#bfdbfe", marginBottom: 2 }}>Généré le</div>
-                <div style={{ fontSize: "10pt", fontWeight: 700 }}>{today}</div>
+                <div className="cover-date-label">Généré le</div>
+                <div className="cover-date-value">{today}</div>
               </div>
               <div style={{ textAlign: "right" }}>
-                <div style={{ fontSize: "8pt", color: "#bfdbfe", marginBottom: 2 }}>Référence</div>
-                <div style={{ fontFamily: "monospace", fontSize: "9pt" }}>{params.id.slice(0, 8).toUpperCase()}</div>
+                <div className="cover-date-label">Référence</div>
+                <div style={{ fontFamily: "monospace", fontSize: "11px", color: "rgba(255,255,255,0.85)", fontWeight: 700 }}>
+                  {params.id.slice(0, 8).toUpperCase()}
+                </div>
               </div>
-            </div>
-            {/* Features badges */}
-            <div style={{ marginTop: 12, display: "flex", gap: 6, flexWrap: "wrap" }}>
-              {a.dpeLetter && (
-                <span className="badge" style={{ borderColor: dpeColor! + "80", color: "#fff", background: "rgba(255,255,255,0.1)" }}>
-                  DPE {a.dpeLetter as string}
-                </span>
-              )}
-              {a.hasParking && <span className="badge" style={{ borderColor: "rgba(255,255,255,0.3)", color: "#bfdbfe" }}>Parking</span>}
-              {a.hasGarage && <span className="badge" style={{ borderColor: "rgba(255,255,255,0.3)", color: "#bfdbfe" }}>Garage</span>}
-              {a.hasBalcony && <span className="badge" style={{ borderColor: "rgba(255,255,255,0.3)", color: "#bfdbfe" }}>Balcon</span>}
-              {a.hasTerrace && <span className="badge" style={{ borderColor: "rgba(255,255,255,0.3)", color: "#bfdbfe" }}>Terrasse</span>}
-              {a.hasPool && <span className="badge" style={{ borderColor: "rgba(255,255,255,0.3)", color: "#bfdbfe" }}>Piscine</span>}
-              {a.hasElevator && <span className="badge" style={{ borderColor: "rgba(255,255,255,0.3)", color: "#bfdbfe" }}>Ascenseur</span>}
             </div>
           </div>
 
+          {/* ── CONTENT ── */}
           <div className="content">
 
-            {/* ── 1. ESTIMATION ── */}
+            {/* §1 — ESTIMATION */}
             <div className="section">
-              <div className="sh2">1. Estimation de valeur</div>
+              <div className="section-title">1. Estimation de valeur</div>
               {a.valuationMid ? (
                 <>
                   {isIndicative && (
-                    <div style={{ background: "#fffbeb", border: "1px solid #fcd34d", borderRadius: 6, padding: "6px 10px", fontSize: "8pt", color: "#92400e", marginBottom: 10 }}>
+                    <div style={{ background: "#FFFBEB", border: "1px solid #FCD34D", borderRadius: 8, padding: "10px 14px", fontSize: "12px", color: "#92400E", marginBottom: 12 }}>
                       <strong>Estimation indicative</strong> — données DVF limitées ({a.dvfSampleSize as number ?? 0} transaction{(a.dvfSampleSize as number ?? 0) !== 1 ? "s" : ""}). Recoupez avec d&apos;autres sources.
                     </div>
                   )}
-                  <div className="grid3" style={{ marginBottom: 10 }}>
-                    <div className="pbox">
-                      <div className="label">Basse</div>
-                      <div style={{ fontSize: "11pt", fontWeight: 700, color: "#374151" }}>{formatPrice(a.valuationLow as number)}</div>
+                  <div className="estim-grid">
+                    <div className="estim-box">
+                      <div className="estim-label">Fourchette basse</div>
+                      <div className="estim-price">{formatPrice(a.valuationLow as number)}</div>
                     </div>
-                    <div className={`pbox ${isIndicative ? "pbox-amber" : "pbox-main"}`}>
-                      <div className="label" style={{ color: isIndicative ? "#92400e" : "#1e40af" }}>Estimation centrale</div>
-                      <div className={`val ${isIndicative ? "val-amber" : ""}`}>{formatPrice(a.valuationMid as number)}</div>
-                      {a.valuationPsm && <div className="sub">{formatPsm(a.valuationPsm as number)}</div>}
+                    <div className={`estim-box ${isIndicative ? "amber" : "main"}`}>
+                      <div className={`estim-label ${isIndicative ? "amber" : "main"}`}>Estimation centrale</div>
+                      <div className={`estim-price ${isIndicative ? "amber" : "main"}`}>{formatPrice(a.valuationMid as number)}</div>
+                      {a.valuationPsm && <div className={`estim-psm ${isIndicative ? "" : "main"}`}>{formatPsm(a.valuationPsm as number)}</div>}
                     </div>
-                    <div className="pbox">
-                      <div className="label">Haute</div>
-                      <div style={{ fontSize: "11pt", fontWeight: 700, color: "#374151" }}>{formatPrice(a.valuationHigh as number)}</div>
+                    <div className="estim-box">
+                      <div className="estim-label">Fourchette haute</div>
+                      <div className="estim-price">{formatPrice(a.valuationHigh as number)}</div>
                     </div>
                   </div>
-                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+                  <div className="chips-row">
                     {a.confidence != null && a.confidenceLabel && (
-                      <span className="badge" style={{ borderColor: confidenceColor!, color: confidenceColor!, background: confidenceColor! + "18" }}>
-                        Fiabilité : {a.confidenceLabel as string} · Score {Math.round((a.confidence as number) * 100)}/100
+                      <span className="chip" style={{ borderColor: CONFIDENCE_COLORS[a.confidenceLabel as string] ?? "#E5E7EB", color: CONFIDENCE_COLORS[a.confidenceLabel as string] ?? "#374151" }}>
+                        Fiabilité : {a.confidenceLabel as string} ({Math.round((a.confidence as number) * 100)}/100)
                       </span>
                     )}
                     {perimeterKm && (
-                      <span className="badge" style={{ borderColor: "#94a3b8", color: "#475569" }}>
-                        {wasExpanded ? `Rayon élargi ${perimeterKm} km` : `Rayon ${perimeterKm} km`}
-                      </span>
+                      <span className="chip">{wasExpanded ? `Rayon élargi ${perimeterKm} km` : `Rayon ${perimeterKm} km`}</span>
                     )}
                     {a.dvfSampleSize != null && (
-                      <span className="badge" style={{ borderColor: "#94a3b8", color: "#475569" }}>
-                        {a.dvfSampleSize as number} transactions DVF retenues
-                      </span>
+                      <span className="chip">{a.dvfSampleSize as number} transaction{(a.dvfSampleSize as number) !== 1 ? "s" : ""} DVF</span>
                     )}
                   </div>
                 </>
               ) : (
-                <p style={{ color: "#64748b", fontSize: "8.5pt" }}>Estimation non disponible — données DVF insuffisantes.</p>
+                <p style={{ color: "#6B7280", fontStyle: "italic" }}>Estimation non disponible — données DVF insuffisantes dans ce secteur.</p>
               )}
             </div>
 
-            <hr className="divider" />
-
-            {/* ── 2. AJUSTEMENTS QUALITATIFS ── */}
-            <div className="section">
-              <div className="sh2">2. Ajustements qualitatifs (grille Estim74)</div>
-              <table>
+            {/* §2 — AJUSTEMENTS QUALITATIFS */}
+            <div className="section-break page-break-hint">
+              <div className="section-title">2. Ajustements qualitatifs — grille Estim74</div>
+              <table className="fixed">
+                <colgroup>
+                  <col style={{ width: "26%" }} />
+                  <col style={{ width: "10%" }} />
+                  <col style={{ width: "14%" }} />
+                  <col style={{ width: "18%" }} />
+                  <col style={{ width: "18%" }} />
+                  <col style={{ width: "14%" }} />
+                </colgroup>
                 <thead>
                   <tr>
-                    <th style={{ width: "30%" }}>Critère</th>
-                    <th style={{ width: "12%", textAlign: "center" }}>Présent</th>
+                    <th>Critère</th>
+                    <th style={{ textAlign: "center" }}>Présent</th>
                     <th style={{ textAlign: "right" }}>Facteur</th>
                     <th style={{ textAlign: "right" }}>Impact €/m²</th>
                     <th style={{ textAlign: "right" }}>Impact total</th>
+                    <th style={{ textAlign: "right" }}>Label appliqué</th>
                   </tr>
                 </thead>
                 <tbody>
                   {adjRows.map(({ critere, adj }) => {
                     const impactPsm = adj ? Math.round(adj.factor * basePsm) : 0;
                     const impactTotal = adj ? Math.round(adj.factor * basePsm * (a.surface as number)) : 0;
-                    const color = adj && adj.factor > 0 ? "#16a34a" : adj && adj.factor < 0 ? "#dc2626" : "#94a3b8";
+                    const col = adj && adj.factor > 0 ? "#16A34A" : adj && adj.factor < 0 ? "#DC2626" : "#9CA3AF";
                     return (
-                      <tr key={critere}>
-                        <td style={{ fontWeight: adj ? 600 : 400, color: adj ? "#111" : "#94a3b8" }}>{critere}</td>
-                        <td style={{ textAlign: "center", fontSize: "10pt" }}>{adj ? "✓" : "—"}</td>
-                        <td style={{ textAlign: "right", color, fontWeight: 600 }}>{adj ? pct(adj.factor) : "—"}</td>
-                        <td style={{ textAlign: "right", color, fontWeight: adj ? 600 : 400 }}>{adj ? (impactPsm >= 0 ? "+" : "") + impactPsm.toLocaleString("fr-FR") + " €" : "—"}</td>
-                        <td style={{ textAlign: "right", color, fontWeight: adj ? 600 : 400 }}>{adj ? (impactTotal >= 0 ? "+" : "") + impactTotal.toLocaleString("fr-FR") + " €" : "—"}</td>
+                      <tr key={critere} style={adj ? undefined : { opacity: 0.5 }}>
+                        <td style={{ fontWeight: adj ? 600 : 400 }}>{critere}</td>
+                        <td style={{ textAlign: "center", fontSize: "13px" }}>{adj ? "✓" : "—"}</td>
+                        <td style={{ textAlign: "right", color: col, fontWeight: adj ? 700 : 400 }}>{adj ? pct(adj.factor) : "—"}</td>
+                        <td style={{ textAlign: "right", color: col, fontWeight: adj ? 600 : 400 }}>
+                          {adj ? (impactPsm >= 0 ? "+" : "") + impactPsm.toLocaleString("fr-FR") + " €" : "—"}
+                        </td>
+                        <td style={{ textAlign: "right", color: col, fontWeight: adj ? 600 : 400 }}>
+                          {adj ? (impactTotal >= 0 ? "+" : "") + impactTotal.toLocaleString("fr-FR") + " €" : "—"}
+                        </td>
+                        <td style={{ textAlign: "right", fontSize: "10px", color: "#6B7280", overflow: "hidden", textOverflow: "ellipsis" }}>
+                          {adj?.label ?? "—"}
+                        </td>
                       </tr>
                     );
                   })}
                   {adjustments.length > 0 && (
-                    <tr className="gray-row">
+                    <tr className="tr-gray">
                       <td colSpan={2} style={{ fontWeight: 700 }}>Total ajustements</td>
-                      <td style={{ textAlign: "right", fontWeight: 700, color: totalAdjFactor >= 0 ? "#16a34a" : "#dc2626" }}>{pct(totalAdjFactor)}</td>
-                      <td style={{ textAlign: "right", fontWeight: 700, color: totalAdjFactor >= 0 ? "#16a34a" : "#dc2626" }}>
+                      <td style={{ textAlign: "right", fontWeight: 700, color: totalAdjFactor >= 0 ? "#16A34A" : "#DC2626" }}>{pct(totalAdjFactor)}</td>
+                      <td style={{ textAlign: "right", fontWeight: 700, color: totalAdjFactor >= 0 ? "#16A34A" : "#DC2626" }}>
                         {(totalAdjFactor >= 0 ? "+" : "") + Math.round(totalAdjFactor * basePsm).toLocaleString("fr-FR")} €/m²
                       </td>
-                      <td style={{ textAlign: "right", fontWeight: 700, color: totalAdjFactor >= 0 ? "#16a34a" : "#dc2626" }}>
+                      <td style={{ textAlign: "right", fontWeight: 700, color: totalAdjFactor >= 0 ? "#16A34A" : "#DC2626" }}>
                         {(totalAdjFactor >= 0 ? "+" : "") + Math.round(totalAdjFactor * basePsm * (a.surface as number)).toLocaleString("fr-FR")} €
                       </td>
+                      <td></td>
                     </tr>
                   )}
                 </tbody>
               </table>
-              <div style={{ fontSize: "7.5pt", color: "#94a3b8", marginTop: 4 }}>
-                Base de calcul : {formatPsm(basePsm)} · Surface : {a.surface as number} m²
-              </div>
+              <p style={{ fontSize: "10px", color: "#9CA3AF", marginTop: 6 }}>Base de calcul : {formatPsm(basePsm)} · Surface : {a.surface as number} m²</p>
             </div>
 
-            <hr className="divider" />
+            {/* §3 — MÉTHODE & CALCUL */}
+            <div className="section-break page-break-hint">
+              <div className="section-title">3. Méthode &amp; Calcul</div>
 
-            {/* ── 3. MÉTHODE & CALCUL ── */}
-            <div className="section">
-              <div className="sh2">3. Méthode &amp; Calcul</div>
-
-              {/* Section A — DVF */}
-              <div style={{ marginBottom: 12 }}>
-                <div style={{ display: "flex", alignItems: "center", marginBottom: 6, fontWeight: 700, fontSize: "8.5pt" }}>
-                  <span className="section-letter">A</span> Données DVF (transactions signées)
-                </div>
-                <table className="pipeline-table">
-                  <thead>
-                    <tr><th>Étape</th><th style={{ textAlign: "right" }}>Transactions</th></tr>
-                  </thead>
+              {/* Section A */}
+              <div style={{ marginBottom: 20 }}>
+                <div className="sec-label"><span className="sec-badge">A</span> Données DVF — transactions signées</div>
+                <table className="fixed pipeline">
+                  <colgroup><col style={{ width: "75%" }} /><col style={{ width: "25%" }} /></colgroup>
+                  <thead><tr><th>Étape du pipeline</th><th style={{ textAlign: "right" }}>Transactions</th></tr></thead>
                   <tbody>
-                    <tr><td>Mutations dans le périmètre ({perimeterKm ?? "?"} km)</td><td style={{ textAlign: "right", fontWeight: 600 }}>{dvfBrutes}</td></tr>
-                    <tr className="orange-row">
-                      <td>⚠ Valeurs aberrantes exclues (IQR×2 + médiane ±40%)</td>
-                      <td style={{ textAlign: "right", fontWeight: 600, color: "#c2410c" }}>{dvfExclus > 0 ? `−\u202F${dvfExclus}` : "0"}</td>
+                    <tr><td>Mutations brutes dans le périmètre ({perimeterKm ?? "?"} km)</td><td style={{ textAlign: "right", fontWeight: 600 }}>{dvfBrutes}</td></tr>
+                    <tr className="tr-orange">
+                      <td>Valeurs aberrantes exclues (IQR×2 + médiane ±40%)</td>
+                      <td style={{ textAlign: "right", fontWeight: 600, color: "#C2410C" }}>{dvfExclus > 0 ? `−\u202F${dvfExclus}` : "0"}</td>
                     </tr>
-                    <tr className="green-row">
-                      <td style={{ fontWeight: 700, color: "#15803d" }}>✓ Transactions retenues</td>
-                      <td style={{ textAlign: "right", fontWeight: 800, color: "#15803d" }}>{dvfRetenues}</td>
+                    <tr className="tr-green">
+                      <td style={{ fontWeight: 700, color: "#15803D" }}>✓ Transactions retenues</td>
+                      <td style={{ textAlign: "right", fontWeight: 800, color: "#15803D" }}>{dvfRetenues}</td>
                     </tr>
                   </tbody>
                 </table>
                 {dvfStats?.isIndexed && (
-                  <div style={{ background: "#f0fdf4", border: "1px solid #86efac", borderRadius: 4, padding: "4px 8px", fontSize: "7.5pt", color: "#15803d", marginTop: 4 }}>
-                    Tous les prix sont indexés en valeur 2025 (indices notariaux Haute-Savoie).
+                  <div style={{ background: "#F0FDF4", border: "1px solid #BBF7D0", borderRadius: 6, padding: "7px 12px", fontSize: "11px", color: "#166534", marginTop: 8 }}>
+                    Tous les prix sont indexés en valeur 2025 via les indices notariaux Haute-Savoie (correction du biais temporel 2014–2024).
                   </div>
                 )}
-                <div className="stat-row" style={{ marginTop: 6 }}>
-                  <span className="k">Médiane DVF (indexée 2025)</span>
-                  <span className="v">{dvfStats ? formatPsm(dvfStats.medianPsm) : "—"}</span>
-                </div>
-                {dvfStats?.weightedAvgPsm != null && (
-                  <div className="stat-row">
-                    <span className="k">Moy. pondérée retenue (distance × surface × récence)</span>
-                    <span className="v" style={{ color: "#1e40af" }}>{formatPsm(dvfStats.weightedAvgPsm)}</span>
+                <div style={{ marginTop: 10 }}>
+                  <div className="stat-row"><span className="stat-k">Médiane DVF (indexée 2025)</span><span className="stat-v">{dvfStats ? formatPsm(dvfStats.medianPsm) : "—"}</span></div>
+                  {dvfStats?.weightedAvgPsm != null && (
+                    <div className="stat-row"><span className="stat-k">Moy. pondérée (distance × surface × récence)</span><span className="stat-v" style={{ color: "#2563EB" }}>{formatPsm(dvfStats.weightedAvgPsm)}</span></div>
+                  )}
+                  {marketPressureAdj !== 0 && (
+                    <div className="stat-row"><span className="stat-k">Pression marché ({pct(marketPressureAdj)})</span><span className="stat-v">{formatPsm(dvfAdjPsm)}</span></div>
+                  )}
+                  <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700, color: "#2563EB", marginTop: 6, padding: "6px 0", borderTop: "1.5px solid #BFDBFE" }}>
+                    <span>Prix DVF retenu</span><span>{formatPsm(dvfAdjPsm)}</span>
                   </div>
-                )}
-                {marketPressureAdj !== 0 && (
-                  <div className="stat-row">
-                    <span className="k">Pression marché ({pct(marketPressureAdj)})</span>
-                    <span className="v">{formatPsm(dvfAdjPsm)}</span>
-                  </div>
-                )}
-                <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700, color: "#1e40af", marginTop: 4, padding: "4px 0", borderTop: "1px solid #bfdbfe" }}>
-                  <span>Prix DVF retenu</span>
-                  <span>{formatPsm(dvfAdjPsm)}</span>
                 </div>
               </div>
 
-              {/* Section B — Annonces */}
-              <div style={{ marginBottom: 12 }}>
-                <div style={{ display: "flex", alignItems: "center", marginBottom: 6, fontWeight: 700, fontSize: "8.5pt" }}>
-                  <span className="section-letter">B</span> Annonces actives (marché affiché)
-                </div>
+              {/* Section B */}
+              <div style={{ marginBottom: 20 }}>
+                <div className="sec-label"><span className="sec-badge">B</span> Annonces actives — marché affiché</div>
                 {listings.length === 0 ? (
-                  <p style={{ color: "#94a3b8", fontSize: "8pt", fontStyle: "italic" }}>Aucune annonce active trouvée.</p>
+                  <p style={{ color: "#9CA3AF", fontStyle: "italic", fontSize: "12px" }}>Aucune annonce active trouvée dans ce secteur.</p>
                 ) : (
                   <>
-                    <table className="pipeline-table">
-                      <thead>
-                        <tr><th>Étape</th><th style={{ textAlign: "right" }}>Annonces</th></tr>
-                      </thead>
+                    <table className="fixed pipeline">
+                      <colgroup><col style={{ width: "75%" }} /><col style={{ width: "25%" }} /></colgroup>
+                      <thead><tr><th>Étape du pipeline</th><th style={{ textAlign: "right" }}>Annonces</th></tr></thead>
                       <tbody>
                         <tr><td>Annonces trouvées</td><td style={{ textAlign: "right", fontWeight: 600 }}>{listings.length}</td></tr>
-                        <tr className="orange-row">
-                          <td>⚠ Valeurs aberrantes exclues (IQR×2 + médiane ±40%)</td>
-                          <td style={{ textAlign: "right", fontWeight: 600, color: "#c2410c" }}>{listings.filter(l => l.outlier).length > 0 ? `−\u202F${listings.filter(l => l.outlier).length}` : "0"}</td>
+                        <tr className="tr-orange">
+                          <td>Valeurs aberrantes exclues (IQR×2 + médiane ±40%)</td>
+                          <td style={{ textAlign: "right", fontWeight: 600, color: "#C2410C" }}>
+                            {listings.filter(l => l.outlier).length > 0 ? `−\u202F${listings.filter(l => l.outlier).length}` : "0"}
+                          </td>
                         </tr>
-                        <tr className="green-row">
-                          <td style={{ fontWeight: 700, color: "#15803d" }}>✓ Annonces retenues</td>
-                          <td style={{ textAlign: "right", fontWeight: 800, color: "#15803d" }}>{cleanListings.length}</td>
+                        <tr className="tr-green">
+                          <td style={{ fontWeight: 700, color: "#15803D" }}>✓ Annonces retenues</td>
+                          <td style={{ textAlign: "right", fontWeight: 800, color: "#15803D" }}>{cleanListings.length}</td>
                         </tr>
                       </tbody>
                     </table>
-                    <div className="stat-row" style={{ marginTop: 6 }}>
-                      <span className="k">Prix affiché moyen (annonces retenues)</span>
-                      <span className="v">{listingAvgPsm > 0 ? formatPsm(Math.round(listingAvgPsm)) : "—"}</span>
-                    </div>
-                    <div className="stat-row">
-                      <span className="k">Abattement vendeur −4% (négociation)</span>
-                      <span className="v">{listingAdjPsm > 0 ? formatPsm(listingAdjPsm) : "—"}</span>
-                    </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700, color: "#1e40af", marginTop: 4, padding: "4px 0", borderTop: "1px solid #bfdbfe" }}>
-                      <span>Prix annonces retenu</span>
-                      <span>{listingAdjPsm > 0 ? formatPsm(listingAdjPsm) : "—"}</span>
+                    <div style={{ marginTop: 10 }}>
+                      <div className="stat-row"><span className="stat-k">Prix affiché moyen (annonces retenues)</span><span className="stat-v">{listingAvgPsm > 0 ? formatPsm(Math.round(listingAvgPsm)) : "—"}</span></div>
+                      <div className="stat-row"><span className="stat-k">Abattement vendeur −4% (négociation)</span><span className="stat-v">{listingAdjPsm > 0 ? formatPsm(listingAdjPsm) : "—"}</span></div>
+                      <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700, color: "#2563EB", marginTop: 6, padding: "6px 0", borderTop: "1.5px solid #BFDBFE" }}>
+                        <span>Prix annonces retenu</span><span>{listingAdjPsm > 0 ? formatPsm(listingAdjPsm) : "—"}</span>
+                      </div>
                     </div>
                   </>
                 )}
               </div>
 
-              {/* Section C — Réconciliation */}
+              {/* Section C */}
               <div>
-                <div style={{ display: "flex", alignItems: "center", marginBottom: 6, fontWeight: 700, fontSize: "8.5pt" }}>
-                  <span className="section-letter">C</span> Réconciliation finale
-                </div>
-                <table>
+                <div className="sec-label"><span className="sec-badge">C</span> Réconciliation finale</div>
+                <table className="fixed">
+                  <colgroup>
+                    <col style={{ width: "35%" }} />
+                    <col style={{ width: "22%" }} />
+                    <col style={{ width: "15%" }} />
+                    <col style={{ width: "28%" }} />
+                  </colgroup>
                   <thead>
                     <tr>
                       <th>Source</th>
@@ -471,127 +490,137 @@ export default async function PrintExpertPage({
                       <td style={{ textAlign: "right" }}>{(listingsWeight * 100).toFixed(0)} %</td>
                       <td style={{ textAlign: "right", fontWeight: 600 }}>{listingAdjPsm > 0 ? formatPsm(Math.round(listingAdjPsm * listingsWeight)) : "—"}</td>
                     </tr>
-                    <tr className="blue-row">
-                      <td colSpan={3} style={{ fontWeight: 700, color: "#1e40af" }}>Prix de base (avant ajustements)</td>
-                      <td style={{ textAlign: "right", fontWeight: 800, color: "#1e40af" }}>{formatPsm(basePsm)}</td>
+                    <tr className="tr-blue">
+                      <td colSpan={3} style={{ fontWeight: 700, color: "#1D4ED8" }}>Prix de base (avant ajustements)</td>
+                      <td style={{ textAlign: "right", fontWeight: 800, color: "#1D4ED8" }}>{formatPsm(basePsm)}</td>
                     </tr>
                     {totalAdjFactor !== 0 && (
                       <tr>
-                        <td colSpan={3} style={{ color: "#64748b" }}>Ajustements qualitatifs ({pct(totalAdjFactor)})</td>
-                        <td style={{ textAlign: "right", fontWeight: 600, color: totalAdjFactor >= 0 ? "#16a34a" : "#dc2626" }}>
+                        <td colSpan={3} style={{ color: "#6B7280" }}>Ajustements qualitatifs ({pct(totalAdjFactor)})</td>
+                        <td style={{ textAlign: "right", fontWeight: 600, color: totalAdjFactor >= 0 ? "#16A34A" : "#DC2626" }}>
                           {(totalAdjFactor >= 0 ? "+" : "") + Math.round(totalAdjFactor * basePsm).toLocaleString("fr-FR")} €/m²
                         </td>
                       </tr>
                     )}
-                    <tr style={{ background: "#1e3a8a" }}>
-                      <td colSpan={3} style={{ fontWeight: 800, color: "#fff" }}>
-                        Prix final · {a.surface as number} m² = {formatPrice(a.valuationMid as number)}
-                      </td>
-                      <td style={{ textAlign: "right", fontWeight: 800, color: "#fff", fontSize: "10pt" }}>
-                        {a.valuationPsm ? formatPsm(a.valuationPsm as number) : "—"}
-                      </td>
+                    <tr className="tr-dark">
+                      <td colSpan={3}>Prix final · {a.surface as number} m² = {formatPrice(a.valuationMid as number)}</td>
+                      <td style={{ textAlign: "right", fontSize: "13px" }}>{a.valuationPsm ? formatPsm(a.valuationPsm as number) : "—"}</td>
                     </tr>
                   </tbody>
                 </table>
               </div>
             </div>
 
-            <hr className="divider" />
-
-            {/* ── 4. COMPARABLES DVF ── */}
-            <div className="section">
-              <div className="sh2">4. Transactions DVF comparables retenues ({retainedComparables.length})</div>
+            {/* §4 — COMPARABLES DVF */}
+            <div className="section-break page-break-hint">
+              <div className="section-title">4. Transactions DVF retenues ({retainedComparables.length})</div>
               {retainedComparables.length > 0 ? (
-                <table>
-                  <thead>
-                    <tr>
-                      <th></th>
-                      <th>Date</th>
-                      <th>Dist.</th>
-                      <th>Type</th>
-                      <th style={{ textAlign: "right" }}>Surface</th>
-                      <th style={{ textAlign: "right" }}>Pièces</th>
-                      <th style={{ textAlign: "right" }}>Prix DVF</th>
-                      <th style={{ textAlign: "right" }}>€/m²</th>
-                      <th style={{ textAlign: "right" }}>€/m² idx2025</th>
-                      <th>Adresse</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {retainedComparables.map((c, i) => (
-                      <tr key={`${c.id ?? "c"}-${i}`} style={c.topComparable ? { background: "#eff6ff" } : undefined}>
-                        <td>
-                          {c.topComparable && (
-                            <span style={{ display: "inline-block", background: "#dbeafe", color: "#1d4ed8", border: "1px solid #60a5fa", borderRadius: 99, padding: "1px 5px", fontSize: "6.5pt", fontWeight: 700 }}>★</span>
-                          )}
-                        </td>
-                        <td style={{ color: "#64748b", whiteSpace: "nowrap" }}>{formatDateShort(c.date)}</td>
-                        <td style={{ whiteSpace: "nowrap", color: "#64748b" }}>{c.distanceM != null ? Math.round(c.distanceM) + " m" : "—"}</td>
-                        <td style={{ whiteSpace: "nowrap" }}>{c.type}</td>
-                        <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>{c.surface} m²</td>
-                        <td style={{ textAlign: "right", color: "#64748b" }}>{c.rooms ?? "—"}</td>
-                        <td style={{ textAlign: "right", fontWeight: 600 }}>{formatPrice(c.price, true)}</td>
-                        <td style={{ textAlign: "right", fontWeight: 700, color: "#475569" }}>{formatPsm(c.pricePsm)}</td>
-                        <td style={{ textAlign: "right", fontWeight: 700, color: "#1e40af" }}>
-                          {c.indexedPricePsm ? formatPsm(c.indexedPricePsm) : "—"}
-                        </td>
-                        <td style={{ maxWidth: 100, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "#64748b", fontSize: "7.5pt" }}>
-                          {c.address || c.city}
-                        </td>
+                <>
+                  <table className="fixed">
+                    <colgroup>
+                      <col style={{ width: "4%" }} />
+                      <col style={{ width: "11%" }} />
+                      <col style={{ width: "10%" }} />
+                      <col style={{ width: "14%" }} />
+                      <col style={{ width: "9%" }} />
+                      <col style={{ width: "7%" }} />
+                      <col style={{ width: "14%" }} />
+                      <col style={{ width: "12%" }} />
+                      <col style={{ width: "13%" }} />
+                      <col style={{ width: "6%" }} />
+                    </colgroup>
+                    <thead>
+                      <tr>
+                        <th></th>
+                        <th>Date</th>
+                        <th>Distance</th>
+                        <th>Type</th>
+                        <th style={{ textAlign: "right" }}>Surface</th>
+                        <th style={{ textAlign: "right" }}>Pcs</th>
+                        <th style={{ textAlign: "right" }}>Prix DVF</th>
+                        <th style={{ textAlign: "right" }}>€/m²</th>
+                        <th style={{ textAlign: "right" }}>€/m² idx.2025</th>
+                        <th>Src</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {retainedComparables.map((c, i) => (
+                        <tr key={`${c.id ?? "c"}-${i}`} style={c.topComparable ? { background: "#EFF6FF" } : undefined}>
+                          <td style={{ textAlign: "center" }}>
+                            {c.topComparable && <span style={{ display: "inline-block", background: "#DBEAFE", color: "#1D4ED8", border: "1px solid #93C5FD", borderRadius: 99, padding: "0 4px", fontSize: "8px", fontWeight: 800 }}>★</span>}
+                          </td>
+                          <td style={{ color: "#6B7280", whiteSpace: "nowrap" }}>{formatDateShort(c.date)}</td>
+                          <td style={{ color: "#6B7280" }}>{c.distanceM != null ? Math.round(c.distanceM) + " m" : "—"}</td>
+                          <td>{c.type}</td>
+                          <td style={{ textAlign: "right" }}>{c.surface} m²</td>
+                          <td style={{ textAlign: "right", color: "#6B7280" }}>{c.rooms ?? "—"}</td>
+                          <td style={{ textAlign: "right", fontWeight: 600 }}>{formatPrice(c.price, true)}</td>
+                          <td style={{ textAlign: "right", color: "#6B7280" }}>{formatPsm(c.pricePsm)}</td>
+                          <td style={{ textAlign: "right", fontWeight: 700, color: "#2563EB" }}>{c.indexedPricePsm ? formatPsm(c.indexedPricePsm) : "—"}</td>
+                          <td style={{ fontSize: "9px", color: c.source === "live" ? "#2563EB" : "#9CA3AF" }}>{c.source === "live" ? "Live" : "CSV"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {excludedCount > 0 && (
+                    <p style={{ fontSize: "10px", color: "#9CA3AF", marginTop: 6 }}>
+                      {excludedCount} transaction{excludedCount > 1 ? "s" : ""} exclue{excludedCount > 1 ? "s" : ""} (valeur aberrante) — non présentée{excludedCount > 1 ? "s" : ""}.
+                    </p>
+                  )}
+                </>
               ) : (
-                <p style={{ color: "#64748b", fontSize: "8.5pt" }}>Aucun comparable DVF disponible.</p>
-              )}
-              {dvfComparables.filter(c => c.outlier).length > 0 && (
-                <p style={{ fontSize: "7.5pt", color: "#94a3b8", marginTop: 4 }}>
-                  {dvfComparables.filter(c => c.outlier).length} transaction{dvfComparables.filter(c => c.outlier).length > 1 ? "s" : ""} exclue{dvfComparables.filter(c => c.outlier).length > 1 ? "s" : ""} (valeur aberrante).
-                </p>
+                <p style={{ color: "#6B7280", fontStyle: "italic" }}>Aucun comparable DVF disponible dans ce périmètre.</p>
               )}
             </div>
 
-            <hr className="divider" />
-
-            {/* ── 5. ANNONCES ACTIVES ── */}
+            {/* §5 — ANNONCES ACTIVES */}
             {listings.length > 0 && (
-              <div className="section">
-                <div className="sh2">5. Annonces actives ({cleanListings.length} retenues / {listings.filter(l => l.outlier).length} exclues)</div>
-                <table>
+              <div className="section-break page-break-hint">
+                <div className="section-title">
+                  5. Annonces actives — {cleanListings.length} retenue{cleanListings.length !== 1 ? "s" : ""} / {listings.filter(l => l.outlier).length} exclue{listings.filter(l => l.outlier).length !== 1 ? "s" : ""}
+                </div>
+                <table className="fixed">
+                  <colgroup>
+                    <col style={{ width: "28%" }} />
+                    <col style={{ width: "16%" }} />
+                    <col style={{ width: "10%" }} />
+                    <col style={{ width: "7%" }} />
+                    <col style={{ width: "14%" }} />
+                    <col style={{ width: "11%" }} />
+                    <col style={{ width: "8%" }} />
+                    <col style={{ width: "6%" }} />
+                  </colgroup>
                   <thead>
                     <tr>
                       <th>Titre</th>
                       <th>Ville</th>
                       <th style={{ textAlign: "right" }}>Surface</th>
-                      <th style={{ textAlign: "right" }}>Pièces</th>
+                      <th style={{ textAlign: "right" }}>Pcs</th>
                       <th style={{ textAlign: "right" }}>Prix affiché</th>
                       <th style={{ textAlign: "right" }}>€/m²</th>
-                      <th>Dist.</th>
+                      <th>Distance</th>
                       <th style={{ textAlign: "center" }}>Statut</th>
                     </tr>
                   </thead>
                   <tbody>
                     {listings.map((l, i) => (
-                      <tr key={`${l.id ?? "l"}-${i}`} style={l.outlier ? { background: "#fff7ed" } : { background: "#f0fdf4" }}>
-                        <td style={{ maxWidth: 110, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "7.5pt" }}>{l.title}</td>
-                        <td style={{ whiteSpace: "nowrap", color: "#64748b", fontSize: "7.5pt" }}>{l.city}</td>
-                        <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>{l.surface} m²</td>
-                        <td style={{ textAlign: "right", color: "#64748b" }}>{l.rooms ?? "—"}</td>
+                      <tr key={`${l.id ?? "l"}-${i}`} style={l.outlier ? { background: "#FFF7ED" } : { background: "#F0FDF4" }}>
+                        <td style={{ fontSize: "10px", fontWeight: 500 }}>{l.title}</td>
+                        <td style={{ color: "#6B7280", fontSize: "10px" }}>{l.city}</td>
+                        <td style={{ textAlign: "right" }}>{l.surface} m²</td>
+                        <td style={{ textAlign: "right", color: "#6B7280" }}>{l.rooms ?? "—"}</td>
                         <td style={{ textAlign: "right", fontWeight: 600 }}>{formatPrice(l.price, true)}</td>
-                        <td style={{ textAlign: "right", fontWeight: 700, color: l.outlier ? "#c2410c" : "#1e40af" }}>{formatPsm(l.pricePsm)}</td>
-                        <td style={{ whiteSpace: "nowrap", color: "#64748b", fontSize: "7.5pt" }}>
+                        <td style={{ textAlign: "right", fontWeight: 700, color: l.outlier ? "#C2410C" : "#2563EB" }}>{formatPsm(l.pricePsm)}</td>
+                        <td style={{ color: "#6B7280", fontSize: "10px" }}>
                           {l.distance ? (l.distance >= 1000 ? (l.distance / 1000).toFixed(1) + " km" : Math.round(l.distance) + " m") : "—"}
                         </td>
                         <td style={{ textAlign: "center" }}>
                           {l.outlier ? (
-                            <span style={{ background: "#ffedd5", color: "#c2410c", border: "1px solid #fbbf24", borderRadius: 99, padding: "1px 6px", fontSize: "6.5pt", fontWeight: 700 }}>
-                              {l.outlierReason === "iqr" ? "Exclu IQR" : "Exclu médiane"}
+                            <span className={l.outlierReason === "iqr" ? "badge-iqr" : "badge-warn"}>
+                              {l.outlierReason === "iqr" ? "IQR" : "Méd."}
                             </span>
                           ) : (
-                            <span style={{ background: "#dcfce7", color: "#15803d", border: "1px solid #86efac", borderRadius: 99, padding: "1px 6px", fontSize: "6.5pt", fontWeight: 700 }}>
-                              Retenu
-                            </span>
+                            <span className="badge-ok">✓</span>
                           )}
                         </td>
                       </tr>
@@ -601,47 +630,51 @@ export default async function PrintExpertPage({
               </div>
             )}
 
-            {listings.length > 0 && <hr className="divider" />}
-
-            {/* ── 6. MARCHÉ LOCAL ── */}
+            {/* §6 — MARCHÉ LOCAL */}
             {trendData.yearlyStats.length > 0 && (
-              <div className="section">
-                <div className="sh2">6. Évolution du marché local{dvfTypeForChart ? ` — ${dvfTypeForChart}s` : ""}</div>
-                <div style={{ display: "flex", gap: 8, marginBottom: 10, flexWrap: "wrap", alignItems: "center" }}>
+              <div className="section-break page-break-hint">
+                <div className="section-title">6. Évolution du marché local{dvfTypeForChart ? ` — ${dvfTypeForChart}s` : ""}</div>
+                <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap", alignItems: "center" }}>
                   {trendData.trend && (
-                    <span className="badge" style={{ borderColor: trendColor, color: trendColor, background: trendColor + "18" }}>
+                    <span className="chip" style={{ borderColor: trendColor, color: trendColor }}>
                       {trendLabel}{trendData.trendPct != null && ` · ${trendData.trendPct > 0 ? "+" : ""}${trendData.trendPct}% sur 6 ans`}
                     </span>
                   )}
-                  <span style={{ fontSize: "7.5pt", color: "#94a3b8" }}>
-                    Rayon {Math.max(perimeterKm ?? 2, 2)} km · {trendData.yearlyStats.reduce((s, y) => s + y.count, 0).toLocaleString("fr-FR")} transactions au total
+                  <span style={{ fontSize: "10px", color: "#9CA3AF" }}>
+                    Rayon {Math.max(perimeterKm ?? 2, 2)} km · {trendData.yearlyStats.reduce((s, y) => s + y.count, 0).toLocaleString("fr-FR")} transactions analysées
                   </span>
                 </div>
-                <table>
+                <table className="fixed">
+                  <colgroup>
+                    <col style={{ width: "12%" }} />
+                    <col style={{ width: "18%" }} />
+                    <col style={{ width: "55%" }} />
+                    <col style={{ width: "15%" }} />
+                  </colgroup>
                   <thead>
                     <tr>
                       <th>Année</th>
                       <th style={{ textAlign: "right" }}>Médiane €/m²</th>
-                      <th style={{ width: "40%" }}>Volume</th>
+                      <th>Volume</th>
                       <th style={{ textAlign: "right" }}>Transactions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {trendData.yearlyStats.map((y) => {
+                    {trendData.yearlyStats.map((y, idx) => {
                       const pctBar = Math.round((y.count / maxTrendCount) * 100);
-                      const isLast3 = trendData.yearlyStats.indexOf(y) >= trendData.yearlyStats.length - 3;
+                      const isRecent = idx >= trendData.yearlyStats.length - 3;
                       return (
-                        <tr key={y.year} style={isLast3 ? { background: "#f0f9ff" } : undefined}>
-                          <td style={{ fontWeight: isLast3 ? 700 : 400 }}>{y.year}</td>
-                          <td style={{ textAlign: "right", fontWeight: 700, color: "#1e40af" }}>{formatPsm(y.medianPsm)}</td>
-                          <td>
+                        <tr key={y.year} style={isRecent ? { background: "#F0F9FF" } : undefined}>
+                          <td style={{ fontWeight: isRecent ? 700 : 400 }}>{y.year}</td>
+                          <td style={{ textAlign: "right", fontWeight: 700, color: "#2563EB" }}>{formatPsm(y.medianPsm)}</td>
+                          <td style={{ paddingRight: 8 }}>
                             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                              <div className="trend-bar-bg">
-                                <div className="trend-bar-fill" style={{ width: `${pctBar}%` }} />
+                              <div className="bar-bg" style={{ flex: 1 }}>
+                                <div className="bar-fill" style={{ width: `${pctBar}%` }} />
                               </div>
                             </div>
                           </td>
-                          <td style={{ textAlign: "right", color: "#64748b" }}>{y.count.toLocaleString("fr-FR")}</td>
+                          <td style={{ textAlign: "right", color: "#6B7280" }}>{y.count.toLocaleString("fr-FR")}</td>
                         </tr>
                       );
                     })}
@@ -650,20 +683,23 @@ export default async function PrintExpertPage({
               </div>
             )}
 
-            {/* ── FOOTER ── */}
+            {/* FOOTER */}
             <div className="footer">
               <span>Estimation fondée sur les prix signés DVF · Source DGFiP 2014–2024 · Usage professionnel uniquement</span>
               <span>ESTIM&apos;74 · Réf. {params.id.slice(0, 8).toUpperCase()} · {today}</span>
             </div>
-            <div style={{ marginTop: 4, fontSize: "6.5pt", color: "#cbd5e1", textAlign: "center" }}>
-              Ce document est une estimation et ne constitue pas une expertise officielle au sens du Code civil. Les données DVF sont fournies par la DGFiP (data.gouv.fr). ESTIM&apos;74 est un outil d&apos;aide à la décision.
+            <div className="footer-legal">
+              Ce document est une estimation et ne constitue pas une expertise officielle au sens du Code civil. Données DVF fournies par la DGFiP (data.gouv.fr). ESTIM&apos;74 est un outil d&apos;aide à la décision.
             </div>
-
           </div>
         </div>
       </div>
 
-      {!skipPrint && <div className="screen-hint" style={{ position: "fixed", top: 16, left: "50%", transform: "translateX(-50%)", background: "#1e40af", color: "#fff", padding: "8px 20px", borderRadius: 99, fontSize: 13, fontFamily: "sans-serif", zIndex: 1000, whiteSpace: "nowrap", boxShadow: "0 2px 12px rgba(0,0,0,0.2)" }}>Ouverture de la boîte d&apos;impression…</div>}
+      {!skipPrint && (
+        <div style={{ position: "fixed", top: 16, left: "50%", transform: "translateX(-50%)", background: "#2563EB", color: "#fff", padding: "8px 20px", borderRadius: 99, fontSize: 13, fontFamily: "sans-serif", zIndex: 1000, boxShadow: "0 2px 12px rgba(37,99,235,0.3)", whiteSpace: "nowrap" }}>
+          Ouverture de la boîte d&apos;impression…
+        </div>
+      )}
     </>
   );
 }
