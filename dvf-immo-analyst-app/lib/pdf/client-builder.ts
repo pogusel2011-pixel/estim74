@@ -31,7 +31,7 @@ import { PDFDocument } from "pdf-lib";
 
   function clientLabel(adj: Adjustment, cond: string): string {
     const l = adj.label.toLowerCase();
-    if (l.includes("excellent") || l.includes("refait") || l.includes("neuf")) return "Excellent etat general";
+    if (l.includes("excellent") || l.includes("refait") || l.includes("neuf")) return "Excellent état général";
     if (l.includes("etat") || l.includes("condition")) return cond || san(adj.label);
     if (l.includes("parking")) return "Parking";
     if (l.includes("garage")) return "Garage";
@@ -67,26 +67,26 @@ import { PDFDocument } from "pdf-lib";
 
     // ═══════════ COVER ═══════════════════════════════════════════════════
     const cp = w.addPage();
-    cp.drawRectangle({ x: 0, y: 0, width: PAGE_W, height: PAGE_H, color: C.darkBlue });
+    cp.drawRectangle({ x: 0, y: 0, width: PAGE_W, height: PAGE_H, color: C.coverBg });
     cp.drawRectangle({ x: 0, y: PAGE_H - 190, width: PAGE_W, height: 190, color: C.blue });
-    cp.drawText("ESTIM'74", { x: ML, y: PAGE_H - 58, font: fonts.bold, size: 34, color: C.white });
-    cp.drawText("Estimation immobiliere - Haute-Savoie (74)", { x: ML, y: PAGE_H - 76, font: fonts.regular, size: FS.small, color: C.white, opacity: 0.70 });
-    cp.drawLine({ start: { x: ML, y: PAGE_H - 93 }, end: { x: PAGE_W - MR, y: PAGE_H - 93 }, color: C.white, thickness: 0.5, opacity: 0.25 });
-    cp.drawText("RAPPORT D'ESTIMATION", { x: ML, y: PAGE_H - 116, font: fonts.bold, size: FS.small, color: C.white, opacity: 0.6 });
-    cp.drawText(propertyLabel.toUpperCase(), { x: ML, y: PAGE_H - 132, font: fonts.regular, size: FS.small, color: C.white, opacity: 0.5 });
-    const addr = san([a.address, a.postalCode, a.city].filter(Boolean).join(", ") || "Adresse non renseignee");
+    cp.drawText("ESTIM’74", { x: ML, y: PAGE_H - 58, font: fonts.bold, size: 34, color: C.white });
+    cp.drawText("Estimation immobilière - Haute-Savoie (74)", { x: ML, y: PAGE_H - 76, font: fonts.regular, size: FS.small, color: C.darkBlue });
+    cp.drawLine({ start: { x: ML, y: PAGE_H - 93 }, end: { x: PAGE_W - MR, y: PAGE_H - 93 }, color: C.borderBlue, thickness: 0.5 });
+    cp.drawText("RAPPORT D'ESTIMATION", { x: ML, y: PAGE_H - 116, font: fonts.bold, size: FS.small, color: C.gray });
+    cp.drawText(propertyLabel.toUpperCase(), { x: ML, y: PAGE_H - 132, font: fonts.regular, size: FS.small, color: C.darkBlue });
+    const addr = san([a.address, a.postalCode, a.city].filter(Boolean).join(", ") || "Adresse non renseignée");
     wrapText(fonts.bold, addr, 17, CW - 20).forEach((line, i) => {
-      cp.drawText(line, { x: ML, y: PAGE_H - 160 - i * 24, font: fonts.bold, size: 17, color: C.white });
+      cp.drawText(line, { x: ML, y: PAGE_H - 160 - i * 24, font: fonts.bold, size: 17, color: C.dark });
     });
-    const chips = [surface ? `${surface} m2` : null, a.rooms ? `${a.rooms} pieces` : null, a.yearBuilt ? `Construit en ${a.yearBuilt}` : null, conditionLabel || null, a.dpeLetter ? `DPE ${a.dpeLetter}` : null].filter(Boolean) as string[];
+    const chips = [surface ? `${surface} m²` : null, a.rooms ? `${a.rooms} pièces` : null, a.yearBuilt ? `Construit en ${a.yearBuilt}` : null, conditionLabel || null, a.dpeLetter ? `DPE ${a.dpeLetter}` : null].filter(Boolean) as string[];
     let chx = ML;
-    chips.forEach((chip) => { cp.drawText(chip, { x: chx + 7, y: PAGE_H - 218, font: fonts.regular, size: FS.small, color: C.white, opacity: 0.8 }); chx += fonts.regular.widthOfTextAtSize(chip, FS.small) + 20; });
+    chips.forEach((chip) => { cp.drawText(chip, { x: chx + 7, y: PAGE_H - 218, font: fonts.regular, size: FS.small, color: C.dark }); chx += fonts.regular.widthOfTextAtSize(chip, FS.small) + 20; });
     const bY = 80;
-    cp.drawLine({ start: { x: ML, y: bY + 56 }, end: { x: PAGE_W - MR, y: bY + 56 }, color: C.white, thickness: 0.5, opacity: 0.2 });
-    cp.drawText("Date du rapport", { x: ML, y: bY + 36, font: fonts.bold, size: FS.micro, color: C.white, opacity: 0.5 });
-    cp.drawText(today, { x: ML, y: bY + 20, font: fonts.bold, size: FS.body, color: C.white });
-    cp.drawText("Prepare par :", { x: ML, y: bY + 1, font: fonts.regular, size: FS.body, color: C.white, opacity: 0.7 });
-    cp.drawLine({ start: { x: ML + 70, y: bY - 1 }, end: { x: ML + 260, y: bY - 1 }, color: C.white, thickness: 0.5, opacity: 0.5 });
+    cp.drawLine({ start: { x: ML, y: bY + 56 }, end: { x: PAGE_W - MR, y: bY + 56 }, color: C.borderBlue, thickness: 0.5 });
+    cp.drawText("Date du rapport", { x: ML, y: bY + 36, font: fonts.bold, size: FS.micro, color: C.gray });
+    cp.drawText(today, { x: ML, y: bY + 20, font: fonts.bold, size: FS.body, color: C.dark });
+    cp.drawText("Préparé par :", { x: ML, y: bY + 1, font: fonts.regular, size: FS.body, color: C.gray });
+    cp.drawLine({ start: { x: ML + 70, y: bY - 1 }, end: { x: ML + 260, y: bY - 1 }, color: C.borderBlue, thickness: 1 });
 
     // ═══════════ PAGE 2: ESTIMATION + POINTS FORTS/VIGILANCES ════════════
     w.addPage();
@@ -111,7 +111,7 @@ import { PDFDocument } from "pdf-lib";
       }
       // Confidence badge on right
       if (a.confidenceLabel) {
-        const badgeTxt = san(`Fiabilite ${a.confidenceLabel}`);
+        const badgeTxt = san(`Fiabilité ${a.confidenceLabel}`);
         const badgeX = ML + CW - fonts.bold.widthOfTextAtSize(badgeTxt, FS.small) - 16;
         w.page.drawText(san(badgeTxt), { x: badgeX, y: bxY + mainBoxH - 14, font: fonts.bold, size: FS.small, color: C.blue });
       }
@@ -132,7 +132,7 @@ import { PDFDocument } from "pdf-lib";
 
       // Info line
       const infoParts = [
-        a.dvfSampleSize != null ? `${a.dvfSampleSize} ventes de reference` : null,
+        a.dvfSampleSize != null ? `${a.dvfSampleSize} ventes de référence` : null,
         perimeterKm ? `Zone ${perimeterKm} km` : null,
       ].filter(Boolean).join(" - ");
       if (infoParts) {
@@ -144,15 +144,17 @@ import { PDFDocument } from "pdf-lib";
         w.gap(4);
         w.rect(ML, w.y - 16, CW, 18, C.amberBg);
         w.rect(ML, w.y - 16, 3, 18, C.amber);
-        w.page.drawText(san("[!] Estimation indicative - le nombre de ventes de reference est limite dans ce secteur."), { x: ML + 9, y: w.y - 10, font: fonts.regular, size: FS.small, color: C.amber });
+        w.page.drawText(san("! Estimation indicative - le nombre de ventes de référence est limité dans ce secteur."), { x: ML + 9, y: w.y - 10, font: fonts.regular, size: FS.small, color: C.amber });
         w.gap(24);
       }
     } else {
-      w.text("Estimation non disponible - donnees insuffisantes dans ce secteur.", ML, w.y, fonts.italic, FS.body, C.gray);
+      w.text("Estimation non disponible - données insuffisantes dans ce secteur.", ML, w.y, fonts.italic, FS.body, C.gray);
       w.gap(20);
     }
 
-    w.gap(16);
+    w.gap(8);
+    w.addPage();
+    w.footer(refId, today);
 
     // ─── Points forts / Vigilances ──────────────────────────────────────
     if (adjustments.length > 0) {
@@ -176,12 +178,12 @@ import { PDFDocument } from "pdf-lib";
       rightY -= 18;
 
       if (positiveAdj.length === 0) {
-        w.page.drawText(san("Aucun point fort identifie."), { x: leftX, y: leftY, font: fonts.italic, size: FS.body, color: C.lightGray });
+        w.page.drawText(san("Aucun point fort identifié."), { x: leftX, y: leftY, font: fonts.italic, size: FS.body, color: C.lightGray });
         leftY -= FS.body * 1.6;
       } else {
         positiveAdj.forEach((adj) => {
           const lbl = clientLabel(adj, conditionLabel);
-          w.page.drawText(san("[OK] " + lbl), { x: leftX, y: leftY, font: fonts.regular, size: FS.body, color: C.dark });
+          w.page.drawText(san("+ " + lbl), { x: leftX, y: leftY, font: fonts.regular, size: FS.body, color: C.dark });
           w.hline(leftX, leftY - 3, colW, C.border, 0.3);
           leftY -= FS.body * 1.7;
         });
@@ -193,7 +195,7 @@ import { PDFDocument } from "pdf-lib";
       } else {
         negativeAdj.forEach((adj) => {
           const lbl = clientLabel(adj, conditionLabel);
-          w.page.drawText(san("[!] " + lbl), { x: rightX, y: rightY, font: fonts.regular, size: FS.body, color: C.dark });
+          w.page.drawText(san("! " + lbl), { x: rightX, y: rightY, font: fonts.regular, size: FS.body, color: C.dark });
           w.hline(rightX, rightY - 3, colW, C.border, 0.3);
           rightY -= FS.body * 1.7;
         });
@@ -214,13 +216,13 @@ import { PDFDocument } from "pdf-lib";
           { header: "Type de bien", width: 100, align: "left" as const },
           { header: "Surface", width: 58, align: "right" as const },
           { header: "Prix de vente", width: 100, align: "right" as const },
-          { header: "Prix / m2", width: 80, align: "right" as const, bold: true, color: () => C.blue },
+          { header: "Prix / m²", width: 80, align: "right" as const, bold: true, color: () => C.blue },
           { header: "Localisation", width: 113, align: "left" as const },
         ],
         rows: top5.map((c, i) => [
           fDateShort(c.date),
           san(c.type),
-          `${c.surface} m2`,
+          `${c.surface} m²`,
           fPrice(c.price),
           fPsm(c.indexedPricePsm ?? c.pricePsm),
           san(c.city) + (c.distanceM != null ? ` (${Math.round(c.distanceM)} m)` : ""),
@@ -229,21 +231,21 @@ import { PDFDocument } from "pdf-lib";
         stripedRows: true,
       });
       w.gap(6);
-      w.text("Prix en valeur 2025 (indice notaires Haute-Savoie). Source : Demandes de Valeurs Foncieres - DGFiP.", ML, w.y, fonts.italic, FS.micro, C.lightGray);
+      w.text("Prix en valeur 2025 (indice notaires Haute-Savoie). Source : Demandes de Valeurs Foncières - DGFiP.", ML, w.y, fonts.italic, FS.micro, C.lightGray);
       w.gap(20);
     }
 
     // ═══════════ PAGE 4: CONTEXTE MARCHE ═════════════════════════════════
     w.addPage();
     w.footer(refId, today);
-    w.sectionTitle("4. Contexte du marche immobilier local");
+    w.sectionTitle("4. Contexte du marché immobilier local");
     w.gap(8);
 
     if (trend && trendStats.length >= 2) {
       const trendWord = trend === "hausse" ? "en hausse" : trend === "baisse" ? "en baisse" : "stable";
       const trendIcon = trend === "hausse" ? "^" : trend === "baisse" ? "v" : "->";
       const trendColor = trend === "hausse" ? C.green : trend === "baisse" ? C.red : C.gray;
-      const trendTitle = `Marche ${trendWord}${trendPct != null ? ` de ${Math.abs(trendPct)}% sur les 3 dernieres annees` : ""}`;
+      const trendTitle = `Marché ${trendWord}${trendPct != null ? ` de ${Math.abs(trendPct)}% sur les 3 dernieres annees` : ""}`;
 
       // Trend header
       w.rect(ML, w.y - 24, CW, 26, trend === "hausse" ? C.greenBg : trend === "baisse" ? C.amberBg : C.rowAlt);
@@ -258,16 +260,16 @@ import { PDFDocument } from "pdf-lib";
       const prev = trendStats[trendStats.length - 2];
       const diff = last.medianPsm - prev.medianPsm;
       const diffPct = Math.round((diff / prev.medianPsm) * 1000) / 10;
-      w.kv(`Prix median ${prev.year}`, fPsm(prev.medianPsm));
-      w.kv(`Prix median ${last.year}`, fPsm(last.medianPsm));
-      w.kv("Evolution annuelle", (diff >= 0 ? "+" : "") + diffPct + "%");
+      w.kv(`Prix médian ${prev.year}`, fPsm(prev.medianPsm));
+      w.kv(`Prix médian ${last.year}`, fPsm(last.medianPsm));
+      w.kv("Évolution annuelle", (diff >= 0 ? "+" : "") + diffPct + "%");
       w.gap(12);
 
       // Commentary
       const commentaries = {
-        hausse: "Le marche immobilier local est dynamique : les prix sont en progression reguliere. Dans ce contexte de demande soutenue, les delais de vente sont generalement courts et la marge de negociation limitee.",
-        baisse: "Le marche local marque un repli sur les dernieres annees. Les acheteurs disposent d'une marge de negociation plus importante. Une mise en valeur soignee du bien et un prix coherent restent essentiels pour conclure la vente.",
-        stable: "Le marche local est stable : les prix se maintiennent dans une fourchette coherente, offrant une bonne visibilite aux vendeurs comme aux acquereurs. Les conditions actuelles sont propices a une transaction dans des delais raisonnables.",
+        hausse: "Le marché immobilier local est dynamique : les prix sont en progression régulière. Dans ce contexte de demande soutenue, les délais de vente sont généralement courts et la marge de négociation limitée.",
+        baisse: "Le marché local marque un repli sur les dernières années. Les acheteurs disposent d’une marge de négociation plus importante. Une mise en valeur soignée du bien et un prix cohérent restent essentiels pour conclure la vente.",
+        stable: "Le marché local est stable : les prix se maintiennent dans une fourchette cohérente, offrant une bonne visibilité aux vendeurs comme aux acquéreurs. Les conditions actuelles sont propices à une transaction dans des délais raisonnables.",
       };
       const commentary = san(commentaries[trend]);
       w.rect(ML, w.y - 6, 3, 56, C.blue);
@@ -277,7 +279,7 @@ import { PDFDocument } from "pdf-lib";
       });
       w.gap(commLines.length * FS.body * 1.5 + 12);
     } else {
-      w.text("Donnees de tendance non disponibles pour ce secteur.", ML, w.y, fonts.italic, FS.body, C.gray);
+      w.text("Données de tendance non disponibles pour ce secteur.", ML, w.y, fonts.italic, FS.body, C.gray);
       w.gap(16);
     }
 

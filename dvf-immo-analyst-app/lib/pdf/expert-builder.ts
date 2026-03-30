@@ -41,27 +41,27 @@ import { PDFDocument } from "pdf-lib";
 
     // ═══════════ COVER ═══════════════════════════════════════════════════
     const cp = w.addPage();
-    cp.drawRectangle({ x: 0, y: 0, width: PAGE_W, height: PAGE_H, color: C.darkBlue });
+    cp.drawRectangle({ x: 0, y: 0, width: PAGE_W, height: PAGE_H, color: C.coverBg });
     cp.drawRectangle({ x: 0, y: PAGE_H - 120, width: PAGE_W, height: 120, color: C.blue });
-    cp.drawText("ESTIM'74 - HAUTE-SAVOIE (74) - DONNEES DVF DGFIP 2014-2024", { x: ML, y: PAGE_H - 48, font: fonts.regular, size: FS.micro, color: C.white, opacity: 0.6 });
-    cp.drawText("RAPPORT D'EXPERTISE", { x: ML, y: PAGE_H - 86, font: fonts.bold, size: 26, color: C.white });
+    cp.drawText("ESTIM’74 - HAUTE-SAVOIE (74) - DONNÉES DVF DGFiP 2014-2024", { x: ML, y: PAGE_H - 48, font: fonts.regular, size: FS.micro, color: C.white, opacity: 0.6 });
+    cp.drawText("RAPPORT D’EXPERTISE", { x: ML, y: PAGE_H - 86, font: fonts.bold, size: 26, color: C.white });
     cp.drawLine({ start: { x: ML, y: PAGE_H - 108 }, end: { x: PAGE_W - MR, y: PAGE_H - 108 }, color: C.white, thickness: 0.5, opacity: 0.3 });
-    cp.drawText(propertyLabel.toUpperCase(), { x: ML, y: PAGE_H - 130, font: fonts.bold, size: FS.small, color: C.white, opacity: 0.65 });
-    const addr = san([a.address, a.postalCode, a.city].filter(Boolean).join(", ") || "Adresse non renseignee");
+    cp.drawText(propertyLabel.toUpperCase(), { x: ML, y: PAGE_H - 130, font: fonts.bold, size: FS.small, color: C.darkBlue });
+    const addr = san([a.address, a.postalCode, a.city].filter(Boolean).join(", ") || "Adresse non renseignée");
     wrapText(fonts.bold, addr, 16, CW - 20).forEach((line, i) => {
-      cp.drawText(line, { x: ML, y: PAGE_H - 156 - i * 22, font: fonts.bold, size: 16, color: C.white });
+      cp.drawText(line, { x: ML, y: PAGE_H - 156 - i * 22, font: fonts.bold, size: 16, color: C.dark });
     });
-    const metaChips = [surface ? `${surface} m2` : null, a.rooms ? `${a.rooms} pieces` : null, a.yearBuilt ? `Construit en ${a.yearBuilt}` : null, conditionLabel || null, a.dpeLetter ? `DPE ${a.dpeLetter}` : null].filter(Boolean) as string[];
+    const metaChips = [surface ? `${surface} m²` : null, a.rooms ? `${a.rooms} pièces` : null, a.yearBuilt ? `Construit en ${a.yearBuilt}` : null, conditionLabel || null, a.dpeLetter ? `DPE ${a.dpeLetter}` : null].filter(Boolean) as string[];
     let mx = ML;
-    metaChips.forEach((chip) => { cp.drawText(chip, { x: mx, y: PAGE_H - 218, font: fonts.regular, size: FS.small, color: C.white, opacity: 0.8 }); mx += fonts.regular.widthOfTextAtSize(chip, FS.small) + 14; });
+    metaChips.forEach((chip) => { cp.drawText(chip, { x: mx, y: PAGE_H - 218, font: fonts.regular, size: FS.small, color: C.dark }); mx += fonts.regular.widthOfTextAtSize(chip, FS.small) + 14; });
     const feats = [a.hasParking && "Parking", a.hasGarage && "Garage", a.hasBalcony && "Balcon", a.hasTerrace && "Terrasse", a.hasPool && "Piscine", a.hasElevator && "Ascenseur", a.hasCellar && "Cave"].filter(Boolean) as string[];
     let fx = ML;
-    feats.forEach((f) => { cp.drawText(f, { x: fx, y: PAGE_H - 238, font: fonts.regular, size: FS.small, color: C.white, opacity: 0.6 }); fx += fonts.regular.widthOfTextAtSize(f, FS.small) + 14; });
-    cp.drawLine({ start: { x: ML, y: 100 }, end: { x: PAGE_W - MR, y: 100 }, color: C.white, thickness: 0.5, opacity: 0.2 });
-    cp.drawText("GENERE LE", { x: ML, y: 80, font: fonts.bold, size: FS.micro, color: C.white, opacity: 0.5 });
-    cp.drawText(today, { x: ML, y: 63, font: fonts.bold, size: 13, color: C.white });
-    cp.drawText("REFERENCE", { x: PAGE_W - MR - 90, y: 80, font: fonts.bold, size: FS.micro, color: C.white, opacity: 0.5 });
-    cp.drawText(refId, { x: PAGE_W - MR - 90, y: 63, font: fonts.bold, size: 13, color: C.white });
+    feats.forEach((f) => { cp.drawText(f, { x: fx, y: PAGE_H - 238, font: fonts.regular, size: FS.small, color: C.gray }); fx += fonts.regular.widthOfTextAtSize(f, FS.small) + 14; });
+    cp.drawLine({ start: { x: ML, y: 100 }, end: { x: PAGE_W - MR, y: 100 }, color: C.borderBlue, thickness: 0.5 });
+    cp.drawText("GÉNÉRÉ LE", { x: ML, y: 80, font: fonts.bold, size: FS.micro, color: C.gray });
+    cp.drawText(today, { x: ML, y: 63, font: fonts.bold, size: 13, color: C.dark });
+    cp.drawText("RÉFÉRENCE", { x: PAGE_W - MR - 90, y: 80, font: fonts.bold, size: FS.micro, color: C.gray });
+    cp.drawText(refId, { x: PAGE_W - MR - 90, y: 63, font: fonts.bold, size: 13, color: C.dark });
 
     // ═══════════ PAGE 2: ESTIMATION + AJUSTEMENTS ════════════════════════
     w.addPage();
@@ -73,7 +73,7 @@ import { PDFDocument } from "pdf-lib";
       if (isIndicative) {
         w.rect(ML, w.y - 18, CW, 20, C.amberBg);
         w.rect(ML, w.y - 18, 3, 20, C.amber);
-        w.page.drawText(san("[!] Estimation indicative - donnees DVF limitees"), { x: ML + 8, y: w.y - 12, font: fonts.bold, size: FS.body, color: C.amber });
+        w.page.drawText(san("! Estimation indicative - données DVF limitées"), { x: ML + 8, y: w.y - 12, font: fonts.bold, size: FS.body, color: C.amber });
         w.gap(26);
       }
       const boxW = (CW - 12) / 3;
@@ -95,9 +95,9 @@ import { PDFDocument } from "pdf-lib";
       w.y = bxY - 6;
 
       const infoChips = [
-        a.confidenceLabel ? san(`Fiabilite ${a.confidenceLabel}`) : null,
+        a.confidenceLabel ? san(`Fiabilité ${a.confidenceLabel}`) : null,
         a.dvfSampleSize != null ? `${a.dvfSampleSize} trans. DVF` : null,
-        perimeterKm ? (perimeterKm > (a.requestedRadiusKm as number ?? 0) ? `Rayon elargi ${perimeterKm} km` : `Rayon ${perimeterKm} km`) : null,
+        perimeterKm ? (perimeterKm > (a.requestedRadiusKm as number ?? 0) ? `Rayon élargi ${perimeterKm} km` : `Rayon ${perimeterKm} km`) : null,
       ].filter(Boolean) as string[];
       let chX = ML;
       infoChips.forEach((chip) => {
@@ -109,11 +109,12 @@ import { PDFDocument } from "pdf-lib";
       });
       w.gap(22);
     } else {
-      w.text("Estimation non disponible - donnees insuffisantes.", ML, w.y, fonts.italic, FS.body, C.gray);
+      w.text("Estimation non disponible - données insuffisantes.", ML, w.y, fonts.italic, FS.body, C.gray);
       w.gap(16);
     }
 
-    w.gap(12);
+    w.addPage();
+    w.footer(refId, today);
     w.sectionTitle("2. Ajustements qualitatifs - grille Estim74");
     w.gap(4);
 
@@ -124,9 +125,9 @@ import { PDFDocument } from "pdf-lib";
         return null;
       };
       const adjDefs = [
-        { critere: "Etat du bien", adj: findAdj(undefined, "condition") },
-        { critere: "DPE (energie)", adj: findAdj(undefined, "energy") },
-        { critere: "Etage", adj: findAdj(undefined, "floor") },
+        { critere: "État du bien", adj: findAdj(undefined, "condition") },
+        { critere: "DPE (énergie)", adj: findAdj(undefined, "energy") },
+        { critere: "Étage", adj: findAdj(undefined, "floor") },
         { critere: "Parking", adj: findAdj("parking") },
         { critere: "Garage", adj: findAdj("garage") },
         { critere: "Balcon", adj: findAdj("balcon") },
@@ -141,19 +142,19 @@ import { PDFDocument } from "pdf-lib";
         if (!adj) return [critere, "-", "-", "-", "-", "-"];
         const ip = Math.round(adj.factor * basePsm);
         const it = Math.round(adj.factor * basePsm * surface);
-        return [critere, "OUI", fPct(adj.factor), (ip >= 0 ? "+" : "") + numFr(ip) + " EUR", (it >= 0 ? "+" : "") + numFr(it) + " EUR", san(adj.label)];
+        return [critere, "OUI", fPct(adj.factor), (ip >= 0 ? "+" : "") + numFr(ip) + " €", (it >= 0 ? "+" : "") + numFr(it) + " €", san(adj.label)];
       });
       const tip = Math.round(totalAdjFactor * basePsm);
       const tit = Math.round(totalAdjFactor * basePsm * surface);
-      adjRows.push(["TOTAL AJUSTEMENTS", "", fPct(totalAdjFactor), (tip >= 0 ? "+" : "") + numFr(tip) + " EUR", (tit >= 0 ? "+" : "") + numFr(tit) + " EUR", ""]);
+      adjRows.push(["TOTAL AJUSTEMENTS", "", fPct(totalAdjFactor), (tip >= 0 ? "+" : "") + numFr(tip) + " €", (tit >= 0 ? "+" : "") + numFr(tit) + " €", ""]);
 
       drawTable(w, {
         cols: [
-          { header: "Critere", width: 100 },
-          { header: "Present", width: 44, align: "center" as const },
+          { header: "Critère", width: 100 },
+          { header: "Présent", width: 44, align: "center" as const },
           { header: "Facteur", width: 56, align: "right" as const, color: (row) => { const f = parseFloat(row[2]); return isNaN(f) ? C.dark : f > 0 ? C.green : f < 0 ? C.red : C.dark; } },
-          { header: "Impact EUR/m2", width: 88, align: "right" as const, color: (row) => !row[3] || row[3] === "-" ? C.gray : row[3].startsWith("+") ? C.green : C.red },
-          { header: "Impact total EUR", width: 100, align: "right" as const, color: (row) => !row[4] || row[4] === "-" ? C.gray : row[4].startsWith("+") ? C.green : C.red },
+          { header: "Impact €/m²", width: 88, align: "right" as const, color: (row) => !row[3] || row[3] === "-" ? C.gray : row[3].startsWith("+") ? C.green : C.red },
+          { header: "Impact total €", width: 100, align: "right" as const, color: (row) => !row[4] || row[4] === "-" ? C.gray : row[4].startsWith("+") ? C.green : C.red },
           { header: "Label", width: 127 },
         ],
         rows: adjRows,
@@ -161,31 +162,31 @@ import { PDFDocument } from "pdf-lib";
         stripedRows: true,
       });
       w.gap(5);
-      w.text(`Base : ${fPsm(basePsm)} - Surface : ${surface} m2`, ML, w.y, fonts.italic, FS.micro, C.lightGray);
+      w.text(`Base : ${fPsm(basePsm)} - Surface : ${surface} m²`, ML, w.y, fonts.italic, FS.micro, C.lightGray);
       w.gap(12);
     }
 
     // ═══════════ PAGE 3: METHODE & CALCUL ════════════════════════════════
     w.addPage();
     w.footer(refId, today);
-    w.sectionTitle("3. Methode et Calcul");
+    w.sectionTitle("3. Méthode et calcul");
     w.gap(6);
 
     // Badge A
     w.rect(ML, w.y - 14, 18, 16, C.blue);
     w.page.drawText(san("A"), { x: ML + 5, y: w.y - 10, font: fonts.bold, size: FS.body, color: C.white });
-    w.page.drawText(san("Donnees DVF - transactions signees"), { x: ML + 24, y: w.y - 9, font: fonts.bold, size: FS.body, color: C.dark });
+    w.page.drawText(san("Données DVF - transactions signées"), { x: ML + 24, y: w.y - 9, font: fonts.bold, size: FS.body, color: C.dark });
     w.gap(22);
 
     drawTable(w, {
       cols: [
-        { header: "Etape pipeline DVF", width: CW - 80 },
+        { header: "Étape pipeline DVF", width: CW - 80 },
         { header: "Transactions", width: 80, align: "right" as const, color: (row) => row[0].startsWith("Valeurs") ? C.red : row[0].includes("[OK]") ? C.green : C.dark },
       ],
       rows: [
-        [`Mutations brutes dans le perimetre (${perimeterKm ?? "?"} km)`, String(dvfRetenues + dvfExclus)],
-        ["Valeurs aberrantes exclues (IQR x2 + mediane +-40%)", dvfExclus > 0 ? `-${dvfExclus}` : "0"],
-        ["[OK] Transactions retenues", String(dvfRetenues)],
+        [`Mutations brutes dans le périmètre (${perimeterKm ?? "?"} km)`, String(dvfRetenues + dvfExclus)],
+        ["Valeurs aberrantes exclues (IQR x2 + médiane +-40%)", dvfExclus > 0 ? `-${dvfExclus}` : "0"],
+        ["+ Transactions retenues", String(dvfRetenues)],
       ],
       rowHeight: 14,
       stripedRows: false,
@@ -195,39 +196,39 @@ import { PDFDocument } from "pdf-lib";
     if (dvfStats?.isIndexed) {
       w.rect(ML, w.y - 14, CW, 16, C.greenBg);
       w.rect(ML, w.y - 14, 3, 16, C.green);
-      w.page.drawText(san("[OK] Prix indexes en valeur 2025 via les indices notariaux Haute-Savoie"), { x: ML + 8, y: w.y - 9, font: fonts.regular, size: FS.small, color: C.green });
+      w.page.drawText(san("+ Prix indexés en valeur 2025 via les indices notariaux Haute-Savoie"), { x: ML + 8, y: w.y - 9, font: fonts.regular, size: FS.small, color: C.green });
       w.gap(22);
     }
 
-    if (dvfStats) { w.kv("Mediane DVF (indexee 2025)", fPsm(dvfStats.medianPsm)); }
-    if (dvfStats?.weightedAvgPsm != null) { w.kv("Moy. ponderee (dist. x surf. x recence)", fPsm(dvfStats.weightedAvgPsm)); }
-    if (mktAdj !== 0) { w.kv(`Pression marche (${fPct(mktAdj)})`, fPsm(dvfAdjPsm)); }
+    if (dvfStats) { w.kv("Médiane DVF (indexée 2025)", fPsm(dvfStats.medianPsm)); }
+    if (dvfStats?.weightedAvgPsm != null) { w.kv("Moy. pondérée (dist. x surf. x récence)", fPsm(dvfStats.weightedAvgPsm)); }
+    if (mktAdj !== 0) { w.kv(`Pression marché (${fPct(mktAdj)})`, fPsm(dvfAdjPsm)); }
     w.hline(ML, w.y + 2, CW, C.borderBlue, 1);
     w.gap(3);
-    w.page.drawText(san("Prix DVF retenu"), { x: ML, y: w.y, font: fonts.bold, size: FS.body, color: C.darkBlue });
-    w.page.drawText(san(fPsm(dvfAdjPsm)), { x: ML + CW - fonts.bold.widthOfTextAtSize(fPsm(dvfAdjPsm), FS.body), y: w.y, font: fonts.bold, size: FS.body, color: C.darkBlue });
+    w.page.drawText(san("Prix DVF retenu"), { x: ML, y: w.y, font: fonts.bold, size: FS.body, color: C.coverBg });
+    w.page.drawText(san(fPsm(dvfAdjPsm)), { x: ML + CW - fonts.bold.widthOfTextAtSize(fPsm(dvfAdjPsm), FS.body), y: w.y, font: fonts.bold, size: FS.body, color: C.coverBg });
     w.gap(20);
 
     // Badge B
     w.rect(ML, w.y - 14, 18, 16, C.blue);
     w.page.drawText(san("B"), { x: ML + 5, y: w.y - 10, font: fonts.bold, size: FS.body, color: C.white });
-    w.page.drawText(san("Annonces actives - marche affiche"), { x: ML + 24, y: w.y - 9, font: fonts.bold, size: FS.body, color: C.dark });
+    w.page.drawText(san("Annonces actives - marché affiché"), { x: ML + 24, y: w.y - 9, font: fonts.bold, size: FS.body, color: C.dark });
     w.gap(22);
 
     if (listings.length === 0) {
-      w.text("Aucune annonce active trouvee.", ML, w.y, fonts.italic, FS.body, C.gray);
+      w.text("Aucune annonce active trouvée.", ML, w.y, fonts.italic, FS.body, C.gray);
       w.gap(16);
     } else {
       const outlierC = listings.filter((l) => l.outlier).length;
       drawTable(w, {
         cols: [
-          { header: "Etape pipeline annonces", width: CW - 80 },
+          { header: "Étape pipeline annonces", width: CW - 80 },
           { header: "Annonces", width: 80, align: "right" as const, color: (row) => row[0].startsWith("Valeurs") ? C.red : row[0].includes("[OK]") ? C.green : C.dark },
         ],
         rows: [
-          ["Annonces trouvees", String(listings.length)],
-          ["Valeurs aberrantes exclues (IQR x2 + mediane +-40%)", outlierC > 0 ? `-${outlierC}` : "0"],
-          ["[OK] Annonces retenues", String(cleanListings.length)],
+          ["Annonces trouvées", String(listings.length)],
+          ["Valeurs aberrantes exclues (IQR x2 + médiane +-40%)", outlierC > 0 ? `-${outlierC}` : "0"],
+          ["+ Annonces retenues", String(cleanListings.length)],
         ],
         rowHeight: 14,
         stripedRows: false,
@@ -238,8 +239,8 @@ import { PDFDocument } from "pdf-lib";
         w.kv("Abattement vendeur -4%", fPsm(listingAdjPsm));
         w.hline(ML, w.y + 2, CW, C.borderBlue, 1);
         w.gap(3);
-        w.page.drawText(san("Prix annonces retenu"), { x: ML, y: w.y, font: fonts.bold, size: FS.body, color: C.darkBlue });
-        w.page.drawText(san(fPsm(listingAdjPsm)), { x: ML + CW - fonts.bold.widthOfTextAtSize(fPsm(listingAdjPsm), FS.body), y: w.y, font: fonts.bold, size: FS.body, color: C.darkBlue });
+        w.page.drawText(san("Prix annonces retenu"), { x: ML, y: w.y, font: fonts.bold, size: FS.body, color: C.coverBg });
+        w.page.drawText(san(fPsm(listingAdjPsm)), { x: ML + CW - fonts.bold.widthOfTextAtSize(fPsm(listingAdjPsm), FS.body), y: w.y, font: fonts.bold, size: FS.body, color: C.coverBg });
         w.gap(20);
       }
     }
@@ -248,24 +249,24 @@ import { PDFDocument } from "pdf-lib";
     w.ensureSpace(80);
     w.rect(ML, w.y - 14, 18, 16, C.blue);
     w.page.drawText(san("C"), { x: ML + 5, y: w.y - 10, font: fonts.bold, size: FS.body, color: C.white });
-    w.page.drawText(san("Reconciliation finale"), { x: ML + 24, y: w.y - 9, font: fonts.bold, size: FS.body, color: C.dark });
+    w.page.drawText(san("Réconciliation finale"), { x: ML + 24, y: w.y - 9, font: fonts.bold, size: FS.body, color: C.dark });
     w.gap(22);
 
     const reconRows2: string[][] = [
-      ["DVF - moy. ponderee", fPsm(dvfAdjPsm), `${Math.round(dvfW * 100)} %`, fPsm(Math.round(dvfAdjPsm * dvfW))],
+      ["DVF - moy. pondérée", fPsm(dvfAdjPsm), `${Math.round(dvfW * 100)} %`, fPsm(Math.round(dvfAdjPsm * dvfW))],
       ["Annonces actives (-4%)", listingAdjPsm > 0 ? fPsm(listingAdjPsm) : "-", `${Math.round(lstW * 100)} %`, listingAdjPsm > 0 ? fPsm(Math.round(listingAdjPsm * lstW)) : "-"],
       ["PRIX DE BASE (avant ajust.)", "", "", fPsm(basePsm)],
     ];
     if (totalAdjFactor !== 0) {
       const adj2 = Math.round(totalAdjFactor * basePsm);
-      reconRows2.push([`Ajustements (${fPct(totalAdjFactor)})`, "", "", (adj2 >= 0 ? "+" : "") + numFr(adj2) + " EUR/m2"]);
+      reconRows2.push([`Ajustements (${fPct(totalAdjFactor)})`, "", "", (adj2 >= 0 ? "+" : "") + numFr(adj2) + " €/m²"]);
     }
     reconRows2.push([`PRIX FINAL - ${surface} m2 = ${fPrice(a.valuationMid as number)}`, "", "", a.valuationPsm ? fPsm(a.valuationPsm as number) : "-"]);
 
     drawTable(w, {
       cols: [
         { header: "Source", width: 180, color: (row) => row[0].includes("PRIX FINAL") ? C.white : row[0].includes("PRIX DE BASE") ? C.darkBlue : C.dark, bgColor: (row) => row[0].includes("PRIX FINAL") ? C.darkBlue : row[0].includes("PRIX DE BASE") ? C.lightBlueBg : null },
-        { header: "EUR/m2", width: 100, align: "right" as const, color: (row) => row[0].includes("PRIX FINAL") ? C.white : C.gray, bgColor: (row) => row[0].includes("PRIX FINAL") ? C.darkBlue : row[0].includes("PRIX DE BASE") ? C.lightBlueBg : null },
+        { header: "€/m²", width: 100, align: "right" as const, color: (row) => row[0].includes("PRIX FINAL") ? C.white : C.gray, bgColor: (row) => row[0].includes("PRIX FINAL") ? C.darkBlue : row[0].includes("PRIX DE BASE") ? C.lightBlueBg : null },
         { header: "Poids", width: 65, align: "right" as const, color: (row) => row[0].includes("PRIX FINAL") ? C.white : C.gray, bgColor: (row) => row[0].includes("PRIX FINAL") ? C.darkBlue : row[0].includes("PRIX DE BASE") ? C.lightBlueBg : null },
         { header: "Contribution", width: 170, align: "right" as const, bold: true, color: (row) => row[0].includes("PRIX FINAL") ? C.white : row[0].includes("PRIX DE BASE") ? C.darkBlue : row[0].includes("Ajust") ? (totalAdjFactor >= 0 ? C.green : C.red) : C.dark, bgColor: (row) => row[0].includes("PRIX FINAL") ? C.darkBlue : row[0].includes("PRIX DE BASE") ? C.lightBlueBg : null },
       ],
@@ -292,11 +293,11 @@ import { PDFDocument } from "pdf-lib";
           { header: "Surf.", width: 44, align: "right" as const },
           { header: "Pc", width: 22, align: "center" as const },
           { header: "Prix DVF", width: 78, align: "right" as const },
-          { header: "EUR/m2", width: 68, align: "right" as const },
-          { header: "EUR/m2 idx.2025", width: 87, align: "right" as const, bold: true, color: () => C.blue },
+          { header: "€/m²", width: 68, align: "right" as const },
+          { header: "€/m² idx.2025", width: 87, align: "right" as const, bold: true, color: () => C.blue },
         ],
         rows: retained.map((c) => [
-          c.topComparable ? "[*]" : "",
+          c.topComparable ? "*" : "",
           fDateShort(c.date),
           c.distanceM != null ? `${Math.round(c.distanceM)} m` : "-",
           san(c.type),
@@ -315,14 +316,14 @@ import { PDFDocument } from "pdf-lib";
         w.gap(10);
       }
     } else {
-      w.text("Aucun comparable DVF dans ce perimetre.", ML, w.y, fonts.italic, FS.body, C.gray);
+      w.text("Aucun comparable DVF dans ce périmètre.", ML, w.y, fonts.italic, FS.body, C.gray);
       w.gap(16);
     }
 
     // ═══════════ ANNONCES ACTIVES ═════════════════════════════════════════
     if (listings.length > 0) {
-      w.gap(14);
-      w.ensureSpace(40);
+      w.addPage();
+      w.footer(refId, today);
       const outlierC2 = listings.filter((l) => l.outlier).length;
       w.sectionTitle(`5. Annonces actives - ${cleanListings.length} retenue(s) / ${outlierC2} exclue(s)`);
       w.gap(4);
@@ -333,7 +334,7 @@ import { PDFDocument } from "pdf-lib";
           { header: "Surf.", width: 46, align: "right" as const },
           { header: "Pc", width: 22, align: "center" as const },
           { header: "Prix", width: 78, align: "right" as const },
-          { header: "EUR/m2", width: 66, align: "right" as const, bold: true, color: (row) => row[7] === "EXCLU" ? C.red : C.blue, bgColor: (row) => row[7] === "EXCLU" ? C.orangeBg : C.greenBg },
+          { header: "€/m²", width: 66, align: "right" as const, bold: true, color: (row) => row[7] === "EXCLU" ? C.red : C.blue, bgColor: (row) => row[7] === "EXCLU" ? C.orangeBg : C.greenBg },
           { header: "Dist.", width: 46, align: "right" as const },
           { header: "Statut", width: 51, align: "center" as const, color: (row) => row[7] === "EXCLU" ? C.red : C.green, bgColor: (row) => row[7] === "EXCLU" ? C.orangeBg : C.greenBg },
         ],
@@ -345,7 +346,7 @@ import { PDFDocument } from "pdf-lib";
           fPrice(l.price),
           fPsm(l.pricePsm),
           l.distance ? (l.distance >= 1000 ? (l.distance / 1000).toFixed(1) + " km" : Math.round(l.distance) + " m") : "-",
-          l.outlier ? "EXCLU" : "[OK]",
+          l.outlier ? "EXCLU" : "OK",
         ]),
         rowHeight: 14,
         stripedRows: false,
@@ -353,16 +354,16 @@ import { PDFDocument } from "pdf-lib";
     }
 
     // ═══════════ CONCLUSION ══════════════════════════════════════════════
-    w.gap(16);
-    w.ensureSpace(60);
+    w.addPage();
+    w.footer(refId, today);
     w.sectionTitle("6. Conclusion");
     w.gap(6);
     [
-      `Bien : ${propertyLabel} de ${surface} m2 - ${san([a.address, a.postalCode, a.city].filter(Boolean).join(", "))}`,
-      `Perimetre : ${perimeterKm ?? "?"} km - ${dvfRetenues} transaction(s) DVF retenue(s)`,
+      `Bien : ${propertyLabel} de ${surface} m² - ${san([a.address, a.postalCode, a.city].filter(Boolean).join(", "))}`,
+      `Périmètre : ${perimeterKm ?? "?"} km - ${dvfRetenues} transaction(s) DVF retenue(s)`,
       `Estimation centrale : ${fPrice(a.valuationMid as number)} (${fPsm(a.valuationPsm as number)})`,
       `Fourchette : ${fPrice(a.valuationLow as number)} - ${fPrice(a.valuationHigh as number)}`,
-      a.confidenceLabel ? `Fiabilite : ${san(a.confidenceLabel as string)} (score ${Math.round((a.confidence as number ?? 0) * 100)}/100)` : "",
+      a.confidenceLabel ? `Fiabilité : ${san(a.confidenceLabel as string)} (score ${Math.round((a.confidence as number ?? 0) * 100)}/100)` : "",
     ].filter(Boolean).forEach((line) => {
       w.text(line, ML, w.y, fonts.regular, FS.body, C.dark);
       w.gap(FS.body * 1.65);

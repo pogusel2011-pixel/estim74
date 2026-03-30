@@ -20,6 +20,7 @@ export const C = {
   border:      rgb(229 / 255, 231 / 255, 235 / 255), // #E5E7EB
   borderBlue:  rgb(191 / 255, 219 / 255, 254 / 255), // #BFDBFE
   lightBlueBg: rgb(239 / 255, 246 / 255, 255 / 255), // #EFF6FF
+  coverBg:     rgb(219 / 255, 234 / 255, 254 / 255), // #DBEAFE — light sky blue for cover
   headerBg:    rgb(248 / 255, 250 / 255, 252 / 255), // #F8FAFC
   rowAlt:      rgb(249 / 255, 250 / 255, 251 / 255), // #F9FAFB
   green:       rgb(22 / 255, 163 / 255, 74 / 255),   // #16A34A
@@ -44,7 +45,12 @@ export const FS = {
 };
 
 // ─── Text sanitization ───────────────────────────────────────────────────────
-/** Converts non-WinAnsi chars to safe equivalents for pdf-lib StandardFonts */
+/**
+ * Converts non-WinAnsi chars to safe equivalents for pdf-lib StandardFonts.
+ * French accents (é è ê à â ù û ç î ô etc.) are in WinAnsi 0xC0-0xFF — kept as-is.
+ * Euro sign U+20AC maps to WinAnsi 0x80 — kept as-is.
+ * Superscript ² U+00B2 is in Latin-1/WinAnsi — kept as-is.
+ */
 export function san(text: string | null | undefined): string {
   if (text == null) return "";
   return String(text)
@@ -52,24 +58,31 @@ export function san(text: string | null | undefined): string {
     .replace(/\u0153/g, "oe") // œ
     .replace(/\u00C6/g, "AE") // Æ
     .replace(/\u00E6/g, "ae") // æ
-    .replace(/[✓✔☑✅]/g, "[OK]")
-    .replace(/[✗✘❌]/g, "[X]")
-    .replace(/[⚠⚡⛔]/g, "[!]")
-    .replace(/[★☆✨*]/g, "[*]") // don't strip plain asterisk
-    .replace(/\*/g, "[*]")       // just in case
+    .replace(/[✓✔☑✅]/g, "+")
+    .replace(/[✗✘❌]/g, "-")
+    .replace(/[⚠⚡⛔]/g, "!")
+    .replace(/[★☆]/g, "*")
     .replace(/[→⟶➜➡]/g, "->")
     .replace(/\u2191/g, "^")    // ↑
     .replace(/\u2193/g, "v")    // ↓
     .replace(/[•·]/g, "-")
-    .replace(/\u2019/g, "'")
-    .replace(/\u2018/g, "'")
-    .replace(/\u201C/g, '"')
-    .replace(/\u201D/g, '"')
-    .replace(/\u2013/g, "-")
-    .replace(/\u2014/g, "-")
-    .replace(/\u00A0/g, " ")  // non-breaking space
-    .replace(/\u202F/g, " ") // narrow no-break space (French thousands separator)
-    .replace(/\u2009/g, " "); // thin space
+    .replace(/\u2019/g, "\u2019") // right single quote — in WinAnsi 0x92
+    .replace(/\u2018/g, "\u2018") // left single quote — in WinAnsi 0x91
+    .replace(/\u201C/g, "\u201C") // left double quote — in WinAnsi 0x93
+    .replace(/\u201D/g, "\u201D") // right double quote — in WinAnsi 0x94
+    .replace(/\u2013/g, "-")    // en dash
+    .replace(/\u2014/g, "-")    // em dash
+    .replace(/\u00A0/g, " ")   // non-breaking space
+    .replace(/\u202F/g, " ")   // narrow no-break space
+    .replace(/\u2009/g, " ")   // thin space
+    .replace(/[\u0100-\u017E]/g, (c) => {
+      // Decompose common Latin Extended-A chars not in WinAnsi
+      const map: Record<string, string> = {
+        "\u0141": "L", "\u0142": "l", "\u0160": "S", "\u0161": "s",
+        "\u017D": "Z", "\u017E": "z", "\u0178": "Y",
+      };
+      return map[c] ?? c.normalize("NFD").replace(/[\u0300-\u036F]/g, "");
+    });
 }
 
 // ─── Number formatting — regular space as thousands separator (WinAnsi-safe) ─
@@ -79,11 +92,11 @@ export function numFr(n: number): string {
 }
 export function fPrice(amount: number | null | undefined): string {
   if (amount == null) return "-";
-  return numFr(Math.round(amount)) + " EUR";
+  return numFr(Math.round(amount)) + " \u20AC";
 }
 export function fPsm(psm: number | null | undefined): string {
   if (psm == null) return "-";
-  return numFr(Math.round(psm)) + " EUR/m2";
+  return numFr(Math.round(psm)) + " \u20AC/m\u00B2";
 }
 export function fPct(factor: number): string {
   return (factor >= 0 ? "+" : "") + (factor * 100).toFixed(1) + "%";
@@ -237,7 +250,7 @@ export class Writer {
     const fy = MB - 14;
     this.hline(ML, fy + 10, CW, C.border);
     this.text(
-      "ESTIM'74 - Estimation fondee sur les prix signes DVF - Source DGFiP 2014-2024 - Usage professionnel",
+      "ESTIM\u201974 - Estimation fond\u00E9e sur les prix sign\u00E9s DVF - Source DGFiP 2014-2024 - Usage professionnel",
       ML, fy, this.fonts.italic, FS.micro, C.lightGray
     );
     this.textRight(`Ref. ${ref} - ${today}`, ML + CW, fy, this.fonts.regular, FS.micro, C.lightGray);
