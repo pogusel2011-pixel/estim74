@@ -1,70 +1,81 @@
 import { ActiveListing } from "@/types/listing";
 import { normalizeMoteurImmoListing } from "./normalize";
 
-const API_URL = "https://moteurimmo.fr/api/ads";
-const API_KEY = process.env.MOTEURIMMO_API_KEY ?? "";
-
 /**
- * MoteurImmo renvoie category = "flat" (appartement) ou "house" (maison).
- * Le champ categories dans le body POST n'accepte pas de valeurs reconnues
- * → on filtre localement après la requête.
+ * API MoteurImmo — annonces actives à la vente.
+ *
+ * Endpoint : GET https://api.moteurimmo.fr/v1/annonces
+ * Auth     : Header X-Api-Key: [MOTEURIMMO_API_KEY]
+ * Params   : type_bien, code_postal, surface_min, surface_max,
+ *            nb_pieces_min, nb_pieces_max, nb_resultats (max 20)
  */
-const CATEGORY_FILTER: Record<string, string> = {
-  APARTMENT: "flat",
-  HOUSE: "house",
+
+const API_BASE = "https://api.moteurimmo.fr/v1";
+const ANNONCES_ENDPOINT = `${API_BASE}/annonces`;
+const TIMEOUT_MS = 8000;
+const MAX_RESULTATS = 20;
+
+const TYPE_BIEN_MAP: Record<string, string> = {
+  APARTMENT: "appartement",
+  HOUSE: "maison",
 };
 
 export interface MoteurImmoSearchParams {
-  inseeCode: string;
-  propertyType: string; // "APARTMENT" | "HOUSE" | "LAND" | "COMMERCIAL"
-  surfaceMin: number;
-  surfaceMax: number;
-  maxLength?: number;
-  /** Coordonnées du bien sujet pour calculer la distance de chaque annonce */
+  postalCode: string;
+  propertyType: string;
+  surfaceMin?: number;
+  surfaceMax?: number;
+  roomsMin?: number;
+  roomsMax?: number;
+  nbResultats?: number;
   subjectLat?: number;
   subjectLng?: number;
 }
 
 export function isApiKeyConfigured(): boolean {
-  return Boolean(API_KEY);
+  return Boolean(process.env.MOTEURIMMO_API_KEY);
 }
 
 export async function searchMoteurImmo(
   params: MoteurImmoSearchParams
 ): Promise<ActiveListing[]> {
-  if (!API_KEY) {
-    console.warn("[MoteurImmo] Clé API absente — marché affiché indisponible");
+  const apiKey = process.env.MOTEURIMMO_API_KEY;
+  if (!apiKey) {
+    console.warn("[MoteurImmo] MOTEURIMMO_API_KEY absent — annonces non disponibles");
     return [];
   }
 
-  // Terrain / Commercial non supportés par l'API MoteurImmo
-  const categoryFilter = CATEGORY_FILTER[params.propertyType];
-  if (!categoryFilter) {
+  const typeBien = TYPE_BIEN_MAP[params.propertyType];
+  if (!typeBien) {
     return [];
   }
 
-  // L'API accepte surfaceMin/surfaceMax uniquement si les deux sont fournis
-  const body: Record<string, unknown> = {
-    apiKey: API_KEY,
-    types: ["sale"],
-    locations: [{ inseeCode: params.inseeCode }],
-    maxLength: Math.min(params.maxLength ?? 30, 100),
+  const qp: Record<string, string> = {
+    type_bien: typeBien,
+    code_postal: params.postalCode,
+    nb_resultats: String(Math.min(params.nbResultats ?? MAX_RESULTATS, MAX_RESULTATS)),
   };
-  if (params.surfaceMin) body.surfaceMin = params.surfaceMin;
-  if (params.surfaceMax) body.surfaceMax = params.surfaceMax;
+  if (params.surfaceMin) qp.surface_min = String(params.surfaceMin);
+  if (params.surfaceMax) qp.surface_max = String(params.surfaceMax);
+  if (params.roomsMin != null) qp.nb_pieces_min = String(params.roomsMin);
+  if (params.roomsMax != null) qp.nb_pieces_max = String(params.roomsMax);
+
+  const url = `${ANNONCES_ENDPOINT}?${new URLSearchParams(qp)}`;
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 8000);
+  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
   try {
-    const res = await fetch(API_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
+    const res = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Accept": "application/json",
+        "X-Api-Key": apiKey,
+      },
       signal: controller.signal,
     });
 
-    clearTimeout(timeout);
+    clearTimeout(timer);
 
     if (!res.ok) {
       const text = await res.text().catch(() => "");
@@ -73,21 +84,25 @@ export async function searchMoteurImmo(
     }
 
     const data = await res.json();
-    const raw: unknown[] = Array.isArray(data) ? data : (data.ads ?? data.results ?? data.data ?? []);
+    const raw: unknown[] = Array.isArray(data)
+      ? data
+      : (data.annonces ?? data.ads ?? data.results ?? data.data ?? []);
 
-    // Filtre local par category (flat / house) car le champ categories du body est non supporté
-    const filtered = raw.filter((item) => {
-      const ad = item as Record<string, unknown>;
-      return ad.category === categoryFilter;
-    });
-
-    return filtered
-      .map((item) => normalizeMoteurImmoListing(item, params.subjectLat, params.subjectLng))
+    const listings = raw
+      .map((item) =>
+        normalizeMoteurImmoListing(item, params.subjectLat, params.subjectLng)
+      )
       .filter(Boolean) as ActiveListing[];
+
+    console.log(
+      `[MoteurImmo] ${listings.length} annonces (${typeBien}, CP ${params.postalCode})`
+    );
+
+    return listings;
   } catch (err) {
-    clearTimeout(timeout);
+    clearTimeout(timer);
     if ((err as Error).name === "AbortError") {
-      console.warn("[MoteurImmo] Timeout 8s dépassé");
+      console.warn("[MoteurImmo] Timeout 8s dépassé — annonces non disponibles");
     } else {
       console.error("[MoteurImmo] Fetch error:", err);
     }

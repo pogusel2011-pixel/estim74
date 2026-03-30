@@ -1,4 +1,5 @@
 "use client";
+import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { propertySchema, PropertyFormValues } from "@/lib/validation/property";
@@ -7,7 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Loader2, Zap } from "lucide-react";
 import { PROPERTY_TYPE_OPTIONS, CONDITION_OPTIONS, DPE_OPTIONS, ORIENTATION_OPTIONS, VIEW_OPTIONS } from "@/lib/mapping/options";
 import { PropertyFeatures } from "./property-features";
 import { CommuneSuggest } from "./commune-suggest";
@@ -31,6 +33,54 @@ export function PropertyForm({ onSubmit, loading, defaultValues }: PropertyFormP
 
   const { register, handleSubmit, setValue, watch, formState: { errors } } = form;
   const propertyType = watch("propertyType");
+  const addressVal   = watch("address") ?? "";
+  const postalCodeVal = watch("postalCode") ?? "";
+  const dpeLetter    = watch("dpeLetter");
+
+  // ── DPE auto-fetch (Pappers Immobilier) ────────────────────────────────────
+  const [dpeFetched, setDpeFetched]     = useState<"dpe" | "year" | "both" | null>(null);
+  const [dpeFetching, setDpeFetching]   = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    // On déclenche quand adresse (≥10 car.) + code postal (74xxx) sont renseignés
+    const trimAddr = addressVal.trim();
+    const trimCp   = postalCodeVal.trim();
+    if (trimAddr.length < 10 || trimCp.length < 5) return;
+
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+
+    debounceRef.current = setTimeout(async () => {
+      setDpeFetching(true);
+      setDpeFetched(null);
+      try {
+        const params = new URLSearchParams({ adresse: trimAddr, postalCode: trimCp });
+        const res = await fetch(`/api/pappers/enrich?${params}`);
+        if (!res.ok) return;
+        const data: { dpeLetter?: string | null; yearBuilt?: number | null } = await res.json();
+
+        let enriched: "dpe" | "year" | "both" | null = null;
+
+        if (data.dpeLetter) {
+          setValue("dpeLetter", data.dpeLetter, { shouldValidate: false });
+          enriched = "dpe";
+        }
+        if (data.yearBuilt) {
+          setValue("yearBuilt", data.yearBuilt, { shouldValidate: false });
+          enriched = enriched === "dpe" ? "both" : "year";
+        }
+        setDpeFetched(enriched);
+      } catch {
+        // silencieux
+      } finally {
+        setDpeFetching(false);
+      }
+    }, 800);
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [addressVal, postalCodeVal, setValue]);
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -93,7 +143,15 @@ export function PropertyForm({ onSubmit, loading, defaultValues }: PropertyFormP
           </div>
 
           <div className="space-y-1">
-            <Label htmlFor="yearBuilt">Année construction</Label>
+            <Label htmlFor="yearBuilt">
+              Année construction
+              {dpeFetched === "year" || dpeFetched === "both" ? (
+                <Badge variant="secondary" className="ml-2 gap-1 text-xs font-normal py-0">
+                  <Zap className="h-3 w-3 text-amber-500" />
+                  Récupérée
+                </Badge>
+              ) : null}
+            </Label>
             <Input id="yearBuilt" type="number" min={1800} max={2026} placeholder="1985" {...register("yearBuilt", { valueAsNumber: true })} />
           </div>
 
@@ -141,8 +199,25 @@ export function PropertyForm({ onSubmit, loading, defaultValues }: PropertyFormP
         <CardHeader className="pb-3"><CardTitle className="text-base">Énergie & exposition</CardTitle></CardHeader>
         <CardContent className="grid grid-cols-2 md:grid-cols-3 gap-4">
           <div className="space-y-1">
-            <Label>DPE</Label>
-            <Select onValueChange={(v) => setValue("dpeLetter", v as never)} defaultValue={defaultValues?.dpeLetter}>
+            <Label className="flex items-center gap-2">
+              DPE
+              {dpeFetching && (
+                <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+              )}
+              {(dpeFetched === "dpe" || dpeFetched === "both") && !dpeFetching ? (
+                <Badge variant="secondary" className="gap-1 text-xs font-normal py-0 bg-green-50 text-green-700 border-green-200">
+                  <Zap className="h-3 w-3" />
+                  DPE récupéré automatiquement
+                </Badge>
+              ) : null}
+            </Label>
+            <Select
+              onValueChange={(v) => {
+                setValue("dpeLetter", v as never);
+                setDpeFetched(null);
+              }}
+              value={dpeLetter ?? ""}
+            >
               <SelectTrigger><SelectValue placeholder="Classe énergie" /></SelectTrigger>
               <SelectContent>{DPE_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
             </Select>

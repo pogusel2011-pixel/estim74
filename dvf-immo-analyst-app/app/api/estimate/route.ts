@@ -112,11 +112,7 @@ export async function POST(req: Request) {
 
     // 5. Annonces actives (via MoteurImmo avec code INSEE + coords du sujet)
     const rawListings = includeListings
-      ? await findActiveListings(propertyWithGeo, {
-          inseeCode: communeCode,
-          lat,
-          lng,
-        })
+      ? await findActiveListings(propertyWithGeo, { lat, lng })
       : [];
 
     // Détection outliers annonces (IQR×2 puis médiane ±40%) — marquées mais conservées

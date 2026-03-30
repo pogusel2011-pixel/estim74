@@ -6,8 +6,6 @@ import { SURFACE_RANGE_FACTOR } from "@/lib/constants";
 export { isApiKeyConfigured };
 
 export interface FindListingsOptions {
-  /** Code INSEE de la commune (ex: "74010") — préféré au code postal */
-  inseeCode?: string;
   /** Lat/lng du bien sujet pour calculer la distance de chaque annonce */
   lat?: number;
   lng?: number;
@@ -15,7 +13,7 @@ export interface FindListingsOptions {
 
 /**
  * Recherche les annonces actives comparables via l'API MoteurImmo.
- * Filtre par code INSEE, type de bien et fourchette de surface ±20%.
+ * Filtre par code postal, type de bien et fourchette de surface ±40%.
  * Trie les résultats par distance croissante.
  * Retourne [] silencieusement si API non configurée ou en erreur.
  */
@@ -23,19 +21,29 @@ export async function findActiveListings(
   property: PropertyInput,
   opts?: FindListingsOptions
 ): Promise<ActiveListing[]> {
-  const inseeCode = opts?.inseeCode ?? property.postalCode ?? "";
+  const postalCode = property.postalCode ?? "";
+  if (!postalCode) {
+    console.warn("[MoteurImmo] Code postal absent — recherche annonces ignorée");
+    return [];
+  }
+
   const subjectLat = opts?.lat ?? property.lat;
   const subjectLng = opts?.lng ?? property.lng;
 
   const surfaceMin = Math.round(property.surface * (1 - SURFACE_RANGE_FACTOR));
   const surfaceMax = Math.round(property.surface * (1 + SURFACE_RANGE_FACTOR));
 
+  const roomsMin = property.rooms ? Math.max(1, property.rooms - 1) : undefined;
+  const roomsMax = property.rooms ? property.rooms + 1 : undefined;
+
   const listings = await searchMoteurImmo({
-    inseeCode,
+    postalCode,
     propertyType: property.propertyType,
     surfaceMin,
     surfaceMax,
-    maxLength: 30,
+    roomsMin,
+    roomsMax,
+    nbResultats: 20,
     subjectLat,
     subjectLng,
   });
