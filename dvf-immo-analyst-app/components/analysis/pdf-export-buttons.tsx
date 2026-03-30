@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { FileText, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 
 interface Props {
   analysisId: string;
@@ -9,8 +10,9 @@ interface Props {
 
 type Version = "expert" | "client";
 
-async function downloadPdf(analysisId: string, version: Version): Promise<void> {
-  const url = `/api/pdf/${version}/${analysisId}`;
+async function downloadPdf(analysisId: string, version: Version, options?: Record<string, string>): Promise<void> {
+  const params = options ? "?" + new URLSearchParams(options).toString() : "";
+  const url = `/api/pdf/${version}/${analysisId}${params}`;
   const res = await fetch(url);
   if (!res.ok) {
     const msg = await res.text().catch(() => `HTTP ${res.status}`);
@@ -31,10 +33,12 @@ function PdfButton({
   analysisId,
   version,
   label,
+  options,
 }: {
   analysisId: string;
   version: Version;
   label: string;
+  options?: Record<string, string>;
 }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -43,7 +47,7 @@ function PdfButton({
     setLoading(true);
     setError(null);
     try {
-      await downloadPdf(analysisId, version);
+      await downloadPdf(analysisId, version, options);
     } catch (err) {
       console.error(`[PDF ${version}]`, err);
       setError(err instanceof Error ? err.message : "Erreur génération PDF");
@@ -76,10 +80,34 @@ function PdfButton({
 }
 
 export function PdfExportButtons({ analysisId }: Props) {
+  const [includeListingPrice, setIncludeListingPrice] = useState(true);
+
   return (
-    <div className="flex items-center gap-2 flex-wrap justify-end">
-      <PdfButton analysisId={analysisId} version="expert" label="Export Expert" />
-      <PdfButton analysisId={analysisId} version="client" label="Export Client" />
+    <div className="flex flex-col items-end gap-2">
+      <div className="flex items-center gap-2 flex-wrap justify-end">
+        <PdfButton analysisId={analysisId} version="expert" label="Export Expert" />
+        <PdfButton
+          analysisId={analysisId}
+          version="client"
+          label="Export Client"
+          options={{ listingPrice: includeListingPrice ? "1" : "0" }}
+        />
+      </div>
+      <div className="flex items-center gap-2">
+        <input
+          id="include-listing-price"
+          type="checkbox"
+          checked={includeListingPrice}
+          onChange={(e) => setIncludeListingPrice(e.target.checked)}
+          className="h-3.5 w-3.5 rounded border-border accent-primary cursor-pointer"
+        />
+        <Label
+          htmlFor="include-listing-price"
+          className="text-xs text-muted-foreground cursor-pointer select-none font-normal"
+        >
+          Inclure le prix d&apos;annonce dans le rapport client
+        </Label>
+      </div>
     </div>
   );
 }

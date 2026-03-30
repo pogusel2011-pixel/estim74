@@ -74,6 +74,7 @@ export function computeValuation(
       low: 0, mid: 0, high: 0, pricePsm: 0,
       confidence: 0.15, confidenceLabel: "Faible",
       method: "fallback", adjustments: [], breakdown: { basePrice: 0, basePsm: 0, adjustedPsm: 0, totalAdjustmentFactor: 0, dvfWeight: 0, listingsWeight: 0 },
+      listingPriceLow: 0, listingPriceHigh: 0,
     };
   }
 
@@ -102,5 +103,7 @@ export function computeValuation(
       dvfWeight,
       listingsWeight,
     },
+    listingPriceLow: Math.round(mid * 1.02),
+    listingPriceHigh: Math.round(mid * 1.03),
   };
 }

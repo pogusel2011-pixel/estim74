@@ -8,6 +8,8 @@ export interface ValuationResult {
   method: "dvf_stats" | "comparables" | "mixed" | "fallback";
   adjustments: Adjustment[];
   breakdown: ValuationBreakdown;
+  listingPriceLow?: number;
+  listingPriceHigh?: number;
 }
 
 export interface Adjustment {

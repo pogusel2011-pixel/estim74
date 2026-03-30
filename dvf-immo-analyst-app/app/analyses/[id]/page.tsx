@@ -19,6 +19,7 @@ import { DeptBenchmarkPanel } from "@/components/dvf/dept-benchmark-panel";
 import { GPTActionsPanel } from "@/components/gpt/gpt-actions-panel";
 import { ChatGPTButton } from "@/components/gpt/chatgpt-button";
 import { MethodeCalculPanel } from "@/components/analysis/methode-calcul-panel";
+import { ListingPriceCard } from "@/components/analysis/listing-price-card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getDVFMutations } from "@/lib/dvf/client";
 import { computePrixM2, markOutliers } from "@/lib/dvf/outliers";
@@ -230,6 +231,14 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
         perimeterKm={perimeterKm}
         confidenceFactors={confidenceFactors}
       />
+
+      {/* Prix d'annonce conseillé */}
+      {serialized.valuationMid ? (
+        <ListingPriceCard
+          listingPriceLow={Math.round((serialized.valuationMid as number) * 1.02)}
+          listingPriceHigh={Math.round((serialized.valuationMid as number) * 1.03)}
+        />
+      ) : null}
 
       {/* Tabs secondaires */}
       <Tabs defaultValue="dvf" className="w-full">

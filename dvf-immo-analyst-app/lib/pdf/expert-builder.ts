@@ -108,6 +108,18 @@ import { PDFDocument } from "pdf-lib";
         chX += cw + 6;
       });
       w.gap(22);
+
+      // ── Prix d'annonce conseillé ─────────────────────────────────────
+      const lpLow = Math.round((a.valuationMid as number) * 1.02);
+      const lpHigh = Math.round((a.valuationMid as number) * 1.03);
+      const lpBoxH = 44;
+      const lpY = w.y - lpBoxH;
+      w.rect(ML, lpY, CW, lpBoxH, C.rowAlt);
+      w.rectStroke(ML, lpY, CW, lpBoxH, C.border, 0.7);
+      w.page.drawText(san("PRIX D'ANNONCE CONSEILLE"), { x: ML + 12, y: lpY + lpBoxH - 13, font: fonts.bold, size: FS.micro, color: C.gray });
+      w.page.drawText(san(`entre ${fPrice(lpLow)} et ${fPrice(lpHigh)}`), { x: ML + 12, y: lpY + lpBoxH - 28, font: fonts.bold, size: 12, color: C.darkBlue });
+      w.page.drawText(san("Marge de negociation de 2 a 3% sur le prix de vente estime"), { x: ML + 12, y: lpY + 8, font: fonts.italic, size: FS.micro, color: C.lightGray });
+      w.y = lpY - 8;
     } else {
       w.text("Estimation non disponible - données insuffisantes.", ML, w.y, fonts.italic, FS.body, C.gray);
       w.gap(16);
