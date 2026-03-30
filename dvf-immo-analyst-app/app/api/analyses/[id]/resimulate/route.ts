@@ -100,9 +100,8 @@ export async function POST(
     if (dvfStats) dvfStats.source = source;
     const dvfComparables = toComparables(enriched, property.surface as number, property.rooms as number | undefined);
 
-    // 6. Annonces actives (via MoteurImmo avec code INSEE + coords du sujet)
+    // 6. Annonces actives (via MoteurImmo avec code postal + coords du sujet)
     const listings = await findActiveListings(propertyWithGeo as never, {
-      inseeCode: communeCode,
       lat,
       lng,
     });

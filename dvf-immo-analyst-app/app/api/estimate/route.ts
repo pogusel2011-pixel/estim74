@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { PropertyInput } from "@/types/property";
 import { estimateRequestSchema } from "@/lib/validation/estimate";
 import { getDVFMutations } from "@/lib/dvf/client";
 import { computePrixM2, markOutliers } from "@/lib/dvf/outliers";
@@ -60,7 +61,7 @@ export async function POST(req: Request) {
           : undefined) ?? getInseeByPostalCode(property.postalCode);
     }
 
-    const propertyWithGeo = { ...property, lat, lng };
+    const propertyWithGeo = { ...property, lat, lng } as unknown as PropertyInput;
 
     // 2. DVF — mutations (avec auto-expansion du rayon si < 5 transactions)
     // On passe city + postalCode pour activer le filtre INSEE secondaire (mutations sans coords)

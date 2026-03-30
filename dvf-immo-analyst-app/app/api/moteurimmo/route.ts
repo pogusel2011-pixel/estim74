@@ -8,10 +8,9 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json() as { property: PropertyInput; inseeCode?: string };
-    const { property, inseeCode } = body;
+    const body = await req.json() as { property: PropertyInput };
+    const { property } = body;
     const listings = await findActiveListings(property, {
-      inseeCode,
       lat: property.lat,
       lng: property.lng,
     });

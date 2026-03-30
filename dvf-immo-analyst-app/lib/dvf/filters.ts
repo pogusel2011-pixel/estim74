@@ -1,7 +1,6 @@
 import { DVFMutation, DVFFilters } from "@/types/dvf";
 import { propertyTypeToDvfTypes } from "@/lib/mapping/property-type";
 import { loadCsvMutations } from "./csv-loader";
-import { fetchDVFFromAPI } from "./client";
 
 export async function getFilteredMutations(filters: DVFFilters): Promise<DVFMutation[]> {
   const dvfTypes = propertyTypeToDvfTypes(filters.propertyType as never);

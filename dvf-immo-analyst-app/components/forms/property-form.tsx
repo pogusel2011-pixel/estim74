@@ -62,7 +62,7 @@ export function PropertyForm({ onSubmit, loading, defaultValues }: PropertyFormP
         let enriched: "dpe" | "year" | "both" | null = null;
 
         if (data.dpeLetter) {
-          setValue("dpeLetter", data.dpeLetter, { shouldValidate: false });
+          setValue("dpeLetter", data.dpeLetter as "A"|"B"|"C"|"D"|"E"|"F"|"G", { shouldValidate: false });
           enriched = "dpe";
         }
         if (data.yearBuilt) {
