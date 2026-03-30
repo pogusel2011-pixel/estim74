@@ -90,7 +90,7 @@ export function computeValuation(
     const fsd = dvfStats?.fsd ?? dvfStats?.stdPsm ?? null;
     if (fsd && fsd > 0 && adjustedPsm > 0) {
       const rawSpread = (1.96 * fsd) / adjustedPsm;
-      spread = Math.max(0.04, Math.min(0.20, rawSpread));
+      spread = Math.max(0.05, Math.min(0.15, rawSpread));
     } else {
       spread = 0.08;
     }

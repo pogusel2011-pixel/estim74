@@ -63,6 +63,8 @@ export function DVFStatsPanel({ stats, sampleSize, perimeterKm, requestedRadiusK
 
   const fsd = stats.fsd ?? stats.stdPsm ?? null;
   const ic95HalfWidth = fsd && fsd > 0 ? Math.round(1.96 * fsd) : null;
+  const rawSpread = fsd && fsd > 0 && stats.medianPsm > 0 ? (1.96 * fsd) / stats.medianPsm : null;
+  const spreadCapped = rawSpread != null && rawSpread > 0.15;
 
   const rows: { label: string; value: string; highlight?: boolean; stat?: boolean }[] = [
     { label: "Transactions", value: transactionsValue },
@@ -138,6 +140,12 @@ export function DVFStatsPanel({ stats, sampleSize, perimeterKm, requestedRadiusK
             </div>
           ))}
         </dl>
+
+        {spreadCapped && (
+          <p className="mt-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1">
+            Fourchette plafonnée à 15 % (dispersion élevée)
+          </p>
+        )}
 
         {/* Pression de marché */}
         {stats.marketPressure ? (

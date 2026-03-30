@@ -3,6 +3,11 @@ import { PROPERTY_TYPE_LABELS, CONDITION_LABELS } from "@/lib/constants";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Home, Calendar, Ruler } from "lucide-react";
 
+function normalizeAddr(s: string | null | undefined): string {
+  if (!s) return "";
+  return s.replace(/^(\d+[A-Za-z]?)([A-Za-zÀ-ÖØ-öø-ÿ])/, "$1 $2");
+}
+
 interface Props { analysis: Record<string, unknown>; }
 
 export function AnalysisSummaryPanel({ analysis }: Props) {
@@ -20,7 +25,7 @@ export function AnalysisSummaryPanel({ analysis }: Props) {
         <h1 className="text-xl font-bold tracking-tight flex items-center gap-2">
           <MapPin className="h-4 w-4 text-muted-foreground shrink-0" />
           {[
-            analysis.address,
+            normalizeAddr(analysis.address as string),
             [analysis.postalCode, analysis.city].filter(Boolean).join(" "),
           ].filter(Boolean).join(", ")}
         </h1>

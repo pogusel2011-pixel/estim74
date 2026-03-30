@@ -50,7 +50,19 @@ export function toComparables(
   subjectSurface: number,
   subjectRooms?: number
 ): DVFComparable[] {
-  const raw = mutations
+  // Déduplication : même id_mutation OU même (date + prix + surface)
+  const seenIds = new Set<string>();
+  const seenKeys = new Set<string>();
+  const deduped = mutations.filter((m) => {
+    if (seenIds.has(m.id_mutation)) return false;
+    const key = `${m.date_mutation}|${m.valeur_fonciere}|${m.surface_reelle_bati ?? m.surface_terrain ?? 0}`;
+    if (seenKeys.has(key)) return false;
+    seenIds.add(m.id_mutation);
+    seenKeys.add(key);
+    return true;
+  });
+
+  const raw = deduped
     .filter((m) => m.prix_m2 != null && m.valeur_fonciere > 0)
     .map((m): DVFComparable => {
       const surface = m.surface_reelle_bati ?? m.surface_terrain ?? 0;

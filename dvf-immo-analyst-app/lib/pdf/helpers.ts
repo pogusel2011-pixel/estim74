@@ -109,6 +109,12 @@ export function fDateShort(dateStr: string | null | undefined): string {
   } catch { return dateStr; }
 }
 
+/** Normalise "30avenue des Fleurs" → "30 avenue des Fleurs" */
+export function normalizeAddr(s: string | null | undefined): string {
+  if (!s) return "";
+  return s.replace(/^(\d+[A-Za-z]?)([A-Za-zÀ-ÖØ-öø-ÿ])/, "$1 $2");
+}
+
 // ─── Font bundle ──────────────────────────────────────────────────────────────
 export interface Fonts {
   regular: PDFFont;

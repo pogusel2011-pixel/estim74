@@ -5,7 +5,7 @@ import { PDFDocument } from "pdf-lib";
   import { PROPERTY_TYPE_LABELS, CONDITION_LABELS } from "@/lib/constants";
   import { DVFComparable, DVFStats } from "@/types/dvf";
   import { Adjustment } from "@/types/valuation";
-  import { Writer, loadFonts, drawTable, san, fPrice, fPsm, fDateShort, wrapText, C, FS, ML, MR, CW, PAGE_W, PAGE_H, numFr } from "./helpers";
+  import { Writer, loadFonts, drawTable, san, fPrice, fPsm, fDateShort, wrapText, C, FS, ML, MR, CW, PAGE_W, PAGE_H, numFr, normalizeAddr } from "./helpers";
 
   async function getTrend(lat: number, lng: number, km: number, type?: string) {
     try {
@@ -75,7 +75,7 @@ import { PDFDocument } from "pdf-lib";
     cp.drawLine({ start: { x: ML, y: PAGE_H - 93 }, end: { x: PAGE_W - MR, y: PAGE_H - 93 }, color: C.borderBlue, thickness: 0.5 });
     cp.drawText("RAPPORT D'ESTIMATION", { x: ML, y: PAGE_H - 116, font: fonts.bold, size: FS.small, color: C.gray });
     cp.drawText(propertyLabel.toUpperCase(), { x: ML, y: PAGE_H - 132, font: fonts.regular, size: FS.small, color: C.darkBlue });
-    const addr = san([a.address, a.postalCode, a.city].filter(Boolean).join(", ") || "Adresse non renseignée");
+    const addr = san([normalizeAddr(a.address as string), a.postalCode, a.city].filter(Boolean).join(", ") || "Adresse non renseignée");
     wrapText(fonts.bold, addr, 17, CW - 20).forEach((line, i) => {
       cp.drawText(line, { x: ML, y: PAGE_H - 160 - i * 24, font: fonts.bold, size: 17, color: C.dark });
     });
@@ -277,7 +277,7 @@ import { PDFDocument } from "pdf-lib";
       const trendWord = trend === "hausse" ? "en hausse" : trend === "baisse" ? "en baisse" : "stable";
       const trendIcon = trend === "hausse" ? "^" : trend === "baisse" ? "v" : "->";
       const trendColor = trend === "hausse" ? C.green : trend === "baisse" ? C.red : C.gray;
-      const trendTitle = `Marché ${trendWord}${trendPct != null ? ` de ${Math.abs(trendPct)}% sur les 3 dernieres annees` : ""}`;
+      const trendTitle = `Marché ${trendWord}${trendPct != null ? ` de ${Math.abs(trendPct)}% sur les 3 dernières années` : ""}`;
 
       // Trend header
       w.rect(ML, w.y - 24, CW, 26, trend === "hausse" ? C.greenBg : trend === "baisse" ? C.amberBg : C.rowAlt);

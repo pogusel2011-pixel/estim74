@@ -4,7 +4,7 @@ import { PDFDocument } from "pdf-lib";
   import { DVFStats, DVFComparable } from "@/types/dvf";
   import { ActiveListing } from "@/types/listing";
   import { Adjustment } from "@/types/valuation";
-  import { Writer, loadFonts, drawTable, san, fPrice, fPsm, fPct, fDateShort, wrapText, C, FS, ML, MR, CW, PAGE_W, PAGE_H, numFr } from "./helpers";
+  import { Writer, loadFonts, drawTable, san, fPrice, fPsm, fPct, fDateShort, wrapText, C, FS, ML, MR, CW, PAGE_W, PAGE_H, numFr, normalizeAddr } from "./helpers";
 
   export async function buildExpertPdf(a: Record<string, unknown>, refId: string): Promise<Uint8Array> {
     const dvfStats: DVFStats | null = (a.dvfStats as DVFStats) ?? null;
@@ -47,7 +47,7 @@ import { PDFDocument } from "pdf-lib";
     cp.drawText("RAPPORT D’EXPERTISE", { x: ML, y: PAGE_H - 86, font: fonts.bold, size: 26, color: C.white });
     cp.drawLine({ start: { x: ML, y: PAGE_H - 108 }, end: { x: PAGE_W - MR, y: PAGE_H - 108 }, color: C.white, thickness: 0.5, opacity: 0.3 });
     cp.drawText(propertyLabel.toUpperCase(), { x: ML, y: PAGE_H - 130, font: fonts.bold, size: FS.small, color: C.darkBlue });
-    const addr = san([a.address, a.postalCode, a.city].filter(Boolean).join(", ") || "Adresse non renseignée");
+    const addr = san([normalizeAddr(a.address as string), a.postalCode, a.city].filter(Boolean).join(", ") || "Adresse non renseignée");
     wrapText(fonts.bold, addr, 16, CW - 20).forEach((line, i) => {
       cp.drawText(line, { x: ML, y: PAGE_H - 156 - i * 22, font: fonts.bold, size: 16, color: C.dark });
     });
@@ -396,7 +396,7 @@ import { PDFDocument } from "pdf-lib";
     w.sectionTitle("6. Conclusion");
     w.gap(6);
     [
-      `Bien : ${propertyLabel} de ${surface} m² - ${san([a.address, a.postalCode, a.city].filter(Boolean).join(", "))}`,
+      `Bien : ${propertyLabel} de ${surface} m² - ${san([normalizeAddr(a.address as string), a.postalCode, a.city].filter(Boolean).join(", "))}`,
       `Périmètre : ${perimeterKm ?? "?"} km - ${dvfRetenues} transaction(s) DVF retenue(s)`,
       `Estimation centrale : ${fPrice(a.valuationMid as number)} (${fPsm(a.valuationPsm as number)})`,
       `Fourchette : ${fPrice(a.valuationLow as number)} - ${fPrice(a.valuationHigh as number)}`,
