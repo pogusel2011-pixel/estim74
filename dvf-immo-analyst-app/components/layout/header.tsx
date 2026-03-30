@@ -1,5 +1,6 @@
 import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { RefreshButton } from "@/components/layout/refresh-button";
 
 export function Header({ onMenuClick }: { onMenuClick: () => void }) {
   return (
@@ -11,6 +12,8 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
       <p className="text-xs text-muted-foreground">
         Haute-Savoie (74) • DVF 2014–2024 + Données récentes
       </p>
+      <div className="h-5 w-px bg-border" />
+      <RefreshButton />
     </header>
   );
 }
