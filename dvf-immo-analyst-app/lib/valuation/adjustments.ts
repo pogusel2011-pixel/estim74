@@ -1,5 +1,6 @@
 import { PropertyInput } from "@/types/property";
 import { Adjustment } from "@/types/valuation";
+import { AmenityResult } from "@/lib/geo/amenities";
 import { getDpeAdjustment } from "@/lib/mapping/energy";
 import { clamp } from "@/lib/utils";
 import { BUSINESS_RULES } from "@/lib/rules/business-rules";
@@ -17,7 +18,12 @@ import { BUSINESS_RULES } from "@/lib/rules/business-rules";
  * Étage appt : RDC -4% | Élevé sans ascenseur -6.5% | Élevé avec ascenseur +1%
  * Plafond :    ±20% (dans applyAdjustments)
  */
-export function computeAdjustments(property: PropertyInput): Adjustment[] {
+/** Formats a distance in meters as a human-readable French string. */
+function fDist(m: number): string {
+  return m < 1000 ? `${m} m` : `${(m / 1000).toFixed(1)} km`;
+}
+
+export function computeAdjustments(property: PropertyInput, amenities?: AmenityResult[]): Adjustment[] {
   const adjustments: Adjustment[] = [];
 
   // ── 1. ÉTAT / CONDITION ──────────────────────────────────────────────────
@@ -182,6 +188,66 @@ export function computeAdjustments(property: PropertyInput): Adjustment[] {
       impact: viewFactor,
       category: "view",
     });
+  }
+
+  // ── 11. PROXIMITÉ ÉQUIPEMENTS (Haute-Savoie) ──────────────────────────────
+  // Lake ≤500m: +8% | 500m–2km: +3%
+  // Ski ≤5km: +5%
+  // Motorway ≤500m: -3% (nuisance) | 500m–2km: +2%
+  // School ≤500m: +1.5%
+  // Shop ≤1km: +0.5%
+  // Train ≤1km: +1% | 1km–3km: +0.5%
+  if (amenities && amenities.length > 0) {
+    for (const am of amenities) {
+      const d = am.distanceM;
+      let factor = 0;
+      let label = "";
+
+      if (am.category === "lake") {
+        if (d <= 500) {
+          factor = 0.08;
+          label = `Lac à ${fDist(d)} (accès direct)`;
+        } else if (d <= 2000) {
+          factor = 0.03;
+          label = `Lac à ${fDist(d)}`;
+        }
+      } else if (am.category === "ski") {
+        if (d <= 5000) {
+          factor = 0.05;
+          label = `Station ski à ${fDist(d)}`;
+        }
+      } else if (am.category === "motorway") {
+        if (d <= 500) {
+          factor = -0.03;
+          label = `Autoroute à ${fDist(d)} (nuisance sonore)`;
+        } else if (d <= 2000) {
+          factor = 0.02;
+          label = `Accès autoroute à ${fDist(d)}`;
+        }
+      } else if (am.category === "school") {
+        if (d <= 500) {
+          factor = 0.015;
+          label = `École à ${fDist(d)}`;
+        }
+      } else if (am.category === "shop") {
+        if (d <= 1000) {
+          factor = 0.005;
+          label = `Commerces à ${fDist(d)}`;
+        }
+      } else if (am.category === "train") {
+        if (d <= 1000) {
+          factor = 0.01;
+          label = `Gare à ${fDist(d)}`;
+        } else if (d <= 3000) {
+          factor = 0.005;
+          label = `Gare à ${fDist(d)}`;
+        }
+      }
+
+      if (factor !== 0) {
+        adjustments.push({ label, factor, impact: factor, category: "proximity" });
+      }
+    }
   }
 
   return adjustments;

@@ -40,6 +40,8 @@ import { PDFDocument } from "pdf-lib";
     if (l.includes("cave")) return "Cave";
     if (l.includes("piscine")) return "Piscine";
     if (l.includes("ascenseur")) return "Ascenseur";
+    // Proximité
+    if (adj.category === "proximity") return san(adj.label);
     return san(adj.label);
   }
 
@@ -54,8 +56,8 @@ import { PDFDocument } from "pdf-lib";
     const today = new Date().toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" });
     const surface = (a.surface as number) ?? 0;
 
-    const positiveAdj = adjustments.filter((adj) => adj.factor > 0);
-    const negativeAdj = adjustments.filter((adj) => adj.factor < 0);
+    const positiveAdj = adjustments.filter((adj) => adj.factor > 0 && adj.category !== "proximity");
+    const negativeAdj = adjustments.filter((adj) => adj.factor < 0 && adj.category !== "proximity");
     const top5 = dvfComparables.filter((c) => !c.outlier).sort((x, y) => (y.score ?? 0) - (x.score ?? 0)).slice(0, 5);
     const dvfTypeForChart = a.propertyType === "APARTMENT" ? "Appartement" : a.propertyType === "HOUSE" ? "Maison" : undefined;
     const { stats: trendStats, trend, trendPct } = (a.lat && a.lng)
@@ -234,6 +236,27 @@ import { PDFDocument } from "pdf-lib";
       }
 
       w.y = Math.min(leftY, rightY) - 6;
+    }
+
+    // ─── Équipements de proximité ─────────────────────────────────────────
+    const proximityAdjs = adjustments.filter((adj) => adj.category === "proximity");
+    if (proximityAdjs.length > 0) {
+      w.gap(12);
+      w.page.drawText(san("ÉQUIPEMENTS DE PROXIMITÉ"), { x: ML, y: w.y, font: fonts.bold, size: FS.small, color: C.blue });
+      w.hline(ML, w.y - 3, CW, C.borderBlue, 1.5);
+      w.gap(16);
+      let px = ML;
+      for (const pa of proximityAdjs) {
+        const lbl = san(pa.label);
+        const pct = san(`${pa.factor > 0 ? "+" : ""}${(pa.factor * 100).toFixed(1)}%`);
+        const col = pa.factor < 0 ? C.red : C.green;
+        const txtW = fonts.regular.widthOfTextAtSize(lbl, FS.body) + fonts.bold.widthOfTextAtSize(` (${pct})`, FS.body) + 20;
+        if (px + txtW > ML + CW) { px = ML; w.gap(14); }
+        w.page.drawText(`${lbl} `, { x: px, y: w.y, font: fonts.regular, size: FS.body, color: C.dark });
+        w.page.drawText(`(${pct})`, { x: px + fonts.regular.widthOfTextAtSize(`${lbl} `, FS.body), y: w.y, font: fonts.bold, size: FS.body, color: col });
+        px += txtW;
+      }
+      w.gap(14);
     }
 
     // ═══════════ PAGE 3: TOP 5 COMPARABLES ═══════════════════════════════

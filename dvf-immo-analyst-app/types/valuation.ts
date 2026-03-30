@@ -16,7 +16,7 @@ export interface Adjustment {
   label: string;
   factor: number;
   impact: number;
-  category: "condition" | "floor" | "energy" | "features" | "orientation" | "view";
+  category: "condition" | "floor" | "energy" | "features" | "orientation" | "view" | "proximity";
 }
 
 export interface ValuationBreakdown {

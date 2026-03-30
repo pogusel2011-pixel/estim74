@@ -80,7 +80,7 @@ export function ValuationCards({ low, mid, high, psm, confidence, confidenceLabe
         )}
         {adjustments && adjustments.length > 0 && (
           <div className="flex flex-wrap gap-1">
-            {adjustments.slice(0, 6).map((adj, i) => (
+            {adjustments.filter((a) => a.category !== "proximity").slice(0, 6).map((adj, i) => (
               <span key={i} className="inline-flex items-center gap-0.5 text-xs px-2 py-0.5 rounded-full border bg-background">
                 {adj.factor > 0 ? <TrendingUp className="h-3 w-3 text-emerald-600" /> : adj.factor < 0 ? <TrendingDown className="h-3 w-3 text-red-500" /> : <Minus className="h-3 w-3 text-muted-foreground" />}
                 {adj.label} {adj.factor > 0 ? "+" : ""}{(adj.factor * 100).toFixed(0)}%

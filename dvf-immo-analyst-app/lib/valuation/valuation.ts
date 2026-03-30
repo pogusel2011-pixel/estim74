@@ -2,6 +2,7 @@ import { PropertyInput } from "@/types/property";
 import { DVFStats, DVFComparable } from "@/types/dvf";
 import { ActiveListing } from "@/types/listing";
 import { ValuationResult } from "@/types/valuation";
+import { AmenityResult } from "@/lib/geo/amenities";
 import { computeAdjustments, applyAdjustments } from "./adjustments";
 import { computeConfidence } from "./confidence";
 
@@ -22,9 +23,10 @@ export function computeValuation(
   property: PropertyInput,
   dvfStats: DVFStats | null,
   listings: ActiveListing[],
-  dvfComparables?: DVFComparable[]
+  dvfComparables?: DVFComparable[],
+  amenities?: AmenityResult[]
 ): ValuationResult {
-  const adjustments = computeAdjustments(property);
+  const adjustments = computeAdjustments(property, amenities);
 
   // Ajustement de pression de marché pré-calculé dans dvfStats (par computeMarketPressure)
   const marketPressure = dvfStats?.marketPressure ?? null;

@@ -21,6 +21,7 @@ import { GPTActionsPanel } from "@/components/gpt/gpt-actions-panel";
 import { ChatGPTButton } from "@/components/gpt/chatgpt-button";
 import { MethodeCalculPanel } from "@/components/analysis/methode-calcul-panel";
 import { ListingPriceCard } from "@/components/analysis/listing-price-card";
+import { ProximityBadges } from "@/components/analysis/proximity-badges";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getDVFMutations } from "@/lib/dvf/client";
 import { computePrixM2, markOutliers } from "@/lib/dvf/outliers";
@@ -235,6 +236,9 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
         perimeterKm={perimeterKm}
         confidenceFactors={confidenceFactors}
       />
+
+      {/* Proximité équipements */}
+      <ProximityBadges adjustments={safeAdjustments} />
 
       {/* Prix d'annonce conseillé */}
       {serialized.valuationMid ? (

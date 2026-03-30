@@ -175,6 +175,12 @@ import { PDFDocument } from "pdf-lib";
         // pour ne pas capturer "Vue sur jardin privatif" (category="view")
         { critere: "Jardin / terrain", adj: findAdj(undefined, "features", "jardin") ?? findAdj(undefined, "features", "terrain") },
       ];
+
+      // Lignes de proximité (catégorie "proximity")
+      const proximityAdjs = adjustments.filter((x) => x.category === "proximity");
+      for (const pa of proximityAdjs) {
+        adjDefs.push({ critere: san(pa.label), adj: pa });
+      }
       const adjRows = adjDefs.map(({ critere, adj }) => {
         if (!adj) return [critere, "-", "-", "-", "-", "-"];
         const ip = Math.round(adj.factor * basePsm);

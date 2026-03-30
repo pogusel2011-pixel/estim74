@@ -10,6 +10,7 @@ import { findActiveListings } from "@/lib/moteurimmo/search";
 import { computeValuation } from "@/lib/valuation/valuation";
 import { fetchNotairesMarket } from "@/lib/notaires/market-check";
 import { geocodeAddress, isGeoError } from "@/lib/geo/address";
+import { fetchAmenities } from "@/lib/geo/amenities";
 
 export async function POST(
   req: Request,
@@ -105,8 +106,11 @@ export async function POST(
       lng,
     });
 
-    // 7. Valorisation
-    const valuation = computeValuation(propertyWithGeo as never, dvfStats ?? null, listings, dvfComparables);
+    // 7. Proximité équipements (Overpass API — non-bloquant en cas d'erreur)
+    const amenities = await fetchAmenities(lat, lng);
+
+    // 8. Valorisation (+ ajustements proximité)
+    const valuation = computeValuation(propertyWithGeo as never, dvfStats ?? null, listings, dvfComparables, amenities);
 
     // 8. Contexte marché
     const marketReading = await fetchNotairesMarket(

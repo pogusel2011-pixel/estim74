@@ -74,6 +74,13 @@ Implemented in `lib/valuation/adjustments.ts` and aligned in `lib/mapping/energy
 - **Piscine** +2.5% | **Cave** +1%
 - **Vue**: lac/montagne +2%, dégagée +1.5%, jardin +1%, cour -1%
 - **Plafond global ±20%** with brut vs retenu logging
+- **Proximité équipements (Haute-Savoie)**: Lac ≤500m +8% | ≤2km +3% | Ski ≤5km +5% | Autoroute ≤500m -3% (nuisance) | 500m–2km +2% | École ≤500m +1.5% | Commerces ≤1km +0.5% | Gare ≤1km +1% | 1–3km +0.5%
+  - Source: OpenStreetMap Overpass API (overpass-api.de), timeout 12s, graceful degradation on error
+  - In-memory cache (lat/lng rounded to ~1km precision)
+  - New file: `lib/geo/amenities.ts` → `fetchAmenities(lat, lng): Promise<AmenityResult[]>`
+  - Propagated: `computeValuation(..., amenities)` → `computeAdjustments(property, amenities)` → `category: "proximity"`
+  - UI: `components/analysis/proximity-badges.tsx` shown between ValuationCards and ListingPriceCard
+  - PDFs: Expert → rows appended to adjDefs table; Client → ÉQUIPEMENTS DE PROXIMITÉ inline row section
 
 ## gptPayload
 `Analysis.gptPayload String?` (Prisma) — JSON string built in `app/api/estimate/route.ts`:

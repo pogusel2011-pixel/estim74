@@ -14,6 +14,7 @@ import { checkRefusalConditions } from "@/lib/valuation/refusal-matrix";
 import { prisma } from "@/lib/prisma";
 import { geocodeAddress, isGeoError } from "@/lib/geo/address";
 import { getInseeByPostalCodeAndCommune, getInseeByPostalCode } from "@/lib/geo/cp-insee";
+import { fetchAmenities } from "@/lib/geo/amenities";
 
 export async function POST(req: Request) {
   try {
@@ -133,9 +134,12 @@ export async function POST(req: Request) {
       dvfStats.marketPressure = marketPressure;
     }
 
-    // 7. Valorisation (applique marketPressure depuis dvfStats.marketPressure)
+    // 7. Proximité équipements (Overpass API — non-bloquant en cas d'erreur)
+    const amenities = await fetchAmenities(lat, lng);
+
+    // 8. Valorisation (applique marketPressure depuis dvfStats.marketPressure + ajustements proximité)
     // Utilise uniquement les annonces retenues pour le calcul
-    const valuation = computeValuation(propertyWithGeo, dvfStats ?? null, cleanListings, dvfComparables);
+    const valuation = computeValuation(propertyWithGeo, dvfStats ?? null, cleanListings, dvfComparables, amenities);
 
     // 8. Contexte marché Notaires
     const marketReading = await fetchNotairesMarket(property.postalCode, property.propertyType);
