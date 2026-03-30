@@ -4,7 +4,7 @@
  */
 
 export interface AmenityResult {
-  category: "lake" | "ski" | "motorway" | "school" | "shop" | "train";
+  category: "lake" | "river" | "stream" | "ski" | "motorway" | "school" | "shop" | "train";
   label: string;
   distanceM: number;
 }
@@ -12,6 +12,8 @@ export interface AmenityResult {
 /** Maximum search radius per category (must be ≥ max adjustment threshold). */
 const RADII: Record<AmenityResult["category"], number> = {
   lake:     3000,
+  river:    1500,
+  stream:    500,
   ski:      6000,
   motorway: 2500,
   school:   1500,
@@ -21,6 +23,8 @@ const RADII: Record<AmenityResult["category"], number> = {
 
 export const AMENITY_LABELS: Record<AmenityResult["category"], string> = {
   lake:     "Vue/accès lac",
+  river:    "Rivière à proximité",
+  stream:   "Ruisseau à proximité",
   ski:      "Proximité ski",
   motorway: "Accès autoroute",
   school:   "École à proximité",
@@ -39,12 +43,14 @@ function haversineM(lat1: number, lng1: number, lat2: number, lng2: number): num
 }
 
 function buildQuery(lat: number, lng: number): string {
-  const { lake, ski, motorway, school, shop, train } = RADII;
+  const { lake, river, stream, ski, motorway, school, shop, train } = RADII;
   return `[out:json][timeout:12];
 (
   way(around:${lake},${lat},${lng})[natural=water];
   relation(around:${lake},${lat},${lng})[natural=water];
   way(around:${lake},${lat},${lng})[natural=lake];
+  way(around:${river},${lat},${lng})[waterway=river];
+  way(around:${stream},${lat},${lng})[waterway=stream];
   node(around:${ski},${lat},${lng})[aerialway];
   way(around:${ski},${lat},${lng})[aerialway];
   way(around:${motorway},${lat},${lng})[highway=motorway];
@@ -82,6 +88,8 @@ function elementCoords(el: OverpassElement): { lat: number; lng: number } | null
 
 function tagToCategory(tags: Record<string, string>): AmenityResult["category"] | null {
   if (tags.natural === "water" || tags.natural === "lake") return "lake";
+  if (tags.waterway === "river") return "river";
+  if (tags.waterway === "stream") return "stream";
   if (tags.aerialway) return "ski";
   if (tags.highway === "motorway" || tags.highway === "motorway_link") return "motorway";
   if (tags.amenity === "school" || tags.amenity === "kindergarten" || tags.amenity === "college") return "school";

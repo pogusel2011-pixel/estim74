@@ -235,6 +235,24 @@ export function computeAdjustments(property: PropertyInput, amenities?: AmenityR
           factor = 0.03;
           label = `Lac à ${fDist(d)}`;
         }
+      } else if (am.category === "river") {
+        // Rivière : cadre naturel recherché en Haute-Savoie
+        if (d <= 200) {
+          factor = 0.02;
+          label = `Rivière à ${fDist(d)}`;
+        } else if (d <= 1000) {
+          factor = 0.015;
+          label = `Rivière à ${fDist(d)}`;
+        }
+      } else if (am.category === "stream") {
+        // Ruisseau : proximité agréable sans la puissance d'un lac
+        if (d <= 100) {
+          factor = 0.015;
+          label = `Ruisseau à ${fDist(d)}`;
+        } else if (d <= 500) {
+          factor = 0.01;
+          label = `Ruisseau à ${fDist(d)}`;
+        }
       } else if (am.category === "ski") {
         if (d <= 5000) {
           factor = 0.05;
