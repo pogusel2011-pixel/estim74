@@ -38,8 +38,8 @@ export interface MarketReading {
 export interface AnalysisSummary {
   id: string;
   createdAt: string;
-  address: string;
-  city: string;
+  address: string | null;
+  city: string | null;
   propertyType: string;
   surface: number;
   valuationMid?: number;

@@ -397,9 +397,7 @@ export function drawTable(writer: Writer, opts: TableOpts): void {
     }
 
     let bg: Color | null = null;
-    if (row.__bg as unknown) {
-      // custom bg set externally — not standard; skip
-    } else if (stripedRows && ri % 2 === 1) {
+    if (stripedRows && ri % 2 === 1) {
       bg = C.rowAlt;
     }
     // Check for custom bgColor per col

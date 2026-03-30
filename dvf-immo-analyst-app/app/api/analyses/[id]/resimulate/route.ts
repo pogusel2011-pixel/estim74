@@ -5,6 +5,7 @@ import { computePrixM2, removeOutliers } from "@/lib/dvf/outliers";
 import { computeDVFStats } from "@/lib/dvf/stats";
 import { toComparables } from "@/lib/dvf/comparables";
 import { propertyTypeToDvfTypes } from "@/lib/mapping/property-type";
+import { PropertyType } from "@/types/property";
 import { findActiveListings } from "@/lib/moteurimmo/search";
 import { computeValuation } from "@/lib/valuation/valuation";
 import { fetchNotairesMarket } from "@/lib/notaires/market-check";
@@ -85,7 +86,7 @@ export async function POST(
     const propertyWithGeo = { ...property, lat, lng };
 
     // 5. DVF mutations (+ filtre INSEE secondaire via city/postalCode)
-    const dvfTypes = propertyTypeToDvfTypes(property.propertyType as string);
+    const dvfTypes = propertyTypeToDvfTypes(property.propertyType as PropertyType);
     const { mutations, source, radiusKm: finalRadiusKm } = await getDVFMutations(
       lat, lng, radiusKm, monthsBack, dvfTypes,
       property.city as string | undefined,

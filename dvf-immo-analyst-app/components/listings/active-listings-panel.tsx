@@ -68,8 +68,8 @@ export function ActiveListingsPanel({ listings, apiAvailable = true }: Props) {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-            {listings.map((listing) => (
-              <ListingCard key={listing.id} listing={listing} />
+            {listings.map((listing, index) => (
+              <ListingCard key={`${listing.id}_${index}`} listing={listing} />
             ))}
           </div>
         )}

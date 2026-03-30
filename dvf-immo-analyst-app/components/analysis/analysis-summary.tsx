@@ -31,11 +31,11 @@ export function AnalysisSummaryPanel({ analysis }: Props) {
         </h1>
         <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
           <span className="flex items-center gap-1"><Ruler className="h-3.5 w-3.5" />{analysis.surface as number} m²</span>
-          {analysis.rooms && <span className="flex items-center gap-1"><Home className="h-3.5 w-3.5" />{analysis.rooms as number} pièces</span>}
+          {!!analysis.rooms && <span className="flex items-center gap-1"><Home className="h-3.5 w-3.5" />{analysis.rooms as number} pièces</span>}
           <span className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5" />{formatDate(analysis.createdAt as string)}</span>
-          {analysis.yearBuilt && <span>Construit en {analysis.yearBuilt as number}</span>}
-          {analysis.condition && <span>{CONDITION_LABELS[analysis.condition as string]}</span>}
-          {analysis.dpeLetter && <span className="font-medium">DPE {analysis.dpeLetter as string}</span>}
+          {!!analysis.yearBuilt && <span>Construit en {analysis.yearBuilt as number}</span>}
+          {!!analysis.condition && <span>{CONDITION_LABELS[analysis.condition as string]}</span>}
+          {!!analysis.dpeLetter && <span className="font-medium">DPE {analysis.dpeLetter as string}</span>}
         </div>
       </div>
     </div>

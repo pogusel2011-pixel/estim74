@@ -36,6 +36,8 @@ import { fetchDeptStats } from "@/lib/dvf/dept-stats";
 import { DVFStats, DVFComparable } from "@/types/dvf";
 import { ActiveListing } from "@/types/listing";
 import { Adjustment, ConfidenceFactors } from "@/types/valuation";
+import { GPTOutput } from "@/types/gpt";
+import { MarketReading as MarketReadingType } from "@/types/analysis";
 
 export const dynamic = "force-dynamic";
 
@@ -88,10 +90,10 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
   // Applique le marquage outlier côté page aussi (pour les analyses antérieures à la v2)
   const safeListings = markListingOutliers(rawListings as ActiveListing[]) as ActiveListing[];
   const safeDvfComparables = safeJsonArray<DVFComparable>(serialized.dvfComparables);
-  const safeGptOutputs = safeJsonArray(serialized.gptOutputs);
-  const safeAdjustments = safeJsonArray(serialized.adjustments);
+  const safeGptOutputs = safeJsonArray<GPTOutput>(serialized.gptOutputs);
+  const safeAdjustments = safeJsonArray<Adjustment>(serialized.adjustments);
   const safeDvfStatsRaw = safeJsonObject<DVFStats>(serialized.dvfStats);
-  const safeMarketReading = safeJsonObject(serialized.marketReading);
+  const safeMarketReading = safeJsonObject<MarketReadingType>(serialized.marketReading);
 
   // If the analysis has no dvfStats saved (e.g. seeded records), fetch live
   let dvfStats: DVFStats | null = safeDvfStatsRaw;
@@ -101,12 +103,12 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
 
   if (!dvfStats && serialized.lat && serialized.lng) {
     try {
-      const dvfTypes = propertyTypeToDvfTypes(serialized.propertyType);
-      const requestedRadius = serialized.perimeterKm ?? 0.5;
-      const monthsBack = serialized.dvfPeriodMonths ?? 24;
+      const dvfTypes = propertyTypeToDvfTypes(serialized.propertyType as string);
+      const requestedRadius = (serialized.perimeterKm as number | null) ?? 0.5;
+      const monthsBack = (serialized.dvfPeriodMonths as number | null) ?? 24;
       const { mutations, source, radiusKm: finalRadius } = await getDVFMutations(
-        serialized.lat,
-        serialized.lng,
+        serialized.lat as number,
+        serialized.lng as number,
         requestedRadius,
         monthsBack,
         dvfTypes
@@ -121,14 +123,14 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
         dvfStats.source = source;
         dvfStats.excludedCount = enriched.length - cleanEnriched.length;
       }
-      dvfComparables = toComparables(enriched, serialized.surface, serialized.rooms);
+      dvfComparables = toComparables(enriched, serialized.surface as number, serialized.rooms as number | undefined);
     } catch (err) {
       console.error("[AnalysisPage] DVF live fetch error:", err);
     }
   }
 
-  const perimeterKm = liveFinalRadiusKm ?? serialized.perimeterKm;
-  const requestedRadiusKm = liveRequestedRadiusKm ?? serialized.requestedRadiusKm;
+  const perimeterKm = liveFinalRadiusKm ?? (serialized.perimeterKm as number | null);
+  const requestedRadiusKm = liveRequestedRadiusKm ?? (serialized.requestedRadiusKm as number | null);
   const apiAvailable = isApiKeyConfigured();
 
   // Enrichir dvfStats avec la pression de marché si listings disponibles
@@ -213,7 +215,7 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
           <AnalysisSummaryPanel analysis={serialized} />
         </div>
         <div className="flex items-start gap-2 shrink-0 flex-wrap justify-end">
-          <ResimulateButton analysisId={serialized.id} />
+          <ResimulateButton analysisId={serialized.id as string} />
           <ChatGPTButton promptText={chatgptPrompt} variant="outline" size="sm" />
           <PdfExportButtons analysisId={serialized.id as string} />
         </div>
@@ -255,7 +257,7 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             <DVFStatsPanel
               stats={dvfStats}
-              sampleSize={serialized.dvfSampleSize}
+              sampleSize={serialized.dvfSampleSize as number | null}
               perimeterKm={perimeterKm}
               requestedRadiusKm={requestedRadiusKm}
             />
@@ -306,10 +308,10 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
             benchmark={deptBenchmark}
             subjectPsm={serialized.valuationPsm as number | null}
           />
-          {serialized.lat && serialized.lng && (
+          {!!(serialized.lat && serialized.lng) && (
             <MarketTrendChart
-              lat={serialized.lat}
-              lng={serialized.lng}
+              lat={serialized.lat as number}
+              lng={serialized.lng as number}
               radiusKm={Math.max(perimeterKm ?? 2, 2)}
               propertyType={dvfTypeForChart}
             />
