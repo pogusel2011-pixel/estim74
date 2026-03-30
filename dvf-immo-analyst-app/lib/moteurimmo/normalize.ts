@@ -13,9 +13,8 @@ import { haversineDistance } from "@/lib/utils";
  *   publisher { type, name, phone, email }, url, category, type,
  *   pictureUrl, pictureUrls[], lastEventDate
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function normalizeMoteurImmoListing(
-  raw: any,
+  raw: any, // eslint-disable-line -- raw API response, shape varies per immoapi.app version
   subjectLat?: number,
   subjectLng?: number
 ): ActiveListing | null {
@@ -106,7 +105,6 @@ export function normalizeMoteurImmoListing(
 }
 
 /** @deprecated Utiliser normalizeMoteurImmoListing — conservé pour compatibilité */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function normalizeListing(raw: any): ActiveListing | null {
+export function normalizeListing(raw: any): ActiveListing | null { // eslint-disable-line
   return normalizeMoteurImmoListing(raw);
 }

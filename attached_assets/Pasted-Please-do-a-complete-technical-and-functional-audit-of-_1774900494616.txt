@@ -1,0 +1,62 @@
+Please do a complete technical and functional audit 
+of the entire ESTIM'74 application. Check everything:
+
+TECHNICAL AUDIT:
+1. Run tsc --noEmit --strict and report all errors
+2. Run npm run lint and report all warnings/errors
+3. Check for any runtime errors in the console logs
+4. Verify all API routes respond correctly
+5. Check database queries for potential issues
+6. Verify CSV loader loads correctly with all 353,253 rows
+7. Check for memory leaks or performance issues
+
+FUNCTIONAL AUDIT — VALUATION ENGINE:
+8. Verify the DVF weighted average calculation 
+   (distance × surface × recency weights)
+9. Verify temporal indexation is correctly applied 
+   (2014 index=100 → 2025 index=126)
+10. Verify outlier detection (IQR×1.5 + median ±40%)
+11. Verify the 70/30 DVF/listings weighting
+12. Verify all qualitative adjustments are correct 
+    and not double-counted
+13. Verify the FSD confidence interval calculation
+14. Verify proximity adjustments from Overpass API
+15. Verify market pressure calculation
+
+FUNCTIONAL AUDIT — DATA QUALITY:
+16. Check for duplicate DVF transactions in results
+17. Verify address formatting (spaces between 
+    number and street name)
+18. Verify French accented characters everywhere
+19. Check that outlier listings are correctly excluded
+20. Verify the auto-radius expansion logic
+
+FUNCTIONAL AUDIT — PDF:
+21. Test PDF Expert generation on 3 different analyses
+22. Test PDF Client generation on 3 different analyses
+23. Check for layout issues, overlapping text, 
+    missing data
+
+FUNCTIONAL AUDIT — GPT & INTEGRATIONS:
+24. Verify GPT-4o API calls work correctly
+25. Verify the ChatGPT Action endpoint returns 
+    correct data
+26. Verify Gamma prompt builders include all data
+27. Verify MoteurImmo/ImmoAPI listings are fetched
+
+FUNCTIONAL AUDIT — UI:
+28. Check all tabs load correctly (DVF, Annonces, 
+    Marché, Méthode, IA)
+29. Check the interactive Leaflet map works
+30. Check the refresh button works
+31. Check PWA installation works
+
+Please provide a detailed report of ALL issues found, 
+categorized by severity:
+🔴 CRITICAL — affects valuation accuracy
+🟠 IMPORTANT — affects reliability
+🟡 MINOR — cosmetic or non-blocking
+✅ OK — working correctly
+
+Fix all CRITICAL and IMPORTANT issues immediately.
+List MINOR issues for review.

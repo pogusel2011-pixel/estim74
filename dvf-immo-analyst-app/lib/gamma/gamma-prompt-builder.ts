@@ -62,7 +62,9 @@ export function buildGammaExpertPrompt(input: GammaPromptInput): string {
   const valuationMid = serialized.valuationMid as number | null;
   const valuationHigh = serialized.valuationHigh as number | null;
   const valuationPsm = serialized.valuationPsm as number | null;
-  const confidence = serialized.confidence as number | null;
+  // confidence stocké 0.0–1.0 en base — conversion en points (0–100) pour l'affichage
+  const confidenceRaw = serialized.confidence as number | null;
+  const confidencePts = confidenceRaw != null ? Math.round(confidenceRaw * 100) : null;
   const confidenceLabel = serialized.confidenceLabel as string | null;
 
   const listingPriceLow = valuationMid ? Math.round(valuationMid * 1.02) : null;
@@ -77,9 +79,10 @@ export function buildGammaExpertPrompt(input: GammaPromptInput): string {
   if (serialized.hasPool) features.push("Piscine");
   if (serialized.hasElevator) features.push("Ascenseur");
 
-  const positiveAdj = adjustments.filter(a => a.factor > 1);
+  // Toutes les proximités (river/stream/lake) sont stockées avec category="proximity"
+  const positiveAdj = adjustments.filter(a => a.factor > 1 && a.category !== "proximity");
   const negativeAdj = adjustments.filter(a => a.factor < 1);
-  const proximityAdj = adjustments.filter(a => a.category === "proximity" || a.category === "river" || a.category === "stream" || a.category === "lake");
+  const proximityAdj = adjustments.filter(a => a.category === "proximity");
 
   const dvfSampleSize = serialized.dvfSampleSize as number | null;
 
@@ -108,7 +111,7 @@ export function buildGammaExpertPrompt(input: GammaPromptInput): string {
   lines.push(`- Fourchette basse : **${fmt(valuationLow)}**`);
   lines.push(`- Estimation centrale : **${fmt(valuationMid)}** (${fmtPsm(valuationPsm)})`);
   lines.push(`- Fourchette haute : **${fmt(valuationHigh)}**`);
-  if (confidence != null) lines.push(`- Indice de confiance : **${confidence}/100** (${confidenceLabel ?? ""})`);
+  if (confidencePts != null) lines.push(`- Indice de confiance : **${confidencePts}/100** (${confidenceLabel ?? ""})`);
   if (listingPriceLow && listingPriceHigh) lines.push(`- Prix d'annonce conseillé : ${fmt(listingPriceLow)} à ${fmt(listingPriceHigh)}`);
   lines.push(``);
 
@@ -134,7 +137,7 @@ export function buildGammaExpertPrompt(input: GammaPromptInput): string {
     if (dvfSampleSize != null) lines.push(`- ${dvfSampleSize} ventes comparables${perimeterKm ? " dans un rayon de " + perimeterKm + " km" : ""}`);
     if (dvfStats.medianPsm != null) lines.push(`- Prix médian : ${fmtPsm(dvfStats.medianPsm)}`);
     if (dvfStats.meanPsm != null) lines.push(`- Prix moyen : ${fmtPsm(dvfStats.meanPsm)}`);
-    if ((dvfStats as Record<string, unknown>).stdPsm != null) lines.push(`- Écart-type : ${fmtPsm((dvfStats as Record<string, unknown>).stdPsm as number)}`);
+    if (dvfStats.stdPsm != null) lines.push(`- Écart-type : ${fmtPsm(dvfStats.stdPsm)}`);
     if (dvfStats.minPsm != null && dvfStats.maxPsm != null) lines.push(`- Fourchette marché : ${fmtPsm(dvfStats.minPsm)} — ${fmtPsm(dvfStats.maxPsm)}`);
     lines.push(``);
   }
@@ -185,12 +188,9 @@ export function buildGammaClientPrompt(input: GammaPromptInput): string {
   if (serialized.hasElevator) features.push("Ascenseur");
   if (landSurface) features.push(`Terrain ${landSurface.toLocaleString("fr-FR")} m²`);
 
-  const positiveAdj = adjustments.filter(a =>
-    a.factor > 1 && a.category !== "proximity" && a.category !== "river" && a.category !== "stream" && a.category !== "lake"
-  );
-  const proximityAdj = adjustments.filter(a =>
-    a.factor > 1 && (a.category === "proximity" || a.category === "river" || a.category === "stream" || a.category === "lake")
-  );
+  // Toutes les proximités (river/stream/lake) sont stockées avec category="proximity"
+  const positiveAdj = adjustments.filter(a => a.factor > 1 && a.category !== "proximity");
+  const proximityAdj = adjustments.filter(a => a.factor > 1 && a.category === "proximity");
 
   const clientGptTypes = ["MARKET_ANALYSIS", "NEGOTIATION_ADVICE", "PROPERTY_DESCRIPTION"];
   const clientGptOutputs = gptOutputs.filter(g => clientGptTypes.includes(g.actionType));

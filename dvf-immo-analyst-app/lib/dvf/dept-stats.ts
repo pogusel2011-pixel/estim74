@@ -46,7 +46,7 @@ export async function fetchDeptStats(
     });
 
     if (!res.ok) {
-      console.warn(`[DeptStats] immoapi.app /v1/stats → HTTP ${res.status}`);
+      console.debug(`[DeptStats] immoapi.app /v1/stats → HTTP ${res.status} (endpoint optionnel)`);
       return null;
     }
 
