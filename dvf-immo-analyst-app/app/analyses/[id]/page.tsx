@@ -19,6 +19,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DeptBenchmarkPanel } from "@/components/dvf/dept-benchmark-panel";
 import { GPTActionsPanel } from "@/components/gpt/gpt-actions-panel";
 import { ChatGPTButton } from "@/components/gpt/chatgpt-button";
+import { GptAnalyzeButton } from "@/components/gpt/gpt-analyze-button";
 import { MethodeCalculPanel } from "@/components/analysis/methode-calcul-panel";
 import { ListingPriceCard } from "@/components/analysis/listing-price-card";
 import { ProximityBadges } from "@/components/analysis/proximity-badges";
@@ -218,6 +219,7 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
         </div>
         <div className="flex items-start gap-2 shrink-0 flex-wrap justify-end">
           <ResimulateButton analysisId={serialized.id as string} />
+          <GptAnalyzeButton analysisId={serialized.id as string} />
           <ChatGPTButton promptText={chatgptPrompt} variant="outline" size="sm" />
           <PdfExportButtons analysisId={serialized.id as string} />
         </div>
