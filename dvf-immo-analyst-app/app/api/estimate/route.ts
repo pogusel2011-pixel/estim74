@@ -229,6 +229,7 @@ export async function POST(req: Request) {
           hasElevator: property.hasElevator,
           orientation: property.orientation,
           view: property.view,
+          mitoyennete: property.mitoyennete,
           valuationLow: valuation.low,
           valuationMid: valuation.mid,
           valuationHigh: valuation.high,

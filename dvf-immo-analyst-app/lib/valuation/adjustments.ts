@@ -160,7 +160,31 @@ export function computeAdjustments(property: PropertyInput, amenities?: AmenityR
     });
   }
 
-  // ── 10. VUE ──────────────────────────────────────────────────────────────
+  // ── 10. MITOYENNETÉ (MAISONS) ────────────────────────────────────────────
+  // individuelle: référence 0% | mitoyenne_un_cote: -4% | mitoyenne_deux_cotes: -7%
+  if (property.propertyType === "HOUSE" && property.mitoyennete) {
+    const mitoyenneFactors: Record<string, number> = {
+      individuelle:          0.00,
+      mitoyenne_un_cote:    -0.04,
+      mitoyenne_deux_cotes: -0.07,
+    };
+    const mitoyenneLabels: Record<string, string> = {
+      individuelle:          "Maison individuelle",
+      mitoyenne_un_cote:    "Mitoyenne d'un côté",
+      mitoyenne_deux_cotes: "Mitoyenne des deux côtés",
+    };
+    const mf = mitoyenneFactors[property.mitoyennete] ?? 0;
+    if (mf !== 0) {
+      adjustments.push({
+        label: mitoyenneLabels[property.mitoyennete] ?? property.mitoyennete,
+        factor: mf,
+        impact: mf,
+        category: "features",
+      });
+    }
+  }
+
+  // ── 11 (ancien 10). VUE ───────────────────────────────────────────────────
   // Spec : +1-2% | Pour Haute-Savoie, lac/montagne restent dans le plafond global ±20%
   // lac/montagne → +2% | dégagée → +1.5% | jardin → +1% | cour → -1%
   const viewFactors: Record<string, number> = {

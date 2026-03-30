@@ -116,6 +116,23 @@ export function PropertyForm({ onSubmit, loading, defaultValues }: PropertyFormP
               <Input id="landSurface" type="number" min={0} placeholder="500" {...register("landSurface", { valueAsNumber: true })} />
             </div>
           )}
+
+          {propertyType === "HOUSE" && (
+            <div className="space-y-1">
+              <Label>Mitoyenneté</Label>
+              <Select
+                onValueChange={(v) => setValue("mitoyennete", v as never)}
+                defaultValue={defaultValues?.mitoyennete}
+              >
+                <SelectTrigger><SelectValue placeholder="Type de maison" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="individuelle">Maison individuelle (référence)</SelectItem>
+                  <SelectItem value="mitoyenne_un_cote">Mitoyenne d&apos;un côté (-4%)</SelectItem>
+                  <SelectItem value="mitoyenne_deux_cotes">Mitoyenne des deux côtés (-7%)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </CardContent>
       </Card>
 

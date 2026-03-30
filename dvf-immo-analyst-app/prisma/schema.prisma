@@ -45,6 +45,7 @@ model Analysis {
   hasElevator  Boolean @default(false)
   orientation  String?
   view         String?
+  mitoyennete  String?
 
   // Valuation result
   valuationLow    Float?

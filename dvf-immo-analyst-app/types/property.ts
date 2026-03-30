@@ -3,6 +3,7 @@ export type Condition = "TO_RENOVATE" | "AVERAGE" | "GOOD" | "EXCELLENT";
 export type DPELetter = "A" | "B" | "C" | "D" | "E" | "F" | "G";
 export type GHGGrade = "A" | "B" | "C" | "D" | "E" | "F" | "G";
 export type Orientation = "N" | "NE" | "E" | "SE" | "S" | "SO" | "O" | "NO";
+export type Mitoyennete = "individuelle" | "mitoyenne_un_cote" | "mitoyenne_deux_cotes";
 
 export interface PropertyInput {
   // Localisation
@@ -38,4 +39,5 @@ export interface PropertyInput {
   hasElevator: boolean;
   orientation?: Orientation;
   view?: string;
+  mitoyennete?: Mitoyennete;
 }

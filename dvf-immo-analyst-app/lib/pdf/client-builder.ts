@@ -40,6 +40,7 @@ import { PDFDocument } from "pdf-lib";
     if (l.includes("cave")) return "Cave";
     if (l.includes("piscine")) return "Piscine";
     if (l.includes("ascenseur")) return "Ascenseur";
+    if (l.includes("mitoyenne") || l.includes("individuelle")) return san(adj.label);
     // Proximité
     if (adj.category === "proximity") return san(adj.label);
     return san(adj.label);

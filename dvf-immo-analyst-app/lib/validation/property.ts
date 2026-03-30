@@ -56,6 +56,7 @@ export const propertySchema = z.object({
   hasElevator: z.boolean().default(false),
   orientation: z.enum(["N", "NE", "E", "SE", "S", "SO", "O", "NO"]).optional(),
   view: z.string().optional(),
+  mitoyennete: z.enum(["individuelle", "mitoyenne_un_cote", "mitoyenne_deux_cotes"]).optional(),
 });
 
 export type PropertyFormValues = z.infer<typeof propertySchema>;

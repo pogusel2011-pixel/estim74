@@ -59,6 +59,7 @@ export async function POST(
       hasElevator: existing.hasElevator ?? false,
       orientation: existing.orientation ?? undefined,
       view: existing.view ?? undefined,
+      mitoyennete: existing.mitoyennete ?? undefined,
       ...bodyOverride,
     } as Record<string, unknown>;
 

@@ -169,6 +169,7 @@ import { PDFDocument } from "pdf-lib";
         { critere: "Terrasse", adj: findAdj("terrasse") },
         { critere: "Cave", adj: findAdj("cave") },
         { critere: "Piscine", adj: findAdj("piscine") },
+        { critere: "Mitoyenneté", adj: findAdj("mitoyenne") },
         { critere: "Orientation", adj: findAdj(undefined, "orientation") },
         { critere: "Vue", adj: findAdj(undefined, "view") },
         // Recherche "jardin" ou "terrain" uniquement dans la catégorie "features"
