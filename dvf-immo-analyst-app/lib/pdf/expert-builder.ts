@@ -4,7 +4,7 @@ import { PDFDocument } from "pdf-lib";
   import { DVFStats, DVFComparable } from "@/types/dvf";
   import { ActiveListing } from "@/types/listing";
   import { Adjustment } from "@/types/valuation";
-  import { Writer, loadFonts, drawTable, san, fPrice, fPsm, fPct, fDateShort, wrapText, C, FS, ML, MR, CW, PAGE_W, PAGE_H } from "./helpers";
+  import { Writer, loadFonts, drawTable, san, fPrice, fPsm, fPct, fDateShort, wrapText, C, FS, ML, MR, CW, PAGE_W, PAGE_H, numFr } from "./helpers";
 
   export async function buildExpertPdf(a: Record<string, unknown>, refId: string): Promise<Uint8Array> {
     const dvfStats: DVFStats | null = (a.dvfStats as DVFStats) ?? null;
@@ -73,7 +73,7 @@ import { PDFDocument } from "pdf-lib";
       if (isIndicative) {
         w.rect(ML, w.y - 18, CW, 20, C.amberBg);
         w.rect(ML, w.y - 18, 3, 20, C.amber);
-        w.page.drawText("[!] Estimation indicative - donnees DVF limitees", { x: ML + 8, y: w.y - 12, font: fonts.bold, size: FS.body, color: C.amber });
+        w.page.drawText(san("[!] Estimation indicative - donnees DVF limitees"), { x: ML + 8, y: w.y - 12, font: fonts.bold, size: FS.body, color: C.amber });
         w.gap(26);
       }
       const boxW = (CW - 12) / 3;
@@ -104,7 +104,7 @@ import { PDFDocument } from "pdf-lib";
         const cw = fonts.regular.widthOfTextAtSize(chip, FS.small) + 14;
         w.rect(chX, w.y - 6, cw, 14, C.headerBg);
         w.rectStroke(chX, w.y - 6, cw, 14, C.border, 0.4);
-        w.page.drawText(chip, { x: chX + 7, y: w.y, font: fonts.regular, size: FS.small, color: C.gray });
+        w.page.drawText(san(chip), { x: chX + 7, y: w.y, font: fonts.regular, size: FS.small, color: C.gray });
         chX += cw + 6;
       });
       w.gap(22);
@@ -141,11 +141,11 @@ import { PDFDocument } from "pdf-lib";
         if (!adj) return [critere, "-", "-", "-", "-", "-"];
         const ip = Math.round(adj.factor * basePsm);
         const it = Math.round(adj.factor * basePsm * surface);
-        return [critere, "OUI", fPct(adj.factor), (ip >= 0 ? "+" : "") + ip.toLocaleString("fr-FR") + " EUR", (it >= 0 ? "+" : "") + it.toLocaleString("fr-FR") + " EUR", san(adj.label)];
+        return [critere, "OUI", fPct(adj.factor), (ip >= 0 ? "+" : "") + numFr(ip) + " EUR", (it >= 0 ? "+" : "") + numFr(it) + " EUR", san(adj.label)];
       });
       const tip = Math.round(totalAdjFactor * basePsm);
       const tit = Math.round(totalAdjFactor * basePsm * surface);
-      adjRows.push(["TOTAL AJUSTEMENTS", "", fPct(totalAdjFactor), (tip >= 0 ? "+" : "") + tip.toLocaleString("fr-FR") + " EUR", (tit >= 0 ? "+" : "") + tit.toLocaleString("fr-FR") + " EUR", ""]);
+      adjRows.push(["TOTAL AJUSTEMENTS", "", fPct(totalAdjFactor), (tip >= 0 ? "+" : "") + numFr(tip) + " EUR", (tit >= 0 ? "+" : "") + numFr(tit) + " EUR", ""]);
 
       drawTable(w, {
         cols: [
@@ -173,8 +173,8 @@ import { PDFDocument } from "pdf-lib";
 
     // Badge A
     w.rect(ML, w.y - 14, 18, 16, C.blue);
-    w.page.drawText("A", { x: ML + 5, y: w.y - 10, font: fonts.bold, size: FS.body, color: C.white });
-    w.page.drawText("Donnees DVF - transactions signees", { x: ML + 24, y: w.y - 9, font: fonts.bold, size: FS.body, color: C.dark });
+    w.page.drawText(san("A"), { x: ML + 5, y: w.y - 10, font: fonts.bold, size: FS.body, color: C.white });
+    w.page.drawText(san("Donnees DVF - transactions signees"), { x: ML + 24, y: w.y - 9, font: fonts.bold, size: FS.body, color: C.dark });
     w.gap(22);
 
     drawTable(w, {
@@ -195,7 +195,7 @@ import { PDFDocument } from "pdf-lib";
     if (dvfStats?.isIndexed) {
       w.rect(ML, w.y - 14, CW, 16, C.greenBg);
       w.rect(ML, w.y - 14, 3, 16, C.green);
-      w.page.drawText("[OK] Prix indexes en valeur 2025 via les indices notariaux Haute-Savoie", { x: ML + 8, y: w.y - 9, font: fonts.regular, size: FS.small, color: C.green });
+      w.page.drawText(san("[OK] Prix indexes en valeur 2025 via les indices notariaux Haute-Savoie"), { x: ML + 8, y: w.y - 9, font: fonts.regular, size: FS.small, color: C.green });
       w.gap(22);
     }
 
@@ -204,14 +204,14 @@ import { PDFDocument } from "pdf-lib";
     if (mktAdj !== 0) { w.kv(`Pression marche (${fPct(mktAdj)})`, fPsm(dvfAdjPsm)); }
     w.hline(ML, w.y + 2, CW, C.borderBlue, 1);
     w.gap(3);
-    w.page.drawText("Prix DVF retenu", { x: ML, y: w.y, font: fonts.bold, size: FS.body, color: C.darkBlue });
-    w.page.drawText(fPsm(dvfAdjPsm), { x: ML + CW - fonts.bold.widthOfTextAtSize(fPsm(dvfAdjPsm), FS.body), y: w.y, font: fonts.bold, size: FS.body, color: C.darkBlue });
+    w.page.drawText(san("Prix DVF retenu"), { x: ML, y: w.y, font: fonts.bold, size: FS.body, color: C.darkBlue });
+    w.page.drawText(san(fPsm(dvfAdjPsm)), { x: ML + CW - fonts.bold.widthOfTextAtSize(fPsm(dvfAdjPsm), FS.body), y: w.y, font: fonts.bold, size: FS.body, color: C.darkBlue });
     w.gap(20);
 
     // Badge B
     w.rect(ML, w.y - 14, 18, 16, C.blue);
-    w.page.drawText("B", { x: ML + 5, y: w.y - 10, font: fonts.bold, size: FS.body, color: C.white });
-    w.page.drawText("Annonces actives - marche affiche", { x: ML + 24, y: w.y - 9, font: fonts.bold, size: FS.body, color: C.dark });
+    w.page.drawText(san("B"), { x: ML + 5, y: w.y - 10, font: fonts.bold, size: FS.body, color: C.white });
+    w.page.drawText(san("Annonces actives - marche affiche"), { x: ML + 24, y: w.y - 9, font: fonts.bold, size: FS.body, color: C.dark });
     w.gap(22);
 
     if (listings.length === 0) {
@@ -238,8 +238,8 @@ import { PDFDocument } from "pdf-lib";
         w.kv("Abattement vendeur -4%", fPsm(listingAdjPsm));
         w.hline(ML, w.y + 2, CW, C.borderBlue, 1);
         w.gap(3);
-        w.page.drawText("Prix annonces retenu", { x: ML, y: w.y, font: fonts.bold, size: FS.body, color: C.darkBlue });
-        w.page.drawText(fPsm(listingAdjPsm), { x: ML + CW - fonts.bold.widthOfTextAtSize(fPsm(listingAdjPsm), FS.body), y: w.y, font: fonts.bold, size: FS.body, color: C.darkBlue });
+        w.page.drawText(san("Prix annonces retenu"), { x: ML, y: w.y, font: fonts.bold, size: FS.body, color: C.darkBlue });
+        w.page.drawText(san(fPsm(listingAdjPsm)), { x: ML + CW - fonts.bold.widthOfTextAtSize(fPsm(listingAdjPsm), FS.body), y: w.y, font: fonts.bold, size: FS.body, color: C.darkBlue });
         w.gap(20);
       }
     }
@@ -247,8 +247,8 @@ import { PDFDocument } from "pdf-lib";
     // Badge C
     w.ensureSpace(80);
     w.rect(ML, w.y - 14, 18, 16, C.blue);
-    w.page.drawText("C", { x: ML + 5, y: w.y - 10, font: fonts.bold, size: FS.body, color: C.white });
-    w.page.drawText("Reconciliation finale", { x: ML + 24, y: w.y - 9, font: fonts.bold, size: FS.body, color: C.dark });
+    w.page.drawText(san("C"), { x: ML + 5, y: w.y - 10, font: fonts.bold, size: FS.body, color: C.white });
+    w.page.drawText(san("Reconciliation finale"), { x: ML + 24, y: w.y - 9, font: fonts.bold, size: FS.body, color: C.dark });
     w.gap(22);
 
     const reconRows2: string[][] = [
@@ -258,7 +258,7 @@ import { PDFDocument } from "pdf-lib";
     ];
     if (totalAdjFactor !== 0) {
       const adj2 = Math.round(totalAdjFactor * basePsm);
-      reconRows2.push([`Ajustements (${fPct(totalAdjFactor)})`, "", "", (adj2 >= 0 ? "+" : "") + adj2.toLocaleString("fr-FR") + " EUR/m2"]);
+      reconRows2.push([`Ajustements (${fPct(totalAdjFactor)})`, "", "", (adj2 >= 0 ? "+" : "") + numFr(adj2) + " EUR/m2"]);
     }
     reconRows2.push([`PRIX FINAL - ${surface} m2 = ${fPrice(a.valuationMid as number)}`, "", "", a.valuationPsm ? fPsm(a.valuationPsm as number) : "-"]);
 

@@ -5,7 +5,7 @@ import { PDFDocument } from "pdf-lib";
   import { PROPERTY_TYPE_LABELS, CONDITION_LABELS } from "@/lib/constants";
   import { DVFComparable } from "@/types/dvf";
   import { Adjustment } from "@/types/valuation";
-  import { Writer, loadFonts, drawTable, san, fPrice, fPsm, fDateShort, wrapText, C, FS, ML, MR, CW, PAGE_W, PAGE_H } from "./helpers";
+  import { Writer, loadFonts, drawTable, san, fPrice, fPsm, fDateShort, wrapText, C, FS, ML, MR, CW, PAGE_W, PAGE_H, numFr } from "./helpers";
 
   async function getTrend(lat: number, lng: number, km: number, type?: string) {
     try {
@@ -101,10 +101,10 @@ import { PDFDocument } from "pdf-lib";
       w.rect(ML, bxY, CW, mainBoxH, C.lightBlueBg);
       w.rectStroke(ML, bxY, CW, mainBoxH, C.borderBlue, 1);
       // Label
-      w.page.drawText(isIndicative ? "ESTIMATION INDICATIVE" : "ESTIMATION CENTRALE", { x: ML + 16, y: bxY + mainBoxH - 14, font: fonts.bold, size: FS.micro, color: isIndicative ? C.amber : C.blue });
+      w.page.drawText(san(isIndicative ? "ESTIMATION INDICATIVE" : "ESTIMATION CENTRALE"), { x: ML + 16, y: bxY + mainBoxH - 14, font: fonts.bold, size: FS.micro, color: isIndicative ? C.amber : C.blue });
       // Main price
       const mainPriceStr = san(fPrice(a.valuationMid as number));
-      w.page.drawText(mainPriceStr, { x: ML + 16, y: bxY + mainBoxH - 34, font: fonts.bold, size: 20, color: isIndicative ? C.amber : C.darkBlue });
+      w.page.drawText(san(mainPriceStr), { x: ML + 16, y: bxY + mainBoxH - 34, font: fonts.bold, size: 20, color: isIndicative ? C.amber : C.darkBlue });
       // PSM
       if (a.valuationPsm) {
         w.page.drawText(san(fPsm(a.valuationPsm as number)), { x: ML + 16, y: bxY + 10, font: fonts.regular, size: FS.body, color: C.blue });
@@ -113,7 +113,7 @@ import { PDFDocument } from "pdf-lib";
       if (a.confidenceLabel) {
         const badgeTxt = san(`Fiabilite ${a.confidenceLabel}`);
         const badgeX = ML + CW - fonts.bold.widthOfTextAtSize(badgeTxt, FS.small) - 16;
-        w.page.drawText(badgeTxt, { x: badgeX, y: bxY + mainBoxH - 14, font: fonts.bold, size: FS.small, color: C.blue });
+        w.page.drawText(san(badgeTxt), { x: badgeX, y: bxY + mainBoxH - 14, font: fonts.bold, size: FS.small, color: C.blue });
       }
       w.y = bxY - 10;
 
@@ -122,11 +122,11 @@ import { PDFDocument } from "pdf-lib";
       const rnY = w.y - 32;
       w.rect(ML, rnY, halfW, 34, C.rowAlt);
       w.rectStroke(ML, rnY, halfW, 34, C.border, 0.5);
-      w.page.drawText("FOURCHETTE BASSE", { x: ML + 10, y: rnY + 22, font: fonts.bold, size: FS.micro, color: C.gray });
+      w.page.drawText(san("FOURCHETTE BASSE"), { x: ML + 10, y: rnY + 22, font: fonts.bold, size: FS.micro, color: C.gray });
       w.page.drawText(san(fPrice(a.valuationLow as number)), { x: ML + 10, y: rnY + 8, font: fonts.bold, size: 11, color: C.dark });
       w.rect(ML + halfW + 6, rnY, halfW, 34, C.rowAlt);
       w.rectStroke(ML + halfW + 6, rnY, halfW, 34, C.border, 0.5);
-      w.page.drawText("FOURCHETTE HAUTE", { x: ML + halfW + 16, y: rnY + 22, font: fonts.bold, size: FS.micro, color: C.gray });
+      w.page.drawText(san("FOURCHETTE HAUTE"), { x: ML + halfW + 16, y: rnY + 22, font: fonts.bold, size: FS.micro, color: C.gray });
       w.page.drawText(san(fPrice(a.valuationHigh as number)), { x: ML + halfW + 16, y: rnY + 8, font: fonts.bold, size: 11, color: C.dark });
       w.y = rnY - 6;
 
@@ -144,7 +144,7 @@ import { PDFDocument } from "pdf-lib";
         w.gap(4);
         w.rect(ML, w.y - 16, CW, 18, C.amberBg);
         w.rect(ML, w.y - 16, 3, 18, C.amber);
-        w.page.drawText("[!] Estimation indicative - le nombre de ventes de reference est limite dans ce secteur.", { x: ML + 9, y: w.y - 10, font: fonts.regular, size: FS.small, color: C.amber });
+        w.page.drawText(san("[!] Estimation indicative - le nombre de ventes de reference est limite dans ce secteur."), { x: ML + 9, y: w.y - 10, font: fonts.regular, size: FS.small, color: C.amber });
         w.gap(24);
       }
     } else {
@@ -166,34 +166,34 @@ import { PDFDocument } from "pdf-lib";
       let rightY = w.y;
 
       // Left column header
-      w.page.drawText("POINTS FORTS", { x: leftX, y: leftY, font: fonts.bold, size: FS.small, color: C.green });
+      w.page.drawText(san("POINTS FORTS"), { x: leftX, y: leftY, font: fonts.bold, size: FS.small, color: C.green });
       w.hline(leftX, leftY - 3, colW, C.greenBorder, 1.5);
       leftY -= 18;
 
       // Right column header
-      w.page.drawText("POINTS DE VIGILANCE", { x: rightX, y: rightY, font: fonts.bold, size: FS.small, color: C.amber });
+      w.page.drawText(san("POINTS DE VIGILANCE"), { x: rightX, y: rightY, font: fonts.bold, size: FS.small, color: C.amber });
       w.hline(rightX, rightY - 3, colW, C.border, 1.5);
       rightY -= 18;
 
       if (positiveAdj.length === 0) {
-        w.page.drawText("Aucun point fort identifie.", { x: leftX, y: leftY, font: fonts.italic, size: FS.body, color: C.lightGray });
+        w.page.drawText(san("Aucun point fort identifie."), { x: leftX, y: leftY, font: fonts.italic, size: FS.body, color: C.lightGray });
         leftY -= FS.body * 1.6;
       } else {
         positiveAdj.forEach((adj) => {
           const lbl = clientLabel(adj, conditionLabel);
-          w.page.drawText("[OK] " + lbl, { x: leftX, y: leftY, font: fonts.regular, size: FS.body, color: C.dark });
+          w.page.drawText(san("[OK] " + lbl), { x: leftX, y: leftY, font: fonts.regular, size: FS.body, color: C.dark });
           w.hline(leftX, leftY - 3, colW, C.border, 0.3);
           leftY -= FS.body * 1.7;
         });
       }
 
       if (negativeAdj.length === 0) {
-        w.page.drawText("Aucun point de vigilance.", { x: rightX, y: rightY, font: fonts.italic, size: FS.body, color: C.lightGray });
+        w.page.drawText(san("Aucun point de vigilance."), { x: rightX, y: rightY, font: fonts.italic, size: FS.body, color: C.lightGray });
         rightY -= FS.body * 1.6;
       } else {
         negativeAdj.forEach((adj) => {
           const lbl = clientLabel(adj, conditionLabel);
-          w.page.drawText("[!] " + lbl, { x: rightX, y: rightY, font: fonts.regular, size: FS.body, color: C.dark });
+          w.page.drawText(san("[!] " + lbl), { x: rightX, y: rightY, font: fonts.regular, size: FS.body, color: C.dark });
           w.hline(rightX, rightY - 3, colW, C.border, 0.3);
           rightY -= FS.body * 1.7;
         });
@@ -248,9 +248,9 @@ import { PDFDocument } from "pdf-lib";
       // Trend header
       w.rect(ML, w.y - 24, CW, 26, trend === "hausse" ? C.greenBg : trend === "baisse" ? C.amberBg : C.rowAlt);
       w.rectStroke(ML, w.y - 24, CW, 26, trend === "hausse" ? C.greenBorder : C.border, 0.7);
-      w.page.drawText(trendIcon + " " + trendTitle, { x: ML + 10, y: w.y - 16, font: fonts.bold, size: FS.body, color: trendColor });
+      w.page.drawText(san(trendIcon + " " + trendTitle), { x: ML + 10, y: w.y - 16, font: fonts.bold, size: FS.body, color: trendColor });
       const dvfTypeStr = dvfTypeForChart ? `${dvfTypeForChart}s - ` : "";
-      w.page.drawText(`${dvfTypeStr}Rayon ${Math.max(perimeterKm ?? 2, 2)} km`, { x: ML + 10, y: w.y - 27, font: fonts.regular, size: FS.micro, color: C.gray });
+      w.page.drawText(san(`${dvfTypeStr}Rayon ${Math.max(perimeterKm ?? 2, 2)} km`), { x: ML + 10, y: w.y - 27, font: fonts.regular, size: FS.micro, color: C.gray });
       w.gap(36);
 
       // Stats KV
@@ -273,7 +273,7 @@ import { PDFDocument } from "pdf-lib";
       w.rect(ML, w.y - 6, 3, 56, C.blue);
       const commLines = wrapText(fonts.regular, commentary, FS.body, CW - 16);
       commLines.forEach((line, i) => {
-        w.page.drawText(line, { x: ML + 10, y: w.y - i * (FS.body * 1.5), font: fonts.regular, size: FS.body, color: C.dark });
+        w.page.drawText(san(line), { x: ML + 10, y: w.y - i * (FS.body * 1.5), font: fonts.regular, size: FS.body, color: C.dark });
       });
       w.gap(commLines.length * FS.body * 1.5 + 12);
     } else {

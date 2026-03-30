@@ -72,10 +72,10 @@ export function san(text: string | null | undefined): string {
     .replace(/\u2009/g, " "); // thin space
 }
 
-// ─── Price formatting — use space as thousands separator (avoids U+202F issues)
-function numFr(n: number): string {
-  // Format with regular space as thousands separator (WinAnsi-safe)
-  return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, "\u00A0").replace(/\u00A0/g, " ");
+// ─── Number formatting — regular space as thousands separator (WinAnsi-safe) ─
+/** Format integer with regular space as thousands separator. Exported for builders. */
+export function numFr(n: number): string {
+  return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
 }
 export function fPrice(amount: number | null | undefined): string {
   if (amount == null) return "-";
