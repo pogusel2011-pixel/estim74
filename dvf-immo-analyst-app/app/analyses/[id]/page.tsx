@@ -20,6 +20,8 @@ import { DeptBenchmarkPanel } from "@/components/dvf/dept-benchmark-panel";
 import { GPTActionsPanel } from "@/components/gpt/gpt-actions-panel";
 import { ChatGPTButton } from "@/components/gpt/chatgpt-button";
 import { GptAnalyzeButton } from "@/components/gpt/gpt-analyze-button";
+import { GammaButtons } from "@/components/gamma/gamma-buttons";
+import { buildGammaExpertPrompt, buildGammaClientPrompt } from "@/lib/gamma/gamma-prompt-builder";
 import { MethodeCalculPanel } from "@/components/analysis/methode-calcul-panel";
 import { ListingPriceCard } from "@/components/analysis/listing-price-card";
 import { ProximityBadges } from "@/components/analysis/proximity-badges";
@@ -194,6 +196,17 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
     listings: safeListings as ActiveListing[],
   });
 
+  // Build Gamma prompts (server-side — all data available)
+  const gammaInput = {
+    serialized,
+    adjustments: safeAdjustments as Adjustment[],
+    gptOutputs: safeGptOutputs,
+    dvfStats,
+    perimeterKm: perimeterKm ?? null,
+  };
+  const gammaExpertPrompt = buildGammaExpertPrompt(gammaInput);
+  const gammaClientPrompt = buildGammaClientPrompt(gammaInput);
+
   // Map propertyType to DVF type string for the trend chart
   const dvfTypeForChart = serialized.propertyType === "APARTMENT" ? "Appartement"
     : serialized.propertyType === "HOUSE" ? "Maison"
@@ -222,6 +235,7 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
           <GptAnalyzeButton analysisId={serialized.id as string} />
           <ChatGPTButton promptText={chatgptPrompt} variant="outline" size="sm" />
           <PdfExportButtons analysisId={serialized.id as string} />
+          <GammaButtons expertPrompt={gammaExpertPrompt} clientPrompt={gammaClientPrompt} />
         </div>
       </div>
 
