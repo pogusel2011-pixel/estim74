@@ -14,7 +14,7 @@ export function GptAnalyzeButton({ analysisId }: Props) {
   const [copied, setCopied] = useState(false);
 
   async function handleClick() {
-    const message = `[APPEL ACTION] getAnalysis id=${analysisId}\nAppelle immédiatement l'action getAnalysis avec cet id et fais l'analyse complète.`;
+    const message = `Analyse l'estimation avec l'id : ${analysisId}`;
 
     try {
       await navigator.clipboard.writeText(message);
