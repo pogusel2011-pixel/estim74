@@ -85,10 +85,12 @@ Implemented in `lib/valuation/adjustments.ts` and aligned in `lib/mapping/energy
 
 ## V2 Features
 
-### Chantier 1 — Export PDF livrable client
-- **Button**: `components/analysis/pdf-download-button.tsx` — "Télécharger PDF" (replaces "Exporter PDF" link)
-- **Implementation**: `html2canvas` + `jsPDF` (dynamically imported) — loads print page in hidden iframe with `?noprint=1`, captures `.print-sheet`, slices into A4 pages
-- **Print page improvements**: `?noprint=1` skips auto-print; blob annonces actives section added (count, price range, PSM listing vs DVF signed + écart); footer updated to full legal mention "Estimation fondée sur les prix signés DVF · Source DGFiP 2014–2024 · Usage professionnel"
+### Chantier 1 — Export PDF double version (Expert + Client)
+- **Buttons**: `components/analysis/pdf-export-buttons.tsx` — two buttons "Export Expert" / "Export Client"; replaces old single `pdf-download-button.tsx`
+- **Implementation**: `html2canvas` + `jsPDF` (dynamically imported) — loads print page in hidden 794px iframe with `?noprint=1`, captures `.print-sheet`, slices into zero-margin A4 pages at 2× scale (93% JPEG quality)
+- **Expert page** `app/analyses/[id]/print-expert/page.tsx`: dark-blue cover (RAPPORT D'EXPERTISE + address), §1 Estimation (3-box grid + confidence), §2 Ajustements qualitatifs (12-critère table: critère/présent/facteur/impact €/m² + impact total), §3 Méthode & Calcul (pipeline DVF A, pipeline annonces B, réconciliation pondérée C), §4 Comparables DVF retenus (avec prix indexé 2025), §5 Annonces actives (retenues/exclues avec motif badge), §6 Marché local (bar chart CSS + trend badge), footer légal
+- **Client page** `app/analyses/[id]/print-client/page.tsx`: large gradient cover (ESTIM'74 logo, adresse, "Conseiller immobilier: ___"), §1 grande estimation centrale (30pt), §2 Points forts/vigilances (deux colonnes +/−), §3 5 ventes clés (top score), §4 Contexte marché (icône + commentary auto + stats), footer discret; aucune donnée technique ou méthodologique
+- **Print pages**: common pattern — server component, force-dynamic, inline CSS only (no Tailwind), `.print-sheet` captured by html2canvas
 - **Packages**: `jspdf`, `html2canvas` (v1.4.x)
 
 ### Chantier 2 — Sélection intelligente des comparables
