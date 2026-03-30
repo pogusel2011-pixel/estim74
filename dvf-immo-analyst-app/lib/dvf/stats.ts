@@ -115,6 +115,8 @@ export function computeDVFStats(
       ? computeWeightedAvgPsm(valid, subjectSurface) ?? undefined
       : undefined;
 
+  const stdPsm = Math.round(standardDeviation(indexedPsms));
+
   return {
     count: valid.length,
     medianPsm: Math.round(percentile(indexedPsms, 50)),
@@ -123,7 +125,8 @@ export function computeDVFStats(
     maxPsm: Math.round(sorted[sorted.length - 1]),
     p25Psm: Math.round(percentile(indexedPsms, 25)),
     p75Psm: Math.round(percentile(indexedPsms, 75)),
-    stdPsm: Math.round(standardDeviation(indexedPsms)),
+    stdPsm,
+    fsd: stdPsm,
     periodMonths,
     oldestDate: dates[0],
     newestDate: dates[dates.length - 1],

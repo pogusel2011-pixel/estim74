@@ -109,6 +109,27 @@ import { PDFDocument } from "pdf-lib";
       });
       w.gap(22);
 
+      // ── IC 95% note ──────────────────────────────────────────────────
+      // fsd est explicitement stocké par la v2 (fsd = stdPsm). Pour les analyses
+      // antérieures, seul stdPsm est disponible — on ne peut pas affirmer IC 95%.
+      const fsdExplicit = dvfStats?.fsd ?? null;
+      const fsdFallback = dvfStats?.stdPsm ?? null;
+      const spreadPct = a.valuationMid && a.valuationHigh
+        ? Math.round(((a.valuationHigh as number) - (a.valuationMid as number)) / (a.valuationMid as number) * 1000) / 10
+        : null;
+      if (spreadPct != null) {
+        let icLine: string;
+        if (fsdExplicit && fsdExplicit > 0) {
+          icLine = san(`Fourchette calculee sur intervalle de confiance statistique a 95% (+/-${spreadPct}% | sigma = ${fPsm(fsdExplicit)})`);
+        } else if (fsdFallback && fsdFallback > 0) {
+          icLine = san(`Fourchette +/-${spreadPct}% | Ecart-type : ${fPsm(fsdFallback)} (resimulation pour IC dynamique)`);
+        } else {
+          icLine = san(`Fourchette standard +/-${spreadPct}%`);
+        }
+        w.text(icLine, ML, w.y, fonts.italic, FS.micro, C.lightGray);
+        w.gap(14);
+      }
+
       // ── Prix d'annonce conseillé ─────────────────────────────────────
       const lpLow = Math.round((a.valuationMid as number) * 1.02);
       const lpHigh = Math.round((a.valuationMid as number) * 1.03);

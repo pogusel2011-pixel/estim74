@@ -59,6 +59,11 @@ export interface DVFStats {
   isIndexed?: boolean;
   /** Moyenne pondérée €/m² indexée 2025 (poids : distance × surface × récence) */
   weightedAvgPsm?: number;
+  /**
+   * Écart-type des prix/m² indexés (= stdPsm, exposé explicitement pour le
+   * calcul de l'intervalle de confiance statistique à 95% : IC = ±1.96 × fsd)
+   */
+  fsd?: number;
 }
 
 export interface DVFComparable {

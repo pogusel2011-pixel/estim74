@@ -3,7 +3,7 @@ import { PDFDocument } from "pdf-lib";
   import { computePrixM2 } from "@/lib/dvf/outliers";
   import { percentile } from "@/lib/utils";
   import { PROPERTY_TYPE_LABELS, CONDITION_LABELS } from "@/lib/constants";
-  import { DVFComparable } from "@/types/dvf";
+  import { DVFComparable, DVFStats } from "@/types/dvf";
   import { Adjustment } from "@/types/valuation";
   import { Writer, loadFonts, drawTable, san, fPrice, fPsm, fDateShort, wrapText, C, FS, ML, MR, CW, PAGE_W, PAGE_H, numFr } from "./helpers";
 
@@ -138,6 +138,24 @@ import { PDFDocument } from "pdf-lib";
       ].filter(Boolean).join(" - ");
       if (infoParts) {
         w.text(infoParts, ML, w.y, fonts.italic, FS.small, C.lightGray);
+        w.gap(14);
+      }
+
+      // ── IC 95% note ──────────────────────────────────────────────────
+      if (!isIndicative && a.valuationMid && a.valuationHigh) {
+        const dvfStatsC = (a.dvfStats as DVFStats) ?? null;
+        const fsdExplicitC = dvfStatsC?.fsd ?? null;
+        const fsdFallbackC = dvfStatsC?.stdPsm ?? null;
+        const spreadPctC = Math.round(((a.valuationHigh as number) - (a.valuationMid as number)) / (a.valuationMid as number) * 1000) / 10;
+        let icNote: string;
+        if (fsdExplicitC && fsdExplicitC > 0) {
+          icNote = san(`Fourchette calculee sur intervalle de confiance statistique a 95% (+/-${spreadPctC}%)`);
+        } else if (fsdFallbackC && fsdFallbackC > 0) {
+          icNote = san(`Fourchette +/-${spreadPctC}% (re-simuler pour IC statistique dynamique)`);
+        } else {
+          icNote = san(`Fourchette standard +/-${spreadPctC}%`);
+        }
+        w.text(icNote, ML, w.y, fonts.italic, FS.small, C.lightGray);
         w.gap(14);
       }
 

@@ -72,10 +72,11 @@ export function computeConfidence(
     refDistM <= R.CONFIDENCE_PROXIMITY_FAR.value      ? 8  : 4;
 
   // ── 4. HOMOGÉNÉITÉ (0-20 pts) ─────────────────────────────────────────────
-  // CV = écart-type / médiane (ou approx. IQR/1.35 si pas de stdPsm)
+  // CV = fsd/médiane si disponible (préféré), sinon stdPsm/médiane, sinon approx. IQR/1.35
   let cv: number | null = null;
-  if (dvfStats.stdPsm > 0 && dvfStats.medianPsm > 0) {
-    cv = dvfStats.stdPsm / dvfStats.medianPsm;
+  const stdForCv = (dvfStats.fsd ?? dvfStats.stdPsm) ?? 0;
+  if (stdForCv > 0 && dvfStats.medianPsm > 0) {
+    cv = stdForCv / dvfStats.medianPsm;
   } else if (dvfStats.medianPsm > 0) {
     const iqr = dvfStats.p75Psm - dvfStats.p25Psm;
     cv = iqr / (dvfStats.medianPsm * 1.35);
