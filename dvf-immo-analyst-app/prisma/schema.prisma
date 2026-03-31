@@ -55,6 +55,10 @@ model Analysis {
   confidence      Float?
   confidenceLabel String?
 
+  // Géocodage
+  geoScore      Float?
+  geoQuality    String?
+
   // Contexte marché
   dvfSampleSize      Int?
   dvfMedianPsm       Float?

@@ -32,6 +32,9 @@ export async function POST(req: Request) {
     let lat = property.lat;
     let lng = property.lng;
     let communeCode: string | undefined;
+    let geoScore: number | undefined;
+    let geoQuality: string | undefined;
+    let geoWarning: string | undefined;
 
     if (!lat || !lng) {
       // Geocode from address if provided, otherwise fall back to city + postal code
@@ -47,6 +50,11 @@ export async function POST(req: Request) {
         lat = geo.lat;
         lng = geo.lng;
         communeCode = geo.citycode;
+        geoScore = geo.score;
+        geoQuality = geo.geoQuality;
+        if (geo.warning) {
+          geoWarning = geo.warning;
+        }
       }
     }
 
@@ -106,6 +114,17 @@ export async function POST(req: Request) {
         },
         { status: 422 }
       );
+    }
+
+    // Avertissement géocodage BAN (score 0.5–0.7)
+    if (geoWarning) {
+      warnings.push({
+        code: "GEO_APPROX",
+        level: "warning" as const,
+        userMessage: `⚠️ ${geoWarning}`,
+        technicalLog: `geoScore=${geoScore?.toFixed(3)}`,
+        corrective: "Vérifiez l'adresse saisie et confirmez que les coordonnées correspondent au bien.",
+      });
     }
 
     if (warnings.length > 0) {
@@ -255,6 +274,8 @@ export async function POST(req: Request) {
           valuationPsm: valuation.pricePsm,
           confidence: valuation.confidence,
           confidenceLabel: valuation.confidenceLabel,
+          geoScore,
+          geoQuality,
           dvfSampleSize: dvfStats?.count,
           dvfMedianPsm: dvfStats?.medianPsm,
           dvfPeriodMonths: dvfStats?.periodMonths,

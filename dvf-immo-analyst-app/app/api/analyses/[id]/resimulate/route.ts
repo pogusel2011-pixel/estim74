@@ -70,6 +70,8 @@ export async function POST(
     let lat = property.lat as number | undefined;
     let lng = property.lng as number | undefined;
     let communeCode: string | undefined = existing.communeCode ?? undefined;
+    let geoScore: number | undefined;
+    let geoQuality: string | undefined;
 
     if (!lat || !lng) {
       const geo = await geocodeAddress(property.address as string, property.postalCode as string);
@@ -80,6 +82,8 @@ export async function POST(
         lat = geo.lat;
         lng = geo.lng;
         communeCode = geo.citycode ?? communeCode;
+        geoScore = geo.score;
+        geoQuality = geo.geoQuality;
       }
     }
     if (!lat || !lng) {
@@ -208,6 +212,8 @@ export async function POST(
         valuationPsm: valuation.pricePsm,
         confidence: valuation.confidence,
         confidenceLabel: valuation.confidenceLabel,
+        geoScore,
+        geoQuality,
         dvfSampleSize: dvfStats?.count ?? null,
         dvfMedianPsm: dvfStats?.medianPsm ?? null,
         dvfPeriodMonths: dvfStats?.periodMonths ?? null,

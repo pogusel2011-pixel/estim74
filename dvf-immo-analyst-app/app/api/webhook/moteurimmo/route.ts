@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
 /**
@@ -85,7 +86,7 @@ async function handleNewAds(ads: unknown[]) {
           return null;
         })(),
         energyGrade: ad.energyGrade != null ? String(ad.energyGrade) : null,
-        options: Array.isArray(ad.options) ? ad.options : null,
+        options: Array.isArray(ad.options) ? ad.options : Prisma.JsonNull,
         isActive: true,
       },
       update: {

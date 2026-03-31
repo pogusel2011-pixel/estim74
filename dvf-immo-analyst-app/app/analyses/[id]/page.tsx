@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, MapPin } from "lucide-react";
+import { AlertTriangle, ArrowLeft, MapPin } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
 import { ResimulateButton } from "@/components/analysis/resimulate-button";
@@ -213,6 +213,9 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
     : serialized.propertyType === "LAND" ? "Terrain"
     : undefined;
 
+  const geoQuality = serialized.geoQuality as string | null | undefined;
+  const geoScore = serialized.geoScore as number | null | undefined;
+
   return (
     <div className="space-y-6">
       {/* Breadcrumb / retour */}
@@ -224,6 +227,32 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
           </Link>
         </Button>
       </div>
+
+      {/* Bannière qualité géocodage */}
+      {geoQuality === "warning" && (
+        <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5 text-amber-500" />
+          <div>
+            <p className="font-medium">⚠️ Adresse approximative — vérifier les coordonnées</p>
+            <p className="text-xs text-amber-700 mt-0.5">
+              Score de géocodage BAN : {geoScore != null ? geoScore.toFixed(2) : "—"} (seuil recommandé : ≥ 0.70).
+              La localisation du bien peut être imprécise et influencer les comparables DVF retenus.
+            </p>
+          </div>
+        </div>
+      )}
+      {geoQuality === "error" && (
+        <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+          <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5 text-red-500" />
+          <div>
+            <p className="font-medium">Adresse non trouvée — vérifiez l'adresse saisie</p>
+            <p className="text-xs text-red-700 mt-0.5">
+              Score de géocodage BAN : {geoScore != null ? geoScore.toFixed(2) : "—"} (minimum requis : ≥ 0.50).
+              Corrigez l'adresse ou le code postal et relancez l'estimation.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* En-tête */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
