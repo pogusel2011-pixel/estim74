@@ -118,6 +118,8 @@ export default async function PrintExpertPage({
   else if (dvfRetenues > 0 && cleanListings.length > 0) { dvfWeight = 0.70; listingsWeight = 0.30; }
   else if (dvfRetenues > 0) { dvfWeight = 1.0; }
   const basePsm = Math.round(dvfAdjPsm * dvfWeight + listingAdjPsm * listingsWeight);
+  const savedMarketReading = (a.marketReading as Record<string, unknown> | null) ?? null;
+  const dvfCtrl = (savedMarketReading?.dvfControl as Record<string, unknown> | null) ?? null;
 
   const findAdj = (cat: string[], frag?: string) => {
     if (frag) return adjustments.find((a) => a.label.toLowerCase().includes(frag.toLowerCase())) ?? null;
@@ -422,6 +424,31 @@ export default async function PrintExpertPage({
                   <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700, color: "#2563EB", marginTop: 6, padding: "6px 0", borderTop: "1.5px solid #BFDBFE" }}>
                     <span>Prix DVF retenu</span><span>{formatPsm(dvfAdjPsm)}</span>
                   </div>
+                  {dvfCtrl && (
+                    <div style={{ marginTop: 8, padding: "6px 10px", background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: 5, fontSize: "10px", color: "#475569" }}>
+                      <span style={{ fontWeight: 600 }}>Contrôle source DVF — </span>
+                      {dvfCtrl.trend6m != null && (
+                        <span>Tendance 6 mois : <strong style={{ color: (dvfCtrl.trend6m as number) > 0 ? "#16A34A" : (dvfCtrl.trend6m as number) < 0 ? "#DC2626" : "#6B7280" }}>
+                          {(dvfCtrl.trend6m as number) > 0 ? "+" : ""}{(dvfCtrl.trend6m as number).toFixed(1)}%
+                        </strong>{" "}</span>
+                      )}
+                      {dvfCtrl.trend12m != null && (
+                        <span>Tendance 12 mois : <strong style={{ color: (dvfCtrl.trend12m as number) > 0 ? "#16A34A" : (dvfCtrl.trend12m as number) < 0 ? "#DC2626" : "#6B7280" }}>
+                          {(dvfCtrl.trend12m as number) > 0 ? "+" : ""}{(dvfCtrl.trend12m as number).toFixed(1)}%
+                        </strong>{" "}</span>
+                      )}
+                      {dvfCtrl.communeMedianPsm != null && dvfCtrl.deptMedianPsm != null && (
+                        <span>· Local {formatPsm(dvfCtrl.communeMedianPsm as number)} vs Dép.74 {formatPsm(dvfCtrl.deptMedianPsm as number)}
+                          {dvfCtrl.divergencePct != null && Math.abs(dvfCtrl.divergencePct as number) > 10 && (
+                            <span style={{ marginLeft: 4, color: "#B45309", fontWeight: 600 }}>
+                              ⚠ Écart {(dvfCtrl.divergencePct as number) > 0 ? "+" : ""}{dvfCtrl.divergencePct as number}%
+                            </span>
+                          )}
+                        </span>
+                      )}
+                      <span style={{ float: "right", color: "#94A3B8" }}>Source : DGFiP DVF officiel</span>
+                    </div>
+                  )}
                 </div>
               </div>
 

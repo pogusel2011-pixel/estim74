@@ -1,0 +1,53 @@
+Investigate and integrate the official Notaires de France 
+API to enrich ESTIM'74 with official notarial market data.
+
+1. INVESTIGATE THE API:
+   Test this official endpoint first:
+   GET https://api.notaires.fr/prix-immobiliers
+   
+   Also check these known Notaires API endpoints:
+   - https://api.notaires.fr/prix-immobiliers/departements
+   - https://api.notaires.fr/prix-immobiliers/communes
+   - https://www.immostats.fr/api (alternative)
+   
+   No API key should be required — it is a public API.
+   Report exactly what each endpoint returns.
+
+2. IF THE API WORKS — implement in lib/notaires/market-check.ts:
+   Function fetchNotairesMarket(lat, lng, propertyType):
+   - Get official median €/m² for the commune
+   - Get official annual evolution %
+   - Get quarterly trend data if available
+   - Get volume of transactions
+
+3. USE THE DATA TO:
+   - Add a "Contrôle notarial" section in the 
+     Marché tab showing:
+     * Prix médian notaires vs Prix médian DVF
+     * Évolution annuelle officielle
+     * Source : Notaires de France (officiel)
+   - If the two sources diverge by more than 10%,
+     show a yellow warning badge:
+     "⚠️ Écart DVF/Notaires — vérifier le secteur"
+   - Add to both PDF versions a line:
+     "Contrôle source notariale : X €/m² 
+     (évolution +X% — Notaires de France)"
+
+4. IF THE API IS NOT ACCESSIBLE:
+   Try scraping this public data page:
+   https://leprixdelimmo.notaires.fr/#/accueil
+   using fetch() on the underlying API calls 
+   (check Network tab for XHR requests)
+   
+   Alternative: use this known working endpoint:
+   GET https://www.meilleursagents.com/prix-immobilier/api/
+   (public data, no auth required)
+
+5. FALLBACK:
+   If no external source works, calculate the 
+   "notarial control" directly from our CSV DVF 
+   by comparing:
+   - Last 6 months median vs previous 6 months median
+   - Show as "Tendance récente : +X% sur 6 mois"
+   
+Report what works and implement the best solution found.

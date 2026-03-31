@@ -33,6 +33,16 @@ export interface MarketReading {
     volumeIndex?: number;
     source: string;
   };
+  dvfControl?: {
+    trend6m?: number;
+    trend12m?: number;
+    communeMedianPsm?: number;
+    deptMedianPsm?: number;
+    divergencePct?: number;
+    count6m?: number;
+    count12m?: number;
+    source: string;
+  };
 }
 
 export interface AnalysisSummary {
