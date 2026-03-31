@@ -185,7 +185,7 @@ export class Writer {
       const logoBuf = Buffer.from(logoB64, "base64");
       [this.agentPhoto, this.iadLogo] = await Promise.all([
         this.pdf.embedJpg(photoBuf),
-        this.pdf.embedJpg(logoBuf),
+        this.pdf.embedPng(logoBuf),
       ]);
     } catch {
       // If assets not found, footer falls back to placeholder boxes
