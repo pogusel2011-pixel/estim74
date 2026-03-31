@@ -250,6 +250,7 @@ export async function POST(req: Request) {
           communeCode: communeCode ?? null,
           clientFirstName: property.clientFirstName,
           clientLastName: property.clientLastName,
+          clientAddress: property.clientAddress,
           clientEmail: property.clientEmail,
           clientPhone: property.clientPhone,
           propertyType: property.propertyType,

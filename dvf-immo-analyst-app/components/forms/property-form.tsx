@@ -249,22 +249,28 @@ export function PropertyForm({ onSubmit, loading, defaultValues }: PropertyFormP
             Destinataire de l'avis de valeur <span className="normal-case text-xs font-normal">(optionnel)</span>
           </CardTitle>
         </CardHeader>
-        <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="space-y-1">
-            <Label>Prénom</Label>
-            <Input {...register("clientFirstName")} placeholder="Prénom" />
+        <CardContent className="space-y-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="space-y-1">
+              <Label>Prénom</Label>
+              <Input {...register("clientFirstName")} placeholder="Prénom" />
+            </div>
+            <div className="space-y-1">
+              <Label>Nom</Label>
+              <Input {...register("clientLastName")} placeholder="NOM" />
+            </div>
+            <div className="space-y-1">
+              <Label>E-mail</Label>
+              <Input {...register("clientEmail")} type="email" placeholder="email@exemple.fr" />
+            </div>
+            <div className="space-y-1">
+              <Label>Téléphone</Label>
+              <Input {...register("clientPhone")} type="tel" placeholder="06 XX XX XX XX" />
+            </div>
           </div>
           <div className="space-y-1">
-            <Label>Nom</Label>
-            <Input {...register("clientLastName")} placeholder="NOM" />
-          </div>
-          <div className="space-y-1">
-            <Label>E-mail</Label>
-            <Input {...register("clientEmail")} type="email" placeholder="email@exemple.fr" />
-          </div>
-          <div className="space-y-1">
-            <Label>Téléphone</Label>
-            <Input {...register("clientPhone")} type="tel" placeholder="06 XX XX XX XX" />
+            <Label>Adresse</Label>
+            <Input {...register("clientAddress")} placeholder="Adresse du destinataire (optionnel)" />
           </div>
         </CardContent>
       </Card>

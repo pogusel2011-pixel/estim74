@@ -60,6 +60,11 @@ export async function POST(
       orientation: existing.orientation ?? undefined,
       view: existing.view ?? undefined,
       mitoyennete: existing.mitoyennete ?? undefined,
+      clientFirstName: existing.clientFirstName ?? undefined,
+      clientLastName: existing.clientLastName ?? undefined,
+      clientAddress: existing.clientAddress ?? undefined,
+      clientEmail: existing.clientEmail ?? undefined,
+      clientPhone: existing.clientPhone ?? undefined,
       ...bodyOverride,
     } as Record<string, unknown>;
 
@@ -206,6 +211,11 @@ export async function POST(
         hasElevator: property.hasElevator as boolean,
         orientation: property.orientation as string ?? null,
         view: property.view as string ?? null,
+        clientFirstName: property.clientFirstName as string ?? null,
+        clientLastName: property.clientLastName as string ?? null,
+        clientAddress: property.clientAddress as string ?? null,
+        clientEmail: property.clientEmail as string ?? null,
+        clientPhone: property.clientPhone as string ?? null,
         valuationLow: valuation.low,
         valuationMid: valuation.mid,
         valuationHigh: valuation.high,

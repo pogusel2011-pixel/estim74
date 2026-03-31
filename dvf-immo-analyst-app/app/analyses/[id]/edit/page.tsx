@@ -49,6 +49,11 @@ export default function EditAnalysisPage() {
           hasElevator: data.hasElevator ?? false,
           orientation: data.orientation ?? undefined,
           view: data.view ?? undefined,
+          clientFirstName: data.clientFirstName ?? undefined,
+          clientLastName: data.clientLastName ?? undefined,
+          clientAddress: data.clientAddress ?? undefined,
+          clientEmail: data.clientEmail ?? undefined,
+          clientPhone: data.clientPhone ?? undefined,
         };
         setDefaultValues(vals);
       })

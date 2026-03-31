@@ -93,12 +93,17 @@ import { PDFDocument } from "pdf-lib";
     cp.drawText("Préparé par :", { x: ML, y: bY + 1, font: fonts.regular, size: FS.body, color: C.gray });
     cp.drawText(san("Aurélie LIVERSET — aurelie.liverset@iadfrance.fr — 07 82 72 78 83"), { x: ML + 80, y: bY + 1, font: fonts.bold, size: FS.small, color: C.dark });
     cp.drawLine({ start: { x: ML + 70, y: bY - 1 }, end: { x: ML + 260, y: bY - 1 }, color: C.borderBlue, thickness: 1 });
-    const clientParts = [a.clientFirstName, a.clientLastName].filter(Boolean).join(" ");
-    const clientLine = [clientParts, a.clientEmail as string, a.clientPhone as string].filter(Boolean).map((v) => san(v as string)).join(" — ");
-    if (clientLine) {
-      const cY = bY + 20;
-      cp.drawText("Préparé pour :", { x: ML, y: cY, font: fonts.regular, size: FS.body, color: C.gray });
-      cp.drawText(san(clientLine), { x: ML + 80, y: cY, font: fonts.bold, size: FS.small, color: C.dark });
+    const clientName = [a.clientFirstName, a.clientLastName].filter(Boolean).map((v) => san(v as string)).join(" ");
+    if (clientName) {
+      const labelX = ML;
+      const valueX = ML + 80;
+      const cY0 = bY + 36;
+      cp.drawText("Pr\u00e9par\u00e9 pour :", { x: labelX, y: cY0, font: fonts.regular, size: FS.body, color: C.gray });
+      cp.drawText(clientName, { x: valueX, y: cY0, font: fonts.bold, size: FS.small, color: C.dark });
+      let cLineY = cY0 - 13;
+      if (a.clientAddress) { cp.drawText(san(a.clientAddress as string), { x: valueX, y: cLineY, font: fonts.regular, size: FS.micro, color: C.gray }); cLineY -= 11; }
+      if (a.clientEmail)   { cp.drawText(san(a.clientEmail as string),   { x: valueX, y: cLineY, font: fonts.regular, size: FS.micro, color: C.gray }); cLineY -= 11; }
+      if (a.clientPhone)   { cp.drawText(san(a.clientPhone as string),   { x: valueX, y: cLineY, font: fonts.regular, size: FS.micro, color: C.gray }); }
     }
 
     // ═══════════ PAGE 2: ESTIMATION + POINTS FORTS/VIGILANCES ════════════

@@ -61,6 +61,7 @@ export const propertySchema = z.object({
   // Destinataire de l'avis de valeur (optionnel)
   clientFirstName: z.string().optional().or(z.literal("")).transform((v) => v === "" ? undefined : v),
   clientLastName:  z.string().optional().or(z.literal("")).transform((v) => v === "" ? undefined : v),
+  clientAddress:   z.string().optional().or(z.literal("")).transform((v) => v === "" ? undefined : v),
   clientEmail:     z.string().optional().or(z.literal("")).transform((v) => v === "" ? undefined : v),
   clientPhone:     z.string().optional().or(z.literal("")).transform((v) => v === "" ? undefined : v),
 });

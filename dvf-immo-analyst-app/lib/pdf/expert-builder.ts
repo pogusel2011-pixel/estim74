@@ -63,11 +63,15 @@ import { PDFDocument } from "pdf-lib";
     cp.drawText(today, { x: ML, y: 63, font: fonts.bold, size: 13, color: C.dark });
     cp.drawText("RÉFÉRENCE", { x: PAGE_W - MR - 90, y: 80, font: fonts.bold, size: FS.micro, color: C.gray });
     cp.drawText(refId, { x: PAGE_W - MR - 90, y: 63, font: fonts.bold, size: 13, color: C.dark });
-    const clientParts = [a.clientFirstName, a.clientLastName].filter(Boolean).join(" ");
-    const clientLine = [clientParts, a.clientEmail as string, a.clientPhone as string].filter(Boolean).map((v) => san(v as string)).join("  —  ");
-    if (clientLine) {
-      cp.drawText("PRÉPARÉ POUR :", { x: PAGE_W / 2, y: 80, font: fonts.bold, size: FS.micro, color: C.gray });
-      cp.drawText(clientLine, { x: PAGE_W / 2, y: 63, font: fonts.bold, size: FS.small, color: C.dark });
+    const clientName = [a.clientFirstName, a.clientLastName].filter(Boolean).map((v) => san(v as string)).join(" ");
+    if (clientName) {
+      const cx = PAGE_W / 2;
+      cp.drawText("PR\u00C9PAR\u00C9 POUR :", { x: cx, y: 80, font: fonts.bold, size: FS.micro, color: C.gray });
+      cp.drawText(clientName, { x: cx, y: 66, font: fonts.bold, size: FS.small, color: C.dark });
+      let cLineY = 54;
+      if (a.clientAddress) { cp.drawText(san(a.clientAddress as string), { x: cx, y: cLineY, font: fonts.regular, size: FS.micro, color: C.gray }); cLineY -= 12; }
+      if (a.clientEmail)   { cp.drawText(san(a.clientEmail as string),   { x: cx, y: cLineY, font: fonts.regular, size: FS.micro, color: C.gray }); cLineY -= 12; }
+      if (a.clientPhone)   { cp.drawText(san(a.clientPhone as string),   { x: cx, y: cLineY, font: fonts.regular, size: FS.micro, color: C.gray }); }
     }
 
     // ═══════════ PAGE 2: ESTIMATION + AJUSTEMENTS ════════════════════════

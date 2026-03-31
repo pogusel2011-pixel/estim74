@@ -71,6 +71,7 @@ export function buildGammaExpertPrompt(input: GammaPromptInput, baseUrl?: string
 
   const clientFirstName = serialized.clientFirstName as string | null | undefined;
   const clientLastName = serialized.clientLastName as string | null | undefined;
+  const clientAddress = serialized.clientAddress as string | null | undefined;
   const clientEmail = serialized.clientEmail as string | null | undefined;
   const clientPhone = serialized.clientPhone as string | null | undefined;
   const clientName = [clientFirstName, clientLastName].filter(Boolean).join(" ");
@@ -121,6 +122,7 @@ export function buildGammaExpertPrompt(input: GammaPromptInput, baseUrl?: string
   lines.push(``);
   if (clientName) {
     lines.push(`**PRÉPARÉ POUR :** ${clientName}`);
+    if (clientAddress) lines.push(clientAddress);
     if (clientEmail) lines.push(clientEmail);
     if (clientPhone) lines.push(clientPhone);
   } else {
@@ -238,7 +240,7 @@ export function buildGammaExpertPrompt(input: GammaPromptInput, baseUrl?: string
 
   lines.push(`---`);
   if (clientName) {
-    const clientAttention = [clientName, clientEmail, clientPhone].filter(Boolean).join(" — ");
+    const clientAttention = [clientName, clientAddress, clientEmail, clientPhone].filter(Boolean).join(" — ");
     lines.push(`*Avis de valeur établi à l'attention de : ${clientAttention}*`);
     lines.push(``);
   }
@@ -273,6 +275,7 @@ export function buildGammaClientPrompt(input: GammaPromptInput, baseUrl?: string
 
   const clientFirstName = serialized.clientFirstName as string | null | undefined;
   const clientLastName = serialized.clientLastName as string | null | undefined;
+  const clientAddress = serialized.clientAddress as string | null | undefined;
   const clientEmail = serialized.clientEmail as string | null | undefined;
   const clientPhone = serialized.clientPhone as string | null | undefined;
   const clientName = [clientFirstName, clientLastName].filter(Boolean).join(" ");
@@ -312,7 +315,7 @@ export function buildGammaClientPrompt(input: GammaPromptInput, baseUrl?: string
 
   const lines: string[] = [];
 
-  lines.push(`Crée une présentation élégante et rassurante pour présenter une estimation immobilière à un propriétaire. Style : chaleureux, clair, moderne, sans jargon technique. Palette verte ou bleue apaisante.`);
+  lines.push(`Crée une présentation élégante et rassurante pour présenter un avis de valeur immobilier à un propriétaire. Style : chaleureux, clair, moderne, sans jargon technique. Palette verte ou bleue apaisante.`);
   lines.push(``);
   lines.push(`## PAGE DE COUVERTURE`);
   lines.push(`[EMPLACEMENT PHOTO CONSEILLÈRE — à insérer manuellement]`);
@@ -321,6 +324,7 @@ export function buildGammaClientPrompt(input: GammaPromptInput, baseUrl?: string
   lines.push(``);
   if (clientName) {
     lines.push(`**PRÉPARÉ POUR :** ${clientName}`);
+    if (clientAddress) lines.push(clientAddress);
     if (clientEmail) lines.push(clientEmail);
     if (clientPhone) lines.push(clientPhone);
   } else {
@@ -370,7 +374,7 @@ export function buildGammaClientPrompt(input: GammaPromptInput, baseUrl?: string
   }
 
   lines.push(`## VOTRE MARCHÉ EN BREF`);
-  lines.push(`Estimation réalisée à partir de milliers de ventes réelles en Haute-Savoie (74).`);
+  lines.push(`Avis de valeur établi à partir de milliers de ventes réelles en Haute-Savoie (74).`);
   lines.push(`Données DVF officielles 2014–2024.`);
 
   if (prixM2Commune != null || dvfControl?.trend12m != null) {
@@ -393,7 +397,7 @@ export function buildGammaClientPrompt(input: GammaPromptInput, baseUrl?: string
   lines.push(``);
   lines.push(`---`);
   if (clientName) {
-    const clientAttention = [clientName, clientEmail, clientPhone].filter(Boolean).join(" — ");
+    const clientAttention = [clientName, clientAddress, clientEmail, clientPhone].filter(Boolean).join(" — ");
     lines.push(`*Avis de valeur établi à l'attention de : ${clientAttention}*`);
     lines.push(``);
   }
@@ -403,7 +407,7 @@ export function buildGammaClientPrompt(input: GammaPromptInput, baseUrl?: string
   lines.push(`IAD France — Haute-Savoie (74)`);
   lines.push(`[EMPLACEMENT LOGO IAD — à insérer manuellement]`);
   lines.push(``);
-  lines.push(`*Estimation ESTIM'74 — Confidentiel — Document réservé au propriétaire*`);
+  lines.push(`*Avis de Valeur ESTIM'74 — Confidentiel — Document réservé au propriétaire*`);
   lines.push(``);
   lines.push(`> Note : Remplacer les emplacements photo et logo par les vraies images après génération.`);
 

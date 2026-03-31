@@ -1,0 +1,72 @@
+Fix client contact information persistence and 
+display in both PDFs and Gamma prompts:
+
+1. PERSISTENCE — CLIENT FIELDS:
+   The client fields (firstName, lastName, email, 
+   phone) must be saved to the database when the 
+   analysis is saved/updated.
+   Verify in app/api/analyses/[id]/route.ts (PATCH) 
+   that clientFirstName, clientLastName, 
+   clientEmail, clientPhone are included in the 
+   Prisma update query.
+   Also verify the estimate route saves them on 
+   first creation.
+   When reopening an analysis, all client fields 
+   must be pre-filled from the database.
+
+2. CLIENT DISPLAY IN PDF EXPERT:
+   In lib/pdf/expert-builder.ts, under the 
+   client name, add on separate lines:
+   - Client address if available
+   - Client email if available  
+   - Client phone if available
+   Format:
+   "PRÉPARÉ POUR : Jean DUPONT"
+   "123 rue de la Paix, 74000 Annecy"
+   "jean.dupont@email.fr"
+   "06 XX XX XX XX"
+
+3. CLIENT DISPLAY IN PDF CLIENT:
+   Same as above in lib/pdf/client-builder.ts
+
+4. GAMMA PROMPTS — CLIENT INFO:
+   In lib/gamma/gamma-prompt-builder.ts, verify 
+   that both Expert and Client prompts include:
+   - Client full name
+   - Client address (if available)
+   - Client email (if available)
+   - Client phone (if available)
+   If missing, add them to the cover page section
+   of both prompts.
+
+5. ADD CLIENT ADDRESS FIELD:
+   Add clientAddress field to:
+   - Prisma schema (String? optional)
+   - Property form (optional input field)
+   - Both PDF builders
+   - Both Gamma prompts
+   Run prisma db push after schema update.
+
+6. FIX GAMMA CLIENT TITLE:
+   In lib/gamma/gamma-prompt-builder.ts,
+   in buildGammaClientPrompt():
+   The cover page title currently says "Estimation" 
+   instead of "Avis de Valeur Immobilier".
+   Fix all occurrences:
+   - "Estimation immobilière" → "Avis de Valeur Immobilier"
+   - "Rapport d'estimation" → "Avis de Valeur Immobilier"
+   - "Estimation" alone → "Avis de Valeur"
+   in the CLIENT prompt only (Expert is already correct)
+
+7. TEST:
+   - Create an analysis with full client info
+     (name, address, email, phone)
+   - Close and reopen → verify all fields persist
+   - Generate PDF Expert → verify client block
+   - Generate PDF Client → verify client block
+   - Generate Gamma Expert → verify client info 
+     and correct title
+   - Generate Gamma Client → verify client info 
+     and "Avis de Valeur Immobilier" title
+
+Report what was missing and what was fixed.

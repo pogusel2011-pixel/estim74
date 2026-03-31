@@ -58,6 +58,7 @@ model Analysis {
   // Destinataire de l'avis de valeur
   clientFirstName String?
   clientLastName  String?
+  clientAddress   String?
   clientEmail     String?
   clientPhone     String?
 
