@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { headers } from "next/headers";
 import Link from "next/link";
-import { AlertTriangle, ArrowLeft, MapPin } from "lucide-react";
+import { AlertTriangle, ArrowLeft, MapPin, Map, Building2 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
 import { ResimulateButton } from "@/components/analysis/resimulate-button";
@@ -45,6 +45,18 @@ import { MarketReading as MarketReadingType } from "@/types/analysis";
 import { PropertyType } from "@/types/property";
 
 export const dynamic = "force-dynamic";
+
+/** Formate une adresse pour l'URL Pappers immobilier (slug kebab-case sans accents). */
+function formatAddressForPappers(address: string | null, postalCode: string | null): string {
+  const full = [address, postalCode].filter(Boolean).join(" ");
+  return full
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9\s]/g, "")
+    .trim()
+    .replace(/\s+/g, "-");
+}
 
 /** Safely parses a Prisma Json? field into an array — returns [] on null/non-array/error. */
 function safeJsonArray<T = unknown>(value: unknown): T[] {
@@ -219,6 +231,18 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
   const geoQuality = serialized.geoQuality as string | null | undefined;
   const geoScore = serialized.geoScore as number | null | undefined;
 
+  // URLs externes Pappers
+  const pappersMapUrl = (serialized.lat && serialized.lng)
+    ? `https://immobilier.pappers.fr/?lat=${serialized.lat}&lon=${serialized.lng}&z=15`
+    : null;
+  const pappersCadastreSlug = formatAddressForPappers(
+    serialized.address as string | null,
+    serialized.postalCode as string | null,
+  );
+  const pappersCadastreUrl = pappersCadastreSlug
+    ? `https://immobilier.pappers.fr/bien/${pappersCadastreSlug}`
+    : null;
+
   return (
     <div className="min-h-screen -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 pb-12" style={{ backgroundColor: "#F8FAFC" }}>
 
@@ -283,6 +307,37 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
             <div className="w-px bg-slate-200 self-stretch hidden sm:block" />
             <GammaButtons expertPrompt={gammaExpertPrompt} clientPrompt={gammaClientPrompt} />
           </div>
+
+          {/* Groupe liens externes — Pappers */}
+          {(pappersMapUrl || pappersCadastreUrl) && (
+            <>
+              <div className="w-px bg-slate-200 self-stretch hidden sm:block mx-1" />
+              <div className="flex items-center gap-2">
+                {pappersMapUrl && (
+                  <a
+                    href={pappersMapUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md border border-slate-300 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-800 transition-colors shadow-sm"
+                  >
+                    <Map className="h-3.5 w-3.5" />
+                    Carte du secteur
+                  </a>
+                )}
+                {pappersCadastreUrl && (
+                  <a
+                    href={pappersCadastreUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md border border-slate-300 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-800 transition-colors shadow-sm"
+                  >
+                    <Building2 className="h-3.5 w-3.5" />
+                    Parcelle cadastrale
+                  </a>
+                )}
+              </div>
+            </>
+          )}
 
         </div>
       </div>
