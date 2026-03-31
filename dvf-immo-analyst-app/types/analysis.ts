@@ -43,6 +43,23 @@ export interface MarketReading {
     count12m?: number;
     source: string;
   };
+  pappersStats?: {
+    commune: string;
+    prixM2: number | null;
+    prixM2Apparts: number | null;
+    prixM2Maisons: number | null;
+    variation1An: number | null;
+    nbTransactions1An: number | null;
+    prixParAnnee?: Record<string, number>;
+    dept?: {
+      prixM2: number | null;
+      prixM2Apparts: number | null;
+      prixM2Maisons: number | null;
+      variation1An: number | null;
+      prixParAnnee?: Record<string, number>;
+    };
+    source: "commune" | "departement";
+  };
 }
 
 export interface AnalysisSummary {

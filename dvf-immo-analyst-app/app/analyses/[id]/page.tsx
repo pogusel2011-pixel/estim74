@@ -324,7 +324,7 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
         </TabsContent>
 
         <TabsContent value="market" className="space-y-4 mt-4">
-          <MarketReading marketReading={safeMarketReading} dvfMedianPsm={dvfStats?.medianPsm ?? null} />
+          <MarketReading marketReading={safeMarketReading} dvfMedianPsm={dvfStats?.medianPsm ?? null} propertyType={serialized.propertyType as string | undefined} />
           <DeptBenchmarkPanel
             benchmark={deptBenchmark}
             subjectPsm={serialized.valuationPsm as number | null}

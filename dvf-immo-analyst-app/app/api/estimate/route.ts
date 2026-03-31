@@ -11,6 +11,7 @@ import { propertyTypeToDvfTypes } from "@/lib/mapping/property-type";
 import { findActiveListings } from "@/lib/moteurimmo/search";
 import { computeValuation } from "@/lib/valuation/valuation";
 import { fetchNotairesMarket } from "@/lib/notaires/market-check";
+import { fetchPappersStats } from "@/lib/pappers/stats";
 import { checkRefusalConditions } from "@/lib/valuation/refusal-matrix";
 import { prisma } from "@/lib/prisma";
 import { geocodeAddress, isGeoError } from "@/lib/geo/address";
@@ -153,8 +154,14 @@ export async function POST(req: Request) {
       );
     }
 
-    // 8. Contexte marché Notaires
-    const marketReading = await fetchNotairesMarket(property.postalCode, property.propertyType);
+    // 8. Contexte marché Notaires + stats Pappers Immobilier (en parallèle)
+    const [marketReadingBase, pappersStats] = await Promise.all([
+      fetchNotairesMarket(property.postalCode, property.propertyType),
+      property.city ? fetchPappersStats(property.city, property.postalCode ?? "") : Promise.resolve(null),
+    ]);
+    const marketReading = marketReadingBase && pappersStats
+      ? { ...marketReadingBase, pappersStats }
+      : marketReadingBase ?? (pappersStats ? { trend: "stable" as const, supplyDemand: "equilibre" as const, commentary: "", pappersStats } : null);
 
     // 8. Construction du gptPayload (export complet pour GPT)
     const gptPayload = JSON.stringify({

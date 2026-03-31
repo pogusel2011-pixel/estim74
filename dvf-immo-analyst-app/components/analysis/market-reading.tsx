@@ -1,9 +1,9 @@
 import { MarketReading as MarketReadingType } from "@/types/analysis";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { TrendingUp, TrendingDown, Minus, BarChart2, AlertTriangle, CheckCircle2, Database } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, BarChart2, AlertTriangle, CheckCircle2, Database, Building2 } from "lucide-react";
 
-interface Props { marketReading?: MarketReadingType | null; dvfMedianPsm?: number | null; }
+interface Props { marketReading?: MarketReadingType | null; dvfMedianPsm?: number | null; propertyType?: string; }
 
 function fmtPct(v: number) {
   return (v > 0 ? "+" : "") + v.toFixed(1) + "%";
@@ -12,7 +12,7 @@ function fmtPsm(v: number) {
   return v.toLocaleString("fr-FR") + " €/m²";
 }
 
-export function MarketReading({ marketReading, dvfMedianPsm }: Props) {
+export function MarketReading({ marketReading, dvfMedianPsm, propertyType }: Props) {
   if (!marketReading) {
     return (
       <Card>
@@ -28,6 +28,13 @@ export function MarketReading({ marketReading, dvfMedianPsm }: Props) {
 
   const ctrl = marketReading.dvfControl;
   const divergenceAbove10 = ctrl?.divergencePct != null && Math.abs(ctrl.divergencePct) > 10;
+
+  const pp = marketReading.pappersStats;
+  const isAppart = propertyType === "APARTMENT";
+  const isHouse = propertyType === "HOUSE";
+  const ppPrixCommune = isAppart ? pp?.prixM2Apparts : isHouse ? pp?.prixM2Maisons : pp?.prixM2;
+  const ppPrixDept = isAppart ? pp?.dept?.prixM2Apparts : isHouse ? pp?.dept?.prixM2Maisons : pp?.dept?.prixM2;
+  const ppTypeLabel = isAppart ? "appartements" : isHouse ? "maisons" : "tous types";
 
   return (
     <div className="space-y-4">
@@ -145,6 +152,70 @@ export function MarketReading({ marketReading, dvfMedianPsm }: Props) {
                 </p>
               </div>
             )}
+          </CardContent>
+        </Card>
+      )}
+
+      {pp && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Building2 className="h-4 w-4 text-blue-500" />
+              Prix de marché — Pappers Immobilier
+            </CardTitle>
+            <p className="text-xs text-muted-foreground">
+              {pp.source === "commune" ? pp.commune : "Haute-Savoie (dép. 74)"} · {ppTypeLabel}
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              {ppPrixCommune != null && (
+                <div className="bg-blue-50/60 rounded-lg p-3">
+                  <p className="text-xs text-muted-foreground mb-1">
+                    Médiane {pp.source === "commune" ? pp.commune : "Haute-Savoie"}
+                  </p>
+                  <p className="text-lg font-bold text-blue-700">{fmtPsm(ppPrixCommune)}</p>
+                  {pp.variation1An != null && (
+                    <p className={`text-xs mt-0.5 font-medium ${pp.variation1An > 0 ? "text-emerald-600" : pp.variation1An < 0 ? "text-red-500" : "text-muted-foreground"}`}>
+                      {fmtPct(pp.variation1An)} / an
+                    </p>
+                  )}
+                </div>
+              )}
+              {ppPrixDept != null && (
+                <div className="bg-muted/40 rounded-lg p-3">
+                  <p className="text-xs text-muted-foreground mb-1">Médiane Haute-Savoie</p>
+                  <p className="text-lg font-bold">{fmtPsm(ppPrixDept)}</p>
+                  {pp.dept?.variation1An != null && (
+                    <p className={`text-xs mt-0.5 font-medium ${pp.dept.variation1An > 0 ? "text-emerald-600" : pp.dept.variation1An < 0 ? "text-red-500" : "text-muted-foreground"}`}>
+                      {fmtPct(pp.dept.variation1An)} / an
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {pp.nbTransactions1An != null && (
+              <p className="text-xs text-muted-foreground">
+                Volume : <span className="font-medium text-foreground">{pp.nbTransactions1An.toLocaleString("fr-FR")} transactions</span> sur 12 mois
+              </p>
+            )}
+
+            {ppPrixCommune != null && ppPrixDept != null && (() => {
+              const ecart = ((ppPrixCommune - ppPrixDept) / ppPrixDept) * 100;
+              return (
+                <div className={`flex items-center gap-2 text-xs rounded-lg px-3 py-2 ${Math.abs(ecart) > 10 ? "bg-amber-50 border border-amber-200 text-amber-800" : "bg-emerald-50/60 text-emerald-700"}`}>
+                  {Math.abs(ecart) > 10
+                    ? <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                    : <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />}
+                  <span>
+                    {pp.commune} {ecart > 0 ? "au-dessus" : "en dessous"} de la médiane 74 ({ecart > 0 ? "+" : ""}{ecart.toFixed(1)}%)
+                  </span>
+                </div>
+              );
+            })()}
+
+            <p className="text-xs text-muted-foreground/70">Source : immobilier.pappers.fr</p>
           </CardContent>
         </Card>
       )}
