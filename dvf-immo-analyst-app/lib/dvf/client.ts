@@ -9,7 +9,7 @@ const MAX_RADIUS_KM = BUSINESS_RULES.GEO_RADIUS_MAX.value;
 
 /**
  * Point d'entrée principal :
- * 1. Charge les mutations depuis le CSV local (source prioritaire, 2014-2024)
+ * 1. Charge les mutations depuis le CSV local (source prioritaire, 2020-2025)
  * 2. Si CSV < MIN_SAMPLES → appelle Pappers Immobilier comme fallback
  * 3. Fusion + déduplique les sources
  * 4. Auto-expand le rayon par pas de 0.5 km (jusqu'à 5 km) si encore < MIN_SAMPLES
@@ -57,7 +57,7 @@ export async function getDVFMutations(
 
 /**
  * Stratégie CSV-first à un rayon donné :
- * 1. Interroge le CSV local (données 2014-2024, source fiable)
+ * 1. Interroge le CSV local (données 2020-2025, source fiable)
  * 2. Si CSV ≥ MIN_SAMPLES → retourne CSV uniquement (rapide, pas d'appel API)
  * 3. Si CSV insuffisant → appelle Pappers Immobilier comme complément
  * 4. Fusionne et déduplique les deux sources

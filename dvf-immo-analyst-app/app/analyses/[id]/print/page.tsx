@@ -235,7 +235,7 @@ export default async function PrintPage({
               <div style={{ fontSize: "7.5pt", color: "#94a3b8" }}>Rapport d'estimation immobilière</div>
             </div>
             <div style={{ textAlign: "right", fontSize: "7.5pt", color: "#94a3b8" }}>
-              <div>Données DVF 2014–2024 · DGFiP</div>
+              <div>Données DVF 2020–2025 · DGFiP</div>
               <div>Généré le {today}</div>
             </div>
           </div>
@@ -525,7 +525,7 @@ export default async function PrintPage({
 
           {/* ── FOOTER ── */}
           <div className="footer">
-            <span>Estimation fondée sur les prix signés DVF · Source DGFiP 2014–2024 · Usage professionnel</span>
+            <span>Estimation fondée sur les prix signés DVF · Source DGFiP 2020–2025 · Usage professionnel</span>
             <span>ESTIM&apos;74 · Réf. {params.id.slice(0, 8).toUpperCase()} · {today}</span>
           </div>
 

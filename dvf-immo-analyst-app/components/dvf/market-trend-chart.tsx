@@ -82,7 +82,7 @@ export function MarketTrendChart({ lat, lng, radiusKm = 5, propertyType }: Props
         <CardTitle className="text-sm flex items-center justify-between gap-2">
           <span className="flex items-center gap-2">
             <BarChart2 className="h-4 w-4 text-primary" />
-            Évolution du prix médian (2014–2024)
+            Évolution du prix médian (2020–2025)
           </span>
           <div className="flex items-center gap-2">
             {trend && (

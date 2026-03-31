@@ -250,7 +250,7 @@ export function buildGammaExpertPrompt(input: GammaPromptInput, baseUrl?: string
   lines.push(`IAD France — Haute-Savoie (74)`);
   lines.push(`[EMPLACEMENT LOGO IAD — à insérer manuellement]`);
   lines.push(``);
-  lines.push(`*Données ESTIM'74 — Haute-Savoie (74) — DVF 2014–2024*`);
+  lines.push(`*Données ESTIM'74 — Haute-Savoie (74) — DVF 2020–2025*`);
   lines.push(``);
   lines.push(`> Note : Remplacer les emplacements photo et logo par les vraies images après génération.`);
 
@@ -375,7 +375,7 @@ export function buildGammaClientPrompt(input: GammaPromptInput, baseUrl?: string
 
   lines.push(`## VOTRE MARCHÉ EN BREF`);
   lines.push(`Avis de valeur établi à partir de milliers de ventes réelles en Haute-Savoie (74).`);
-  lines.push(`Données DVF officielles 2014–2024.`);
+  lines.push(`Données DVF officielles 2020–2025.`);
 
   if (prixM2Commune != null || dvfControl?.trend12m != null) {
     lines.push(``);

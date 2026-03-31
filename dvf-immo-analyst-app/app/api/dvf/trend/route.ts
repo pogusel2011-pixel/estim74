@@ -17,7 +17,7 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "lat et lng requis" }, { status: 400 });
     }
 
-    // Load all mutations for the last 10+ years (130 months ≈ 2014–2024)
+    // Load all mutations (données 2020–2025)
     const types = type ? [type] : undefined;
     const rawMutations = await loadCsvMutations(lat, lng, radius, 130, types);
     const mutations = computePrixM2(rawMutations).filter(m => m.prix_m2 != null && m.prix_m2 > 0);

@@ -239,7 +239,7 @@ export default async function PrintExpertPage({
 
           {/* ── COVER ── */}
           <div className="cover">
-            <div className="cover-eyebrow">ESTIM&apos;74 — Haute-Savoie (74) · Données DVF DGFiP 2014–2024</div>
+            <div className="cover-eyebrow">ESTIM&apos;74 — Haute-Savoie (74) · Données DVF DGFiP 2020–2025</div>
             <hr className="cover-rule" />
             <div className="cover-type">Rapport d&apos;expertise · {propertyLabel}</div>
             <div className="cover-title">RAPPORT D&apos;EXPERTISE</div>
@@ -410,7 +410,7 @@ export default async function PrintExpertPage({
                 </table>
                 {dvfStats?.isIndexed && (
                   <div style={{ background: "#F0FDF4", border: "1px solid #BBF7D0", borderRadius: 6, padding: "7px 12px", fontSize: "11px", color: "#166534", marginTop: 8 }}>
-                    Tous les prix sont indexés en valeur 2025 via les indices notariaux Haute-Savoie (correction du biais temporel 2014–2024).
+                    Tous les prix sont indexés en valeur 2025 via les indices notariaux Haute-Savoie (correction du biais temporel 2020–2025).
                   </div>
                 )}
                 <div style={{ marginTop: 10 }}>
@@ -713,7 +713,7 @@ export default async function PrintExpertPage({
 
             {/* FOOTER */}
             <div className="footer">
-              <span>Estimation fondée sur les prix signés DVF · Source DGFiP 2014–2024 · Usage professionnel uniquement</span>
+              <span>Estimation fondée sur les prix signés DVF · Source DGFiP 2020–2025 · Usage professionnel uniquement</span>
               <span>ESTIM&apos;74 · Réf. {params.id.slice(0, 8).toUpperCase()} · {today}</span>
             </div>
             <div className="footer-legal">

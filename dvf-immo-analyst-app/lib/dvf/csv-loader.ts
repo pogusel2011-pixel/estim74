@@ -43,7 +43,7 @@ export async function loadAllCsvMutations(): Promise<DVFMutation[]> {
 
   const csvPath = path.join(
     process.cwd(),
-    process.env.DVF_CSV_PATH ?? "data/dvf/2014-2024_mutations_d74.csv"
+    process.env.DVF_CSV_PATH ?? "data/dvf/2020-2025_mutations_d74.csv"
   );
 
   if (!fs.existsSync(csvPath)) {

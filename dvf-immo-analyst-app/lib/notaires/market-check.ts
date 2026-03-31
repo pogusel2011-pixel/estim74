@@ -11,7 +11,7 @@ import { percentile } from "@/lib/utils";
  *   – leprixdelimmo.notaires.fr → 404 (backend Spring Boot, routes non publiées)
  *   – meilleursagents.com → 403
  *
- * Ce module calcule à partir du CSV local (353 k transactions, 74, 2014–2025) :
+ * Ce module calcule à partir du CSV local (353 k transactions, 74, 2020–2025) :
  *   – Tendance récente 6 mois  (médiane J-0/J-6m vs J-6m/J-12m)
  *   – Tendance annuelle 12 mois (médiane J-0/J-12m vs J-12m/J-24m)
  *   – Médiane locale (12 derniers mois) vs médiane dép. 74

@@ -10,7 +10,7 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
       </Button>
       <div className="flex-1" />
       <p className="text-xs text-muted-foreground">
-        Haute-Savoie (74) • DVF 2014–2024 + Données récentes
+        Haute-Savoie (74) • DVF 2020–2025 + Données récentes
       </p>
       <div className="h-5 w-px bg-border" />
       <RefreshButton />

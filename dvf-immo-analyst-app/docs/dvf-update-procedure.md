@@ -5,7 +5,7 @@
 ESTIM'74 utilise un fichier CSV local des Demandes de Valeurs Foncières (DVF) géolocalisées du
 département 74 (Haute-Savoie), fourni par la DGFiP via data.gouv.fr.
 
-**Couverture actuelle :** 2014–2024 (`data/dvf/2014-2024_mutations_d74.csv`, ~353 000 transactions)
+**Couverture actuelle :** 2014–2024 (`data/dvf/2020-2025_mutations_d74.csv`, ~353 000 transactions)
 
 Le script `scripts/update-dvf.ts` automatise la mise à jour en téléchargeant le fichier national,
 en extrayant uniquement les lignes du département 74, et en mettant à jour la référence dans le code.
@@ -113,7 +113,7 @@ Le script archive automatiquement l'ancien fichier en `.bak` :
 ls dvf-immo-analyst-app/data/dvf/*.bak
 
 # Restaurer
-mv data/dvf/2014-2024_mutations_d74.csv.bak data/dvf/2014-2024_mutations_d74.csv
+mv data/dvf/2020-2025_mutations_d74.csv.bak data/dvf/2020-2025_mutations_d74.csv
 
 # Remettre la référence dans csv-loader.ts (manuellement)
 # Chercher : DVF_CSV_PATH ?? "data/dvf/xxx.csv"

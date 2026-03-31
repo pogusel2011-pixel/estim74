@@ -177,7 +177,7 @@ function sectionDvf(d: ChatGPTPromptData): string {
       ? `- Ajustements qualitatifs : ${fmtPct(adjTotal * 100, 1)} (plafonné à ±20%)`
       : null,
     adjDetails ? `  Détail : ${adjDetails}` : null,
-    `- Source données  : ${stats.source === "csv" ? "CSV DGFiP 2014-2024" : stats.source === "api" ? "API cquest.org (live)" : "CSV + API"}`,
+    `- Source données  : ${stats.source === "csv" ? "CSV DGFiP 2020-2025" : stats.source === "api" ? "API cquest.org (live)" : "CSV + API"}`,
   ].filter(Boolean);
 
   return lines.join("\n");

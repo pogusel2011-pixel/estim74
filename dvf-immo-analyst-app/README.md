@@ -30,7 +30,7 @@ npm run db:push       # ou db:migrate en prod
 npm run db:seed       # données exemple
 
 # 4. Placer les fichiers de données
-# → data/dvf/2014-2024_mutations_d74.csv
+# → data/dvf/2020-2025_mutations_d74.csv
 # → data/iris/reference_IRIS_geo2025.xlsx
 
 # 5. Démarrer

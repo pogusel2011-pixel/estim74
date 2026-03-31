@@ -220,7 +220,7 @@ export default async function PrintClientPage({
           {/* ── COVER ── */}
           <div className="cover">
             <div className="cover-top">
-              <div className="cover-eyebrow">Haute-Savoie (74) · Données DVF DGFiP 2014–2024</div>
+              <div className="cover-eyebrow">Haute-Savoie (74) · Données DVF DGFiP 2020–2025</div>
               <div className="cover-logo">ESTIM&apos;74</div>
               <div className="cover-logo-tagline">Outil d&apos;estimation fondé sur les données réelles de ventes signées</div>
               <hr className="cover-rule" />

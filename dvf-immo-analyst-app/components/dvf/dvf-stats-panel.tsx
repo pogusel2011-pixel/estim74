@@ -88,7 +88,7 @@ export function DVFStatsPanel({ stats, sampleSize, perimeterKm, requestedRadiusK
         ? `${perimeterDisplay} (demandé : ${requestedRadiusKm} km)`
         : perimeterDisplay,
     },
-    { label: "Source", value: stats.source === "csv" ? "CSV local 2014–2024" : stats.source === "api" ? "DVF Live (API)" : "CSV local + DVF Live" },
+    { label: "Source", value: stats.source === "csv" ? "CSV local 2020–2025" : stats.source === "api" ? "DVF Live (API)" : "CSV local + DVF Live" },
   ];
 
   return (
@@ -158,6 +158,10 @@ export function DVFStatsPanel({ stats, sampleSize, perimeterKm, requestedRadiusK
             </div>
           </div>
         )}
+
+        <p className="mt-3 text-xs text-muted-foreground/70 italic border-t pt-2">
+          * Données juin 2025 partielles (enregistrement cadastral en cours)
+        </p>
       </CardContent>
     </Card>
   );

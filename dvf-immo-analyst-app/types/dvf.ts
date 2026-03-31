@@ -85,7 +85,7 @@ export interface DVFComparable {
   score?: number;
   /** true si ce comparable fait partie du top 5-10 les plus pertinents */
   topComparable?: boolean;
-  /** Source : "csv" = données locales 2014-2024, "live" = API temps réel */
+  /** Source : "csv" = données locales 2020-2025, "live" = API temps réel */
   source?: "csv" | "live";
   /** true si la transaction est une valeur aberrante exclue du calcul de référence */
   outlier?: boolean;

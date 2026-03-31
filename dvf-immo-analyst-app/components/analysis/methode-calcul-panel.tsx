@@ -180,7 +180,7 @@ export function MethodeCalculPanel({
               <Info className="h-3.5 w-3.5 shrink-0 mt-0.5" />
               <span>
                 Tous les prix sont indexés en valeur 2025 via les indices notariaux Haute-Savoie
-                (correction du biais temporel 2014–2024).
+                (correction du biais temporel 2020–2025).
               </span>
             </div>
           )}

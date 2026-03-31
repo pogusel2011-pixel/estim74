@@ -297,7 +297,7 @@ export class Writer {
     this.page.drawText("Aur\u00E9lie LIVERSET", { x: aX, y: fy - 12, font: this.fonts.bold, size: FS.micro, color: C.dark });
     this.page.drawText("aurelie.liverset@iadfrance.fr  |  07 82 72 78 83", { x: aX, y: fy - 22, font: this.fonts.regular, size: FS.micro, color: C.gray });
     this.page.drawText("Conseill\u00E8re IAD France - Haute-Savoie (74)", { x: aX, y: fy - 32, font: this.fonts.italic, size: FS.micro, color: C.lightGray });
-    this.page.drawText("ESTIM\u201974 - Donn\u00E9es DVF DGFiP 2014-2024 - Usage professionnel", { x: aX, y: fy - 42, font: this.fonts.italic, size: 6, color: C.lightGray });
+    this.page.drawText("ESTIM\u201974 - Donn\u00E9es DVF DGFiP 2020-2025 - Usage professionnel", { x: aX, y: fy - 42, font: this.fonts.italic, size: 6, color: C.lightGray });
 
     // ── IAD logo (60×20, right-aligned) ──────────────────────────────────
     const logoW = 60; const logoH = 20;

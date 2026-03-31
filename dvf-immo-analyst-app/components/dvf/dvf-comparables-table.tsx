@@ -104,7 +104,7 @@ export function DVFComparablesTable({ comparables, hasLiveData }: Props) {
           )}
           {(hasLiveData || liveCount > 0) && (
             <span className="text-xs text-muted-foreground font-normal ml-auto">
-              DVF 2014–2024 + données récentes
+              DVF 2020–2025 + données récentes
             </span>
           )}
         </CardTitle>

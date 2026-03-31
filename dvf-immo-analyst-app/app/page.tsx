@@ -49,7 +49,7 @@ async function DVFStats() {
         <StatCard
           label="Transactions totales"
           value={all.length.toLocaleString("fr-FR")}
-          sub="2014–2024"
+          sub="2020–2025"
         />
         <StatCard
           label="Prix médian/m²"
@@ -214,7 +214,7 @@ export default function HomePage() {
           icon={Database}
           color="text-blue-600"
           title="Données DVF officielles"
-          description="353 000+ transactions réelles enregistrées par la DGFiP de 2014 à 2024 pour toute la Haute-Savoie."
+          description="353 000+ transactions réelles enregistrées par la DGFiP de 2020 à 2025 pour toute la Haute-Savoie."
         />
         <FeatureCard
           icon={BarChart3}
@@ -231,7 +231,7 @@ export default function HomePage() {
       </section>
 
       <p className="text-xs text-center text-muted-foreground">
-        Couverture : Haute-Savoie (74) • Données DVF 2014–2024 • Source DGFiP (data.gouv.fr)
+        Couverture : Haute-Savoie (74) • Données DVF 2020–2025 • Source DGFiP (data.gouv.fr)
       </p>
     </div>
   );
