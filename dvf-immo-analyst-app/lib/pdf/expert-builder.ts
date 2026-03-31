@@ -65,12 +65,13 @@ import { PDFDocument } from "pdf-lib";
     cp.drawText(refId, { x: PAGE_W - MR - 90, y: 63, font: fonts.bold, size: 13, color: C.dark });
     const clientName = [a.clientFirstName, a.clientLastName].filter(Boolean).map((v) => san(v as string)).join(" ");
     if (clientName) {
+      // Bloc destinataire — colonne centrale, aligné avec GÉNÉRÉ LE (y=80) et RÉFÉRENCE (y=80)
       const cx = PAGE_W / 2;
       cp.drawText("PR\u00C9PAR\u00C9 POUR :", { x: cx, y: 80, font: fonts.bold, size: FS.micro, color: C.gray });
-      cp.drawText(clientName, { x: cx, y: 66, font: fonts.bold, size: FS.small, color: C.dark });
-      let cLineY = 54;
-      if (a.clientAddress) { cp.drawText(san(a.clientAddress as string), { x: cx, y: cLineY, font: fonts.regular, size: FS.micro, color: C.gray }); cLineY -= 12; }
-      if (a.clientEmail)   { cp.drawText(san(a.clientEmail as string),   { x: cx, y: cLineY, font: fonts.regular, size: FS.micro, color: C.gray }); cLineY -= 12; }
+      cp.drawText(clientName,                  { x: cx, y: 66, font: fonts.bold, size: FS.small, color: C.dark });
+      let cLineY = 55;
+      if (a.clientAddress) { cp.drawText(san(a.clientAddress as string), { x: cx, y: cLineY, font: fonts.regular, size: FS.micro, color: C.gray }); cLineY -= 11; }
+      if (a.clientEmail)   { cp.drawText(san(a.clientEmail as string),   { x: cx, y: cLineY, font: fonts.regular, size: FS.micro, color: C.gray }); cLineY -= 11; }
       if (a.clientPhone)   { cp.drawText(san(a.clientPhone as string),   { x: cx, y: cLineY, font: fonts.regular, size: FS.micro, color: C.gray }); }
     }
 

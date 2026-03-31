@@ -95,15 +95,14 @@ import { PDFDocument } from "pdf-lib";
     cp.drawLine({ start: { x: ML + 70, y: bY - 1 }, end: { x: ML + 260, y: bY - 1 }, color: C.borderBlue, thickness: 1 });
     const clientName = [a.clientFirstName, a.clientLastName].filter(Boolean).map((v) => san(v as string)).join(" ");
     if (clientName) {
-      const labelX = ML;
-      const valueX = ML + 80;
-      const cY0 = bY + 36;
-      cp.drawText("Pr\u00e9par\u00e9 pour :", { x: labelX, y: cY0, font: fonts.regular, size: FS.body, color: C.gray });
-      cp.drawText(clientName, { x: valueX, y: cY0, font: fonts.bold, size: FS.small, color: C.dark });
-      let cLineY = cY0 - 13;
-      if (a.clientAddress) { cp.drawText(san(a.clientAddress as string), { x: valueX, y: cLineY, font: fonts.regular, size: FS.micro, color: C.gray }); cLineY -= 11; }
-      if (a.clientEmail)   { cp.drawText(san(a.clientEmail as string),   { x: valueX, y: cLineY, font: fonts.regular, size: FS.micro, color: C.gray }); cLineY -= 11; }
-      if (a.clientPhone)   { cp.drawText(san(a.clientPhone as string),   { x: valueX, y: cLineY, font: fonts.regular, size: FS.micro, color: C.gray }); }
+      // Bloc destinataire — colonne droite (PAGE_W/2) pour ne pas chevaucher la colonne gauche
+      const cx = PAGE_W / 2;
+      cp.drawText("Pr\u00e9par\u00e9 pour :", { x: cx, y: bY + 36, font: fonts.bold, size: FS.micro, color: C.gray });
+      cp.drawText(clientName, { x: cx, y: bY + 22, font: fonts.bold, size: FS.small, color: C.dark });
+      let cLineY = bY + 10;
+      if (a.clientAddress) { cp.drawText(san(a.clientAddress as string), { x: cx, y: cLineY, font: fonts.regular, size: FS.micro, color: C.gray }); cLineY -= 11; }
+      if (a.clientEmail)   { cp.drawText(san(a.clientEmail as string),   { x: cx, y: cLineY, font: fonts.regular, size: FS.micro, color: C.gray }); cLineY -= 11; }
+      if (a.clientPhone)   { cp.drawText(san(a.clientPhone as string),   { x: cx, y: cLineY, font: fonts.regular, size: FS.micro, color: C.gray }); }
     }
 
     // ═══════════ PAGE 2: ESTIMATION + POINTS FORTS/VIGILANCES ════════════
