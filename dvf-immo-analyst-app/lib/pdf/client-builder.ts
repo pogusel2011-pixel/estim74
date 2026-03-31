@@ -77,7 +77,7 @@ import { PDFDocument } from "pdf-lib";
     cp.drawText("ESTIM’74", { x: ML, y: PAGE_H - 58, font: fonts.bold, size: 34, color: C.white });
     cp.drawText("Avis de Valeur — Haute-Savoie (74)", { x: ML, y: PAGE_H - 76, font: fonts.regular, size: FS.small, color: C.darkBlue });
     cp.drawLine({ start: { x: ML, y: PAGE_H - 93 }, end: { x: PAGE_W - MR, y: PAGE_H - 93 }, color: C.borderBlue, thickness: 0.5 });
-    cp.drawText("RAPPORT D'ESTIMATION", { x: ML, y: PAGE_H - 116, font: fonts.bold, size: FS.small, color: C.gray });
+    cp.drawText("AVIS DE VALEUR IMMOBILIER", { x: ML, y: PAGE_H - 116, font: fonts.bold, size: FS.small, color: C.gray });
     cp.drawText(propertyLabel.toUpperCase(), { x: ML, y: PAGE_H - 132, font: fonts.regular, size: FS.small, color: C.darkBlue });
     const addr = san([normalizeAddr(a.address as string), a.postalCode, a.city].filter(Boolean).join(", ") || "Adresse non renseignée");
     wrapText(fonts.bold, addr, 17, CW - 20).forEach((line, i) => {
