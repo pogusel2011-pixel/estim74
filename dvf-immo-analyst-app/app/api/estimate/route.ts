@@ -138,6 +138,21 @@ export async function POST(req: Request) {
     // Utilise uniquement les annonces retenues pour le calcul
     const valuation = computeValuation(propertyWithGeo, dvfStats ?? null, cleanListings, dvfComparables, amenities);
 
+    // Log de vérification des ajustements (signe + valeur)
+    if (valuation.adjustments.length > 0) {
+      const adjLines = valuation.adjustments.map((a) => {
+        const sign = a.factor >= 0 ? "+" : "";
+        return `  ${sign}${(a.factor * 100).toFixed(1)}% — ${a.label} [${a.category}]`;
+      });
+      const totalPct = (valuation.breakdown.totalAdjustmentFactor * 100).toFixed(1);
+      const totalSign = valuation.breakdown.totalAdjustmentFactor >= 0 ? "+" : "";
+      console.log(
+        `[estimate] Ajustements qualitatifs — basePsm: ${valuation.breakdown.basePsm} €/m²\n` +
+        adjLines.join("\n") + "\n" +
+        `  → total: ${totalSign}${totalPct}% | PSM final: ${valuation.pricePsm} €/m²`
+      );
+    }
+
     // 8. Contexte marché Notaires
     const marketReading = await fetchNotairesMarket(property.postalCode, property.propertyType);
 

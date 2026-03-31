@@ -13,8 +13,9 @@ function fmtPsm(n: number | null | undefined): string {
 }
 
 function pct(factor: number): string {
-  const p = Math.round((factor - 1) * 100);
-  return (p >= 0 ? "+" : "") + p + "%";
+  const p = Math.round(factor * 100);
+  const sign = p >= 0 ? "+" : "";
+  return `${sign}${p}%`;
 }
 
 interface GammaPromptInput {
@@ -79,9 +80,8 @@ export function buildGammaExpertPrompt(input: GammaPromptInput): string {
   if (serialized.hasPool) features.push("Piscine");
   if (serialized.hasElevator) features.push("Ascenseur");
 
-  // Toutes les proximités (river/stream/lake) sont stockées avec category="proximity"
-  const positiveAdj = adjustments.filter(a => a.factor > 1 && a.category !== "proximity");
-  const negativeAdj = adjustments.filter(a => a.factor < 1);
+  const positiveAdj = adjustments.filter(a => a.factor > 0 && a.category !== "proximity");
+  const negativeAdj = adjustments.filter(a => a.factor < 0);
   const proximityAdj = adjustments.filter(a => a.category === "proximity");
 
   const dvfSampleSize = serialized.dvfSampleSize as number | null;
@@ -188,9 +188,8 @@ export function buildGammaClientPrompt(input: GammaPromptInput): string {
   if (serialized.hasElevator) features.push("Ascenseur");
   if (landSurface) features.push(`Terrain ${landSurface.toLocaleString("fr-FR")} m²`);
 
-  // Toutes les proximités (river/stream/lake) sont stockées avec category="proximity"
-  const positiveAdj = adjustments.filter(a => a.factor > 1 && a.category !== "proximity");
-  const proximityAdj = adjustments.filter(a => a.factor > 1 && a.category === "proximity");
+  const positiveAdj = adjustments.filter(a => a.factor > 0 && a.category !== "proximity");
+  const proximityAdj = adjustments.filter(a => a.factor > 0 && a.category === "proximity");
 
   const clientGptTypes = ["MARKET_ANALYSIS", "NEGOTIATION_ADVICE", "PROPERTY_DESCRIPTION"];
   const clientGptOutputs = gptOutputs.filter(g => clientGptTypes.includes(g.actionType));
