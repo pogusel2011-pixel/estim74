@@ -61,7 +61,7 @@ export default async function PrintClientPage({
   const propertyLabel = PROPERTY_TYPE_LABELS[a.propertyType as string] ?? (a.propertyType as string);
   const conditionLabel = a.condition ? CONDITION_LABELS[a.condition as string] : null;
   const dpeColor = a.dpeLetter ? DPE_COLORS[a.dpeLetter as string] ?? "#6B7280" : null;
-  const today = new Date().toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" });
+  const today = new Date().toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric", timeZone: "Europe/Paris" });
   const isIndicative = a.confidenceLabel === "Indicative" || ((a.dvfSampleSize as number) != null && (a.dvfSampleSize as number) < 3);
 
   const top5 = dvfComparables

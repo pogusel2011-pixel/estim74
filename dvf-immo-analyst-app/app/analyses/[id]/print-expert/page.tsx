@@ -97,7 +97,7 @@ export default async function PrintExpertPage({
   const wasExpanded = requestedRadiusKm != null && perimeterKm != null && perimeterKm > requestedRadiusKm;
   const isIndicative = a.confidenceLabel === "Indicative" || ((a.dvfSampleSize as number) != null && (a.dvfSampleSize as number) < 3);
   const adjustments = (a.adjustments as Adjustment[]) ?? [];
-  const today = new Date().toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" });
+  const today = new Date().toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric", timeZone: "Europe/Paris" });
   const maxTrendCount = trendData.yearlyStats.length > 0 ? Math.max(...trendData.yearlyStats.map((y) => y.count)) : 1;
   const trendColor = trendData.trend === "hausse" ? "#16A34A" : trendData.trend === "baisse" ? "#DC2626" : "#6B7280";
   const trendLabel = trendData.trend === "hausse" ? "En hausse" : trendData.trend === "baisse" ? "En baisse" : "Stable";

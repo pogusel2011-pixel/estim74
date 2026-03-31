@@ -126,7 +126,7 @@ export default async function PrintPage({
   const adjustments = (a.adjustments as Adjustment[]) ?? [];
   const trendLabel = trendData.trend === "hausse" ? "En hausse" : trendData.trend === "baisse" ? "En baisse" : "Stable";
   const trendColor = trendData.trend === "hausse" ? "#16a34a" : trendData.trend === "baisse" ? "#dc2626" : "#6b7280";
-  const today = new Date().toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" });
+  const today = new Date().toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric", timeZone: "Europe/Paris" });
   const maxTrendCount = trendData.yearlyStats.length > 0 ? Math.max(...trendData.yearlyStats.map(y => y.count)) : 1;
 
   return (

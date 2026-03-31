@@ -20,11 +20,11 @@ export function formatPsm(value: number): string {
 }
 
 export function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" });
+  return new Date(dateStr).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric", timeZone: "Europe/Paris" });
 }
 
 export function formatDateShort(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString("fr-FR", { month: "short", year: "2-digit" });
+  return new Date(dateStr).toLocaleDateString("fr-FR", { month: "short", year: "2-digit", timeZone: "Europe/Paris" });
 }
 
 export function haversineDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
