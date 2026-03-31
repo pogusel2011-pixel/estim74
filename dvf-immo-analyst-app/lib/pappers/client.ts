@@ -6,10 +6,28 @@ const PAPPERS_TIMEOUT_MS = 8000;
 /** Lettre DPE valide (A-G) */
 const DPE_LETTERS = new Set(["A", "B", "C", "D", "E", "F", "G"]);
 
-function pappersAuthHeaders(): Record<string, string> {
-  const apiKey = process.env.PAPPERS_API_KEY;
-  if (!apiKey) return {};
-  return { "api-key": apiKey };
+/**
+ * Construit les query params d'auth Pappers.
+ * L'API Pappers Immobilier utilise api_token en query param (pas de header api-key).
+ * Le plan d'entrée est limité à par_page=1 — ce paramètre est obligatoire.
+ */
+function pappersParams(extra: Record<string, string> = {}): URLSearchParams {
+  const apiKey = process.env.PAPPERS_API_KEY ?? "";
+  return new URLSearchParams({ api_token: apiKey, par_page: "1", ...extra });
+}
+
+/**
+ * Extrait le tableau de résultats depuis la réponse Pappers.
+ * La clé top-level réelle est "resultats" (confirmé en production).
+ */
+function extractResultats(data: Record<string, unknown>): Record<string, unknown>[] {
+  const arr =
+    data.resultats ??
+    data.parcelles ??
+    data.results ??
+    data.data ??
+    (Array.isArray(data) ? data : []);
+  return Array.isArray(arr) ? (arr as Record<string, unknown>[]) : [];
 }
 
 // ─── Enrich DPE + Batiments ─────────────────────────────────────────────────
@@ -21,7 +39,11 @@ export interface PappersEnrichResult {
 
 /**
  * Récupère le DPE et l'année de construction d'un bien depuis Pappers Immobilier.
- * GET /parcelles?adresse=[adresse]&bases=dpe,batiments
+ * GET /parcelles?adresse=[adresse]&bases=dpe,batiments&par_page=1&api_token=[key]
+ *
+ * Structure réelle de la réponse (confirmée) :
+ *   { resultats: [{ dpe: [{classe_bilan_dpe, classe_conso_energie_arrete_2012, ...}],
+ *                   batiments: [{annee_construction, ...}] }] }
  *
  * Retourne null si la clé est absente, si l'API échoue ou si aucune donnée n'est trouvée.
  */
@@ -36,20 +58,15 @@ export async function fetchPappersEnrich(
   }
 
   const query = postalCode ? `${adresse} ${postalCode}` : adresse;
-
-  const params = new URLSearchParams({
+  const url = `${PAPPERS_BASE}/parcelles?${pappersParams({
     adresse: query,
     bases: "dpe,batiments",
-  });
-  const url = `${PAPPERS_BASE}/parcelles?${params}`;
+  })}`;
 
   try {
     const res = await fetch(url, {
       signal: AbortSignal.timeout(PAPPERS_TIMEOUT_MS),
-      headers: {
-        Accept: "application/json",
-        ...pappersAuthHeaders(),
-      },
+      headers: { Accept: "application/json" },
     });
 
     if (!res.ok) {
@@ -57,44 +74,63 @@ export async function fetchPappersEnrich(
       return null;
     }
 
-    const data = await res.json();
-    const parcelles: Record<string, unknown>[] =
-      data.parcelles ?? data.results ?? data.data ?? (Array.isArray(data) ? data : []);
+    const data = await res.json() as Record<string, unknown>;
+    const parcelles = extractResultats(data);
+    if (!parcelles.length) {
+      console.log(`[Pappers] Aucune parcelle trouvée pour "${query}"`);
+      return null;
+    }
 
-    if (!parcelles.length) return null;
-
-    // On prend la première parcelle retournée
-    const parcelle = parcelles[0] as Record<string, unknown>;
-
+    const parcelle = parcelles[0];
     let dpeLetter: string | undefined;
     let yearBuilt: number | undefined;
 
-    // ── DPE ────────────────────────────────────────────────────────────────
-    const dpe = parcelle.dpe as Record<string, unknown> | undefined;
+    // ── DPE : tableau de diagnostics ──────────────────────────────────────
+    // Champs vérifiés en production :
+    //   classe_bilan_dpe          → label DPE post-2021 (ex: "E")
+    //   classe_conso_energie_arrete_2012 → label DPE pré-2021 (ex: "E")
+    const dpeArr: Record<string, unknown>[] = Array.isArray(parcelle.dpe)
+      ? (parcelle.dpe as Record<string, unknown>[])
+      : parcelle.dpe
+        ? [parcelle.dpe as Record<string, unknown>]
+        : [];
+
+    // On préfère le DPE le plus récent (dernier dans le tableau)
+    const dpe = dpeArr[dpeArr.length - 1];
     if (dpe) {
       const raw =
+        dpe.classe_bilan_dpe ??
+        dpe.classe_conso_energie_arrete_2012 ??
         dpe.classe_consommation_energie ??
         dpe.classe_dpe ??
         dpe.lettre_dpe ??
-        dpe.classe ??
-        dpe.dpe_lettre;
-      const letter = String(raw ?? "").toUpperCase().charAt(0);
+        dpe.classe;
+      const letter = String(raw ?? "").toUpperCase().trim().charAt(0);
       if (DPE_LETTERS.has(letter)) dpeLetter = letter;
+
+      // Année de construction depuis le DPE (fallback)
+      if (!yearBuilt) {
+        const rawYear = dpe.annee_construction_dpe ?? dpe.annee_construction;
+        const y = Number(rawYear);
+        if (y >= 1800 && y <= new Date().getFullYear()) yearBuilt = y;
+      }
     }
 
-    // ── Bâtiment (année construction) ────────────────────────────────────
-    const batiment = (
-      parcelle.batiments ??
-      parcelle.batiment
-    ) as Record<string, unknown> | undefined;
+    // ── Bâtiment : tableau BDNB (plus fiable que DPE pour l'année) ───────
+    const batArr: Record<string, unknown>[] = Array.isArray(parcelle.batiments)
+      ? (parcelle.batiments as Record<string, unknown>[])
+      : parcelle.batiment
+        ? [parcelle.batiment as Record<string, unknown>]
+        : [];
 
+    const batiment = batArr[0];
     if (batiment) {
       const rawYear =
         batiment.annee_construction ??
         batiment.date_construction ??
         batiment.annee;
-      const year = Number(rawYear);
-      if (year >= 1800 && year <= new Date().getFullYear()) yearBuilt = year;
+      const y = Number(rawYear);
+      if (y >= 1800 && y <= new Date().getFullYear()) yearBuilt = y;
     }
 
     if (dpeLetter || yearBuilt) {
@@ -102,6 +138,8 @@ export async function fetchPappersEnrich(
         `[Pappers] Enrichissement OK — DPE: ${dpeLetter ?? "??"}, ` +
         `construction: ${yearBuilt ?? "??"} (${adresse})`
       );
+    } else {
+      console.log(`[Pappers] Parcelle trouvée mais DPE/année vides (${adresse})`);
     }
 
     return { dpeLetter, yearBuilt };
@@ -121,9 +159,14 @@ export async function fetchPappersEnrich(
  * Recherche des transactions comparables via Pappers Immobilier.
  * GET /parcelles?latitude=[lat]&longitude=[lng]&distance=[radiusM]
  *              &bases=ventes&type_local_vente=[typeLocal]&date_vente_min=[dateMin]
+ *              &par_page=1&api_token=[key]
  *
- * Retourne [] si la clé est absente, si l'API échoue ou si aucune donnée n'est trouvée.
- * La distance est exprimée en mètres.
+ * Note : sur le plan actuel, la clé "ventes" dans chaque parcelle peut être vide
+ * si l'abonnement ne couvre pas l'historique des transactions géolocalisées.
+ * Dans ce cas, fetchPappersSales retourne [] sans erreur — le fallback DVF CSV
+ * reste la source principale.
+ *
+ * Retourne [] si la clé est absente, si l'API échoue ou si aucune vente n'est trouvée.
  */
 export async function fetchPappersSales(
   lat: number,
@@ -142,24 +185,21 @@ export async function fetchPappersSales(
   dateMin.setMonth(dateMin.getMonth() - monthsBack);
   const dateMinStr = dateMin.toISOString().slice(0, 10);
 
-  const params: Record<string, string> = {
-    latitude: String(lat),
-    longitude: String(lng),
-    distance: String(Math.round(radiusM)),
+  const extra: Record<string, string> = {
+    lat: String(lat),
+    lon: String(lng),
+    rayon: String(Math.round(radiusM)),
     bases: "ventes",
     date_vente_min: dateMinStr,
   };
-  if (typeLocal) params.type_local_vente = typeLocal;
+  if (typeLocal) extra.type_local_vente = typeLocal;
 
-  const url = `${PAPPERS_BASE}/parcelles?${new URLSearchParams(params)}`;
+  const url = `${PAPPERS_BASE}/parcelles?${pappersParams(extra)}`;
 
   try {
     const res = await fetch(url, {
       signal: AbortSignal.timeout(PAPPERS_TIMEOUT_MS),
-      headers: {
-        Accept: "application/json",
-        ...pappersAuthHeaders(),
-      },
+      headers: { Accept: "application/json" },
     });
 
     if (!res.ok) {
@@ -167,9 +207,8 @@ export async function fetchPappersSales(
       return [];
     }
 
-    const data = await res.json();
-    const parcelles: Record<string, unknown>[] =
-      data.parcelles ?? data.results ?? data.data ?? (Array.isArray(data) ? data : []);
+    const data = await res.json() as Record<string, unknown>;
+    const parcelles = extractResultats(data);
 
     const mutations: DVFMutation[] = [];
 
@@ -179,7 +218,7 @@ export async function fetchPappersSales(
       const parcelLon = Number(p.longitude ?? p.lon ?? p.lng ?? 0) || undefined;
 
       const ventes: Record<string, unknown>[] =
-        Array.isArray(p.ventes) ? p.ventes : [];
+        Array.isArray(p.ventes) ? (p.ventes as Record<string, unknown>[]) : [];
 
       for (const v of ventes) {
         const mut = mapPappersVenteToMutation(v, parcelLat, parcelLon, lat, lng);
@@ -189,7 +228,8 @@ export async function fetchPappersSales(
 
     console.log(
       `[Pappers] ${mutations.length} transactions (rayon ${radiusM}m` +
-      `${typeLocal ? `, type: ${typeLocal}` : ""}, depuis ${dateMinStr})`
+      `${typeLocal ? `, type: ${typeLocal}` : ""}, depuis ${dateMinStr}, ` +
+      `${parcelles.length} parcelle(s) inspectée(s))`
     );
 
     return mutations;
@@ -241,7 +281,6 @@ function mapPappersVenteToMutation(
       ? Math.round(valeur / surface)
       : undefined;
 
-  // Distance haversine vers le point de recherche
   let distanceM: number | undefined;
   if (parcelLat != null && parcelLon != null) {
     distanceM = Math.round(haversineM(searchLat, searchLng, parcelLat, parcelLon));
