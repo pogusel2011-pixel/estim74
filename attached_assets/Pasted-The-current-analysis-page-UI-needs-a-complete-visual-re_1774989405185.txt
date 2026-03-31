@@ -1,0 +1,68 @@
+The current analysis page UI needs a complete 
+visual redesign. The interface is too cluttered 
+and hard to read. Be bold and make real changes.
+
+DESIGN GOALS:
+- Much more whitespace between every section
+- Clean, modern, professional look
+- Clear visual hierarchy — most important first
+- Easy to scan at a glance
+
+COMPLETE REDESIGN OF app/analyses/[id]/page.tsx 
+and related components:
+
+1. PAGE HEADER — clean and prominent:
+   - Large property address as page title
+   - One clean row of chips below:
+     [🏠 Maison] [116 m²] [4 pièces] [Excellent] [DPE C]
+   - Reference number small and grey on the right
+   - Clean white card with subtle shadow
+
+2. ACTION TOOLBAR — organized and clear:
+   - One horizontal toolbar with 3 groups 
+     separated by dividers:
+     LEFT: "↻ Re-simuler" (blue outline)
+     CENTER: "✦ Analyser avec GPT" (green)
+     RIGHT: "PDF Expert" "PDF Client" 
+             "Gamma Expert" "Gamma Client"
+   - On mobile: 2×2 grid
+
+3. ESTIMATION SECTION — simplified:
+   - 3 large cards side by side: 
+     Basse / CENTRALE (bigger) / Haute
+   - Centrale card highlighted in blue
+   - Confidence badge under centrale only
+   - Prix d'annonce in a clean banner below
+   - "Voir les ajustements ▼" collapsible 
+     section below — COLLAPSED by default
+     (shows adjustment chips when expanded)
+   - Proximity badges inside same collapsible
+
+4. TABS — reordered and renamed:
+   1. Marché
+   2. Ventes signées (DVF)
+   3. Marché actif (Annonces)
+   4. Calcul détaillé (Méthode)
+   5. Analyse IA
+
+5. GENERAL STYLE:
+   - Background: #F8FAFC (very light grey)
+   - Cards: white with shadow-sm
+   - Primary: #2563EB (blue)
+   - Text: #1F2937 (dark grey)
+   - Spacing: generous padding everywhere
+   - Rounded corners on all cards (rounded-xl)
+   - Clear section separators
+
+IMPORTANT RULES:
+- Keep ALL existing functionality intact
+- Do NOT modify API routes
+- Do NOT modify PDF builders  
+- Do NOT modify Gamma prompts
+- Do NOT modify valuation calculation
+- Only redesign the visual layout
+- Test all buttons still work after changes
+- Test all tabs load correctly
+
+Make it look like a premium professional 
+real estate tool, not a developer dashboard.

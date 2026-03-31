@@ -25,7 +25,6 @@ import { GammaButtons } from "@/components/gamma/gamma-buttons";
 import { buildGammaExpertPrompt, buildGammaClientPrompt } from "@/lib/gamma/gamma-prompt-builder";
 import { MethodeCalculPanel } from "@/components/analysis/methode-calcul-panel";
 import { ListingPriceCard } from "@/components/analysis/listing-price-card";
-import { ProximityBadges } from "@/components/analysis/proximity-badges";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getDVFMutations } from "@/lib/dvf/client";
 import { computePrixM2, markOutliers } from "@/lib/dvf/outliers";
@@ -221,10 +220,11 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
   const geoScore = serialized.geoScore as number | null | undefined;
 
   return (
-    <div className="space-y-0">
-      {/* Breadcrumb / retour */}
-      <div className="pb-4">
-        <Button asChild variant="ghost" size="sm" className="gap-1.5 text-muted-foreground hover:text-foreground -ml-2">
+    <div className="min-h-screen -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 pb-12" style={{ backgroundColor: "#F8FAFC" }}>
+
+      {/* ── Breadcrumb ────────────────────────────────────────────────────── */}
+      <div className="pt-4 pb-3">
+        <Button asChild variant="ghost" size="sm" className="gap-1.5 text-slate-500 hover:text-slate-800 -ml-2">
           <Link href="/analyses">
             <ArrowLeft className="h-4 w-4" />
             Retour aux analyses
@@ -232,91 +232,104 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
         </Button>
       </div>
 
-      {/* Bannière qualité géocodage */}
+      {/* ── Bannières géocodage ───────────────────────────────────────────── */}
       {geoQuality === "warning" && (
-        <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 mb-4">
+        <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 mb-4">
           <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5 text-amber-500" />
           <div>
-            <p className="font-medium">⚠️ Adresse approximative — vérifier les coordonnées</p>
+            <p className="font-medium">Adresse approximative — vérifier les coordonnées</p>
             <p className="text-xs text-amber-700 mt-0.5">
-              Score de géocodage BAN : {geoScore != null ? geoScore.toFixed(2) : "—"} (seuil recommandé : ≥ 0.70).
-              La localisation du bien peut être imprécise et influencer les comparables DVF retenus.
+              Score BAN : {geoScore != null ? geoScore.toFixed(2) : "—"} (recommandé ≥ 0.70).
+              La localisation peut influencer les comparables DVF retenus.
             </p>
           </div>
         </div>
       )}
       {geoQuality === "error" && (
-        <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 mb-4">
+        <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 mb-4">
           <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5 text-red-500" />
           <div>
             <p className="font-medium">Adresse non trouvée — vérifiez l'adresse saisie</p>
             <p className="text-xs text-red-700 mt-0.5">
-              Score de géocodage BAN : {geoScore != null ? geoScore.toFixed(2) : "—"} (minimum requis : ≥ 0.50).
-              Corrigez l'adresse ou le code postal et relancez l'estimation.
+              Score BAN : {geoScore != null ? geoScore.toFixed(2) : "—"} (minimum ≥ 0.50).
+              Corrigez l'adresse et relancez l'estimation.
             </p>
           </div>
         </div>
       )}
 
-      {/* ── En-tête bien + actions ─────────────────────────────────────────── */}
-      <div className="rounded-xl bg-[#F8FAFC] border border-border/50 px-5 py-5 mb-6 shadow-sm">
-        <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div className="flex-1 min-w-0">
-            <AnalysisSummaryPanel analysis={serialized} />
-          </div>
-          <div className="flex items-start gap-2 shrink-0 flex-wrap justify-end">
+      {/* ── 1. HEADER — Identité du bien ─────────────────────────────────── */}
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200/80 px-6 py-6 mb-5">
+        <AnalysisSummaryPanel analysis={serialized} analysisId={serialized.id as string} />
+      </div>
+
+      {/* ── 2. TOOLBAR — Actions ─────────────────────────────────────────── */}
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200/80 px-5 py-4 mb-5">
+        <div className="flex flex-wrap items-start gap-x-0 gap-y-3">
+
+          {/* Groupe gauche — Re-simuler */}
+          <div className="flex items-center pr-4 mr-4 border-r border-slate-200">
             <ResimulateButton analysisId={serialized.id as string} />
+          </div>
+
+          {/* Groupe centre — GPT */}
+          <div className="flex items-center pr-4 mr-4 border-r border-slate-200">
             <GptAnalyzeButton analysisId={serialized.id as string} />
+          </div>
+
+          {/* Groupe droite — PDF + Gamma */}
+          <div className="flex items-start gap-3 flex-wrap">
             <PdfExportButtons analysisId={serialized.id as string} />
+            <div className="w-px bg-slate-200 self-stretch hidden sm:block" />
             <GammaButtons expertPrompt={gammaExpertPrompt} clientPrompt={gammaClientPrompt} />
           </div>
+
         </div>
       </div>
 
-      {/* ── Valorisation ──────────────────────────────────────────────────── */}
-      <div className="mb-6">
-        <ValuationCards
-          low={serialized.valuationLow as number | null}
-          mid={serialized.valuationMid as number | null}
-          high={serialized.valuationHigh as number | null}
-          psm={serialized.valuationPsm as number | null}
-          confidence={serialized.confidence as number | null}
-          confidenceLabel={serialized.confidenceLabel as string | null}
-          adjustments={safeAdjustments}
-          dvfSampleSize={serialized.dvfSampleSize as number | null}
-          perimeterKm={perimeterKm}
-          confidenceFactors={confidenceFactors}
-        />
-      </div>
+      {/* ── 3. ESTIMATION ────────────────────────────────────────────────── */}
+      <ValuationCards
+        low={serialized.valuationLow as number | null}
+        mid={serialized.valuationMid as number | null}
+        high={serialized.valuationHigh as number | null}
+        psm={serialized.valuationPsm as number | null}
+        confidence={serialized.confidence as number | null}
+        confidenceLabel={serialized.confidenceLabel as string | null}
+        adjustments={safeAdjustments}
+        dvfSampleSize={serialized.dvfSampleSize as number | null}
+        perimeterKm={perimeterKm}
+        confidenceFactors={confidenceFactors}
+      />
 
-      {/* Proximité équipements */}
-      <div className="mb-4">
-        <ProximityBadges adjustments={safeAdjustments} />
-      </div>
-
-      {/* Prix d'annonce conseillé */}
+      {/* Prix d'annonce — bannière sous l'estimation */}
       {serialized.valuationMid ? (
-        <div className="mb-6">
+        <div className="mt-3 mb-5">
           <ListingPriceCard
             listingPriceLow={Math.round((serialized.valuationMid as number) * 1.02)}
             listingPriceHigh={Math.round((serialized.valuationMid as number) * 1.03)}
           />
         </div>
-      ) : null}
+      ) : <div className="mb-5" />}
 
-      {/* ── Onglets ───────────────────────────────────────────────────────── */}
+      {/* ── 4. ONGLETS ───────────────────────────────────────────────────── */}
       <Tabs defaultValue="market" className="w-full">
-        <TabsList className="grid grid-cols-5 w-full max-w-3xl h-10">
-          <TabsTrigger value="market" className="text-xs sm:text-sm">Marché</TabsTrigger>
-          <TabsTrigger value="signed" className="text-xs sm:text-sm">Ventes signées</TabsTrigger>
-          <TabsTrigger value="active" className="text-xs sm:text-sm">Marché actif</TabsTrigger>
-          <TabsTrigger value="methode" className="text-xs sm:text-sm">Calcul détaillé</TabsTrigger>
-          <TabsTrigger value="gpt" className="text-xs sm:text-sm">Analyse IA</TabsTrigger>
-        </TabsList>
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200/80 px-2 py-2 mb-5">
+          <TabsList className="grid grid-cols-5 w-full h-9 bg-slate-100/80 rounded-xl">
+            <TabsTrigger value="market" className="rounded-lg text-xs sm:text-sm font-medium">Marché</TabsTrigger>
+            <TabsTrigger value="signed" className="rounded-lg text-xs sm:text-sm font-medium">Ventes signées</TabsTrigger>
+            <TabsTrigger value="active" className="rounded-lg text-xs sm:text-sm font-medium">Marché actif</TabsTrigger>
+            <TabsTrigger value="methode" className="rounded-lg text-xs sm:text-sm font-medium">Calcul détaillé</TabsTrigger>
+            <TabsTrigger value="gpt" className="rounded-lg text-xs sm:text-sm font-medium">Analyse IA</TabsTrigger>
+          </TabsList>
+        </div>
 
-        {/* ── 1. Marché ── */}
-        <TabsContent value="market" className="space-y-4 mt-5">
-          <MarketReading marketReading={safeMarketReading} dvfMedianPsm={dvfStats?.medianPsm ?? null} propertyType={serialized.propertyType as string | undefined} />
+        {/* 1 — Marché */}
+        <TabsContent value="market" className="space-y-4 mt-0">
+          <MarketReading
+            marketReading={safeMarketReading}
+            dvfMedianPsm={dvfStats?.medianPsm ?? null}
+            propertyType={serialized.propertyType as string | undefined}
+          />
           <DeptBenchmarkPanel
             benchmark={deptBenchmark}
             subjectPsm={serialized.valuationPsm as number | null}
@@ -335,8 +348,8 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
           />
         </TabsContent>
 
-        {/* ── 2. Ventes signées (ex DVF) ── */}
-        <TabsContent value="signed" className="space-y-4 mt-5">
+        {/* 2 — Ventes signées */}
+        <TabsContent value="signed" className="space-y-4 mt-0">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             <DVFStatsPanel
               stats={dvfStats}
@@ -346,10 +359,10 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
             />
             <div className="lg:col-span-2">
               {serialized.lat && serialized.lng ? (
-                <Card className="flex-1 h-full shadow-sm">
+                <Card className="flex-1 h-full shadow-sm rounded-xl">
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm flex items-center gap-2">
-                      <MapPin className="h-4 w-4 text-primary" />
+                      <MapPin className="h-4 w-4 text-[#2563EB]" />
                       Transactions comparables{perimeterKm ? ` • Périmètre ${perimeterKm} km` : ""}
                     </CardTitle>
                   </CardHeader>
@@ -363,7 +376,7 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
                   </CardContent>
                 </Card>
               ) : (
-                <Card className="flex-1 shadow-sm">
+                <Card className="flex-1 shadow-sm rounded-xl">
                   <CardContent className="pt-6 text-center text-sm text-muted-foreground">
                     Coordonnées non disponibles
                   </CardContent>
@@ -377,17 +390,14 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
           />
         </TabsContent>
 
-        {/* ── 3. Marché actif (ex Annonces) ── */}
-        <TabsContent value="active" className="space-y-4 mt-5">
-          <ActiveListingsPanel
-            listings={safeListings}
-            apiAvailable={apiAvailable}
-          />
+        {/* 3 — Marché actif */}
+        <TabsContent value="active" className="space-y-4 mt-0">
+          <ActiveListingsPanel listings={safeListings} apiAvailable={apiAvailable} />
           <DVFRecentSalesPanel comparables={dvfComparables} />
         </TabsContent>
 
-        {/* ── 4. Calcul détaillé (ex Méthode) ── */}
-        <TabsContent value="methode" className="space-y-4 mt-5">
+        {/* 4 — Calcul détaillé */}
+        <TabsContent value="methode" className="space-y-4 mt-0">
           <MethodeCalculPanel
             dvfStats={dvfStats}
             listings={safeListings}
@@ -400,8 +410,8 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
           />
         </TabsContent>
 
-        {/* ── 5. Analyse IA (ex IA) ── */}
-        <TabsContent value="gpt" className="mt-5">
+        {/* 5 — Analyse IA */}
+        <TabsContent value="gpt" className="mt-0">
           <GPTActionsPanel
             analysisId={serialized.id as string}
             initialOutputs={safeGptOutputs}
