@@ -98,3 +98,31 @@ enum AnalysisStatus {
   COMPLETE
   ARCHIVED
 }
+
+model ActiveListing {
+  id          String    @id @default(cuid())
+  uniqueId    String    @unique
+  title       String?
+  city        String?
+  postalCode  String?
+  price       Float?
+  pricePsm    Float?
+  surface     Float?
+  rooms       Int?
+  category    String?
+  lat         Float?
+  lng         Float?
+  url         String?
+  pictureUrl  String?
+  energyGrade String?
+  options     Json?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  @@index([postalCode])
+  @@index([category])
+  @@index([isActive])
+  @@index([postalCode, category, isActive])
+}

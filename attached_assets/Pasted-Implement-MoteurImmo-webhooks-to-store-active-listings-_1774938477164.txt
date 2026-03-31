@@ -1,0 +1,90 @@
+Implement MoteurImmo webhooks to store active 
+listings locally in the database.
+The MOTEURIMMO_API_KEY remains in secrets for 
+fallback API calls.
+
+WEBHOOK ENDPOINT:
+1. Create POST /api/webhook/moteurimmo route that:
+   - Receives webhook events from MoteurImmo
+   - Handles event types: "newAds", 
+     "watchedAdPriceChanged", "watchedAdDeleted"
+   - For "newAds": saves each listing to 
+     ActiveListing table in database
+   - For price changes: updates existing listing
+   - For deletions: sets isActive=false 
+     and deletedAt=now()
+   - Returns HTTP 200 within 30 seconds
+   - Logs each event type and count received
+
+2. Create Prisma model ActiveListing:
+   id          String   @id @default(cuid())
+   uniqueId    String   @unique
+   title       String?
+   city        String?
+   postalCode  String?
+   price       Float?
+   pricePsm    Float?
+   surface     Float?
+   rooms       Int?
+   category    String?
+   lat         Float?
+   lng         Float?
+   url         String?
+   pictureUrl  String?
+   energyGrade String?
+   options     Json?
+   isActive    Boolean  @default(true)
+   createdAt   DateTime @default(now())
+   updatedAt   DateTime @updatedAt
+   deletedAt   DateTime?
+   
+   Index on: postalCode, category, isActive
+
+3. Update lib/moteurimmo/search.ts:
+   Priority order:
+   A) Query local ActiveListing table first:
+      WHERE postalCode = X 
+      AND category = Y
+      AND isActive = true
+      AND deletedAt IS NULL
+      AND surface BETWEEN X*0.6 AND X*1.4
+   B) If less than 3 local results → 
+      call MoteurImmo API as fallback
+   C) If API also fails → 
+      use DVF 100% weighting silently
+
+4. Run prisma db push after adding the model
+
+5. Test the webhook endpoint with this payload:
+   POST /api/webhook/moteurimmo
+   {
+     "event": "newAds",
+     "searchId": "test123",
+     "ads": [{
+       "uniqueId": "test001",
+       "title": "Appartement T3 Annecy",
+       "location": {
+         "city": "Annecy",
+         "postalCode": "74000"
+       },
+       "price": 320000,
+       "pricePerSquareMeter": 4925,
+       "surface": 65,
+       "rooms": 3,
+       "category": "flat",
+       "position": [6.1296, 45.8992],
+       "url": "https://test.com",
+       "energyGrade": "C",
+       "options": ["hasBalcony"],
+       "creationDate": "2026-03-31T10:00:00Z"
+     }]
+   }
+   Confirm it returns 200 and the listing 
+   is saved in the database.
+
+6. The webhook URL to configure in MoteurImmo 
+   when ready:
+   https://19e4ba95-cd54-4a58-b759-4fa8b36c72ae-00-16vx7xeo4kgx5.janeway.replit.dev/api/webhook/moteurimmo
+
+IMPORTANT: Do not remove MOTEURIMMO_API_KEY — 
+keep it as fallback for direct API calls.
