@@ -69,6 +69,12 @@ export function buildGammaExpertPrompt(input: GammaPromptInput, baseUrl?: string
   const view = serialized.view as string | null;
   const mitoyennete = serialized.mitoyennete as string | null;
 
+  const clientFirstName = serialized.clientFirstName as string | null | undefined;
+  const clientLastName = serialized.clientLastName as string | null | undefined;
+  const clientEmail = serialized.clientEmail as string | null | undefined;
+  const clientPhone = serialized.clientPhone as string | null | undefined;
+  const clientName = [clientFirstName, clientLastName].filter(Boolean).join(" ");
+
   const valuationLow = serialized.valuationLow as number | null;
   const valuationMid = serialized.valuationMid as number | null;
   const valuationHigh = serialized.valuationHigh as number | null;
@@ -107,6 +113,19 @@ export function buildGammaExpertPrompt(input: GammaPromptInput, baseUrl?: string
   const lines: string[] = [];
 
   lines.push(`Crée une présentation professionnelle d'expertise immobilière pour un agent immobilier ou un notaire. Style : sobre, technique, chiffré, crédible. Police professionnelle, palette bleue marine.`);
+  lines.push(``);
+  lines.push(`## PAGE DE COUVERTURE`);
+  lines.push(`[EMPLACEMENT PHOTO CONSEILLÈRE — à insérer manuellement]`);
+  lines.push(`**CONSEILLÈRE :** Aurélie LIVERSET — IAD France — Haute-Savoie (74)`);
+  lines.push(`[EMPLACEMENT LOGO IAD — à insérer manuellement]`);
+  lines.push(``);
+  if (clientName) {
+    lines.push(`**PRÉPARÉ POUR :** ${clientName}`);
+    if (clientEmail) lines.push(clientEmail);
+    if (clientPhone) lines.push(clientPhone);
+  } else {
+    lines.push(`**PRÉPARÉ POUR :** [Nom du client — à compléter]`);
+  }
   lines.push(``);
   lines.push(`## BIEN ESTIMÉ`);
   lines.push(`**${type}** — ${surface} m² — ${address ? address + ", " : ""}${city}${postalCode ? " (" + postalCode + ")" : ""}`);
@@ -218,19 +237,20 @@ export function buildGammaExpertPrompt(input: GammaPromptInput, baseUrl?: string
   }
 
   lines.push(`---`);
-  if (input.baseUrl) {
-    lines.push(`![Photo Aurélie LIVERSET](${input.baseUrl}/agent-photo.jpg)`);
+  if (clientName) {
+    const clientAttention = [clientName, clientEmail, clientPhone].filter(Boolean).join(" — ");
+    lines.push(`*Avis de valeur établi à l'attention de : ${clientAttention}*`);
     lines.push(``);
   }
+  lines.push(`[EMPLACEMENT PHOTO CONSEILLÈRE — à insérer manuellement]`);
   lines.push(`**CONSEILLÈRE :** Aurélie LIVERSET`);
   lines.push(`aurelie.liverset@iadfrance.fr — 07 82 72 78 83`);
   lines.push(`IAD France — Haute-Savoie (74)`);
-  if (input.baseUrl) {
-    lines.push(``);
-    lines.push(`![Logo IAD France](${input.baseUrl}/iad-logo.jpg)`);
-  }
+  lines.push(`[EMPLACEMENT LOGO IAD — à insérer manuellement]`);
   lines.push(``);
   lines.push(`*Données ESTIM'74 — Haute-Savoie (74) — DVF 2014–2024*`);
+  lines.push(``);
+  lines.push(`> Note : Remplacer les emplacements photo et logo par les vraies images après génération.`);
 
   return lines.join("\n");
 }
@@ -250,6 +270,12 @@ export function buildGammaClientPrompt(input: GammaPromptInput, baseUrl?: string
   const landSurface = serialized.landSurface as number | null;
   const orientation = serialized.orientation as string | null;
   const view = serialized.view as string | null;
+
+  const clientFirstName = serialized.clientFirstName as string | null | undefined;
+  const clientLastName = serialized.clientLastName as string | null | undefined;
+  const clientEmail = serialized.clientEmail as string | null | undefined;
+  const clientPhone = serialized.clientPhone as string | null | undefined;
+  const clientName = [clientFirstName, clientLastName].filter(Boolean).join(" ");
 
   const valuationLow = serialized.valuationLow as number | null;
   const valuationMid = serialized.valuationMid as number | null;
@@ -287,6 +313,19 @@ export function buildGammaClientPrompt(input: GammaPromptInput, baseUrl?: string
   const lines: string[] = [];
 
   lines.push(`Crée une présentation élégante et rassurante pour présenter une estimation immobilière à un propriétaire. Style : chaleureux, clair, moderne, sans jargon technique. Palette verte ou bleue apaisante.`);
+  lines.push(``);
+  lines.push(`## PAGE DE COUVERTURE`);
+  lines.push(`[EMPLACEMENT PHOTO CONSEILLÈRE — à insérer manuellement]`);
+  lines.push(`**Aurélie LIVERSET** — Conseillère IAD France — Haute-Savoie (74)`);
+  lines.push(`[EMPLACEMENT LOGO IAD — à insérer manuellement]`);
+  lines.push(``);
+  if (clientName) {
+    lines.push(`**PRÉPARÉ POUR :** ${clientName}`);
+    if (clientEmail) lines.push(clientEmail);
+    if (clientPhone) lines.push(clientPhone);
+  } else {
+    lines.push(`**PRÉPARÉ POUR :** [Nom du client — à compléter]`);
+  }
   lines.push(``);
   lines.push(`## VOTRE BIEN`);
   lines.push(`**${type}** de **${surface} m²** — ${address ? address + ", " : ""}${city}`);
@@ -353,19 +392,20 @@ export function buildGammaClientPrompt(input: GammaPromptInput, baseUrl?: string
 
   lines.push(``);
   lines.push(`---`);
-  if (input.baseUrl) {
-    lines.push(`![Photo Aurélie LIVERSET](${input.baseUrl}/agent-photo.jpg)`);
+  if (clientName) {
+    const clientAttention = [clientName, clientEmail, clientPhone].filter(Boolean).join(" — ");
+    lines.push(`*Avis de valeur établi à l'attention de : ${clientAttention}*`);
     lines.push(``);
   }
+  lines.push(`[EMPLACEMENT PHOTO CONSEILLÈRE — à insérer manuellement]`);
   lines.push(`**CONSEILLÈRE :** Aurélie LIVERSET`);
   lines.push(`aurelie.liverset@iadfrance.fr — 07 82 72 78 83`);
   lines.push(`IAD France — Haute-Savoie (74)`);
-  if (input.baseUrl) {
-    lines.push(``);
-    lines.push(`![Logo IAD France](${input.baseUrl}/iad-logo.jpg)`);
-  }
+  lines.push(`[EMPLACEMENT LOGO IAD — à insérer manuellement]`);
   lines.push(``);
   lines.push(`*Estimation ESTIM'74 — Confidentiel — Document réservé au propriétaire*`);
+  lines.push(``);
+  lines.push(`> Note : Remplacer les emplacements photo et logo par les vraies images après génération.`);
 
   return lines.join("\n");
 }
