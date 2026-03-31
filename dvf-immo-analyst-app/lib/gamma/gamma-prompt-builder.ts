@@ -32,6 +32,7 @@ interface GammaPromptInput {
   gptOutputs: GPTOutput[];
   dvfStats: DVFStats | null;
   perimeterKm: number | null;
+  baseUrl?: string;
 }
 
 const PROPERTY_LABELS: Record<string, string> = {
@@ -47,7 +48,8 @@ const CONDITION_LABELS: Record<string, string> = {
   TO_RENOVATE: "À rénover",
 };
 
-export function buildGammaExpertPrompt(input: GammaPromptInput): string {
+export function buildGammaExpertPrompt(input: GammaPromptInput, baseUrl?: string): string {
+  if (!input.baseUrl && baseUrl) input = { ...input, baseUrl };
   const { serialized, adjustments, gptOutputs, dvfStats, perimeterKm } = input;
 
   const type = PROPERTY_LABELS[serialized.propertyType as string] ?? (serialized.propertyType as string);
@@ -216,16 +218,25 @@ export function buildGammaExpertPrompt(input: GammaPromptInput): string {
   }
 
   lines.push(`---`);
+  if (input.baseUrl) {
+    lines.push(`![Photo Aurélie LIVERSET](${input.baseUrl}/agent-photo.jpg)`);
+    lines.push(``);
+  }
   lines.push(`**CONSEILLÈRE :** Aurélie LIVERSET`);
   lines.push(`aurelie.liverset@iadfrance.fr — 07 82 72 78 83`);
   lines.push(`IAD France — Haute-Savoie (74)`);
+  if (input.baseUrl) {
+    lines.push(``);
+    lines.push(`![Logo IAD France](${input.baseUrl}/iad-logo.jpg)`);
+  }
   lines.push(``);
   lines.push(`*Données ESTIM'74 — Haute-Savoie (74) — DVF 2014–2024*`);
 
   return lines.join("\n");
 }
 
-export function buildGammaClientPrompt(input: GammaPromptInput): string {
+export function buildGammaClientPrompt(input: GammaPromptInput, baseUrl?: string): string {
+  if (!input.baseUrl && baseUrl) input = { ...input, baseUrl };
   const { serialized, adjustments, gptOutputs } = input;
 
   const type = PROPERTY_LABELS[serialized.propertyType as string] ?? (serialized.propertyType as string);
@@ -342,9 +353,17 @@ export function buildGammaClientPrompt(input: GammaPromptInput): string {
 
   lines.push(``);
   lines.push(`---`);
+  if (input.baseUrl) {
+    lines.push(`![Photo Aurélie LIVERSET](${input.baseUrl}/agent-photo.jpg)`);
+    lines.push(``);
+  }
   lines.push(`**CONSEILLÈRE :** Aurélie LIVERSET`);
   lines.push(`aurelie.liverset@iadfrance.fr — 07 82 72 78 83`);
   lines.push(`IAD France — Haute-Savoie (74)`);
+  if (input.baseUrl) {
+    lines.push(``);
+    lines.push(`![Logo IAD France](${input.baseUrl}/iad-logo.jpg)`);
+  }
   lines.push(``);
   lines.push(`*Estimation ESTIM'74 — Confidentiel — Document réservé au propriétaire*`);
 

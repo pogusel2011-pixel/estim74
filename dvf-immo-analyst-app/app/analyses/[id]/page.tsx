@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { headers } from "next/headers";
 import Link from "next/link";
 import { AlertTriangle, ArrowLeft, MapPin } from "lucide-react";
 import { prisma } from "@/lib/prisma";
@@ -204,8 +205,11 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
     dvfStats,
     perimeterKm: perimeterKm ?? null,
   };
-  const gammaExpertPrompt = buildGammaExpertPrompt(gammaInput);
-  const gammaClientPrompt = buildGammaClientPrompt(gammaInput);
+  const host = headers().get("host") ?? "";
+  const proto = host.includes("localhost") ? "http" : "https";
+  const baseUrl = host ? `${proto}://${host}` : "";
+  const gammaExpertPrompt = buildGammaExpertPrompt({ ...gammaInput, baseUrl });
+  const gammaClientPrompt = buildGammaClientPrompt({ ...gammaInput, baseUrl });
 
   // Map propertyType to DVF type string for the trend chart
   const dvfTypeForChart = serialized.propertyType === "APARTMENT" ? "Appartement"
