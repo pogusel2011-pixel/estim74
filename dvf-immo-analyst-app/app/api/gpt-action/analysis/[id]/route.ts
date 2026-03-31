@@ -93,6 +93,8 @@ export async function GET(
         low: a.valuationLow ?? null,
         mid: a.valuationMid ?? null,
         high: a.valuationHigh ?? null,
+        listingPriceLow: a.valuationMid != null ? Math.round(a.valuationMid * 1.02) : null,
+        listingPriceHigh: a.valuationMid != null ? Math.round(a.valuationMid * 1.03) : null,
         pricePsmEur: a.valuationPsm ?? null,
         confidence: a.confidence != null
           ? parseInt((a.confidence * 100).toFixed(0))

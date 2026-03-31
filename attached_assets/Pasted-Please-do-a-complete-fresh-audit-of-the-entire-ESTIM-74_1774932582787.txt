@@ -1,0 +1,87 @@
+Please do a complete fresh audit of the entire 
+ESTIM'74 application. Many files have changed 
+since the last audit. Check everything carefully:
+
+TECHNICAL AUDIT:
+1. Run tsc --noEmit --strict → report all errors
+2. Run npm run lint → report all warnings/errors
+3. Check for any runtime errors in console logs
+4. Check all new files added since last audit:
+   - lib/pappers/client.ts
+   - lib/notaires/market-check.ts
+   - lib/gamma/gamma-prompt-builder.ts
+   - lib/moteurimmo/client.ts + normalize.ts
+   - lib/dvf/dept-stats.ts
+   - components/analysis/proximity-badges.tsx
+   - components/analysis/listing-price-card.tsx
+   - components/gamma/gamma-buttons.tsx
+   - app/api/pappers/enrich/route.ts
+   - app/api/gpt-action/analysis/[id]/route.ts
+
+FUNCTIONAL AUDIT — VALUATION ENGINE:
+5. Verify DVF weighted average calculation is correct
+6. Verify temporal indexation 2025 is applied correctly
+7. Verify outlier detection IQR×1.5 + median ±40%
+8. Verify 70/30 DVF/listings weighting
+9. Verify ALL qualitative adjustments show correct 
+   +/- signs (positive = adds value, negative = reduces)
+10. Verify FSD confidence interval 5%-15% clamp
+11. Verify proximity adjustments from Overpass API
+12. Verify market pressure calculation ±5% cap
+13. Verify listing price low/high (mid×1.02, mid×1.03)
+
+FUNCTIONAL AUDIT — DATA SOURCES:
+14. Verify Pappers API call works with PAPPERS_API_KEY
+15. Verify MoteurImmo POST to moteurimmo.fr/api/ads 
+    with apiKey in body works correctly
+16. Verify CSV DVF loads all 353,253 rows correctly
+17. Verify DVF dept benchmark calculates from CSV
+18. Verify DVF control (tendance 6m/12m) is correct
+19. Verify Overpass API proximity detection works
+20. Verify BAN geocoding works for addresses
+
+FUNCTIONAL AUDIT — PDF:
+21. Test PDF Expert on 3 different analyses
+    - Check all accented characters display correctly
+    - Check € symbol displays correctly
+    - Check all sections present and correct
+    - Check adjustment signs are correct (+/-)
+22. Test PDF Client on 3 different analyses
+    - Check listing price is shown when checkbox checked
+    - Check no technical jargon visible
+    - Check layout is clean
+
+FUNCTIONAL AUDIT — GPT & INTEGRATIONS:
+23. Verify GPT-4o API calls work (OPENAI_API_KEY)
+24. Verify ChatGPT Action endpoint returns correct JSON
+25. Verify Gamma prompt builder shows correct +/- signs
+26. Verify confidence shows correctly (75 not 0.75)
+27. Verify GptAnalyzeButton copies correct message
+28. Verify old ChatGPT button has been removed
+
+FUNCTIONAL AUDIT — UI:
+29. Check all tabs load correctly
+    DVF / Annonces / Marché / Méthode / IA
+30. Check Leaflet map shows correct pins
+31. Check proximity badges display correctly
+32. Check listing price card displays correctly
+33. Check refresh button works with timestamp
+34. Check Gamma buttons copy correct prompts
+35. Check PWA installation works
+
+FUNCTIONAL AUDIT — DATABASE:
+36. Verify all new fields save correctly:
+    mitoyennete, listingPriceLow, listingPriceHigh,
+    dvfControl, proximity adjustments
+37. Verify resimulate route works correctly
+38. Verify analysis history loads correctly
+
+Please provide a detailed report categorized by:
+🔴 CRITICAL — affects valuation accuracy or crashes
+🟠 IMPORTANT — affects reliability or data quality  
+🟡 MINOR — cosmetic or non-blocking
+✅ OK — working correctly
+
+Fix ALL critical and important issues immediately.
+List minor issues for review.
+Do NOT modify anything that is already working.
