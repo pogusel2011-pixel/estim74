@@ -31,11 +31,28 @@ export function PropertyForm({ onSubmit, loading, defaultValues }: PropertyFormP
     },
   });
 
-  const { register, handleSubmit, setValue, watch, formState: { errors } } = form;
-  const propertyType = watch("propertyType");
-  const addressVal   = watch("address") ?? "";
+  const { register, handleSubmit, setValue, watch, reset, formState: { errors } } = form;
+  const propertyType  = watch("propertyType");
+  const addressVal    = watch("address") ?? "";
   const postalCodeVal = watch("postalCode") ?? "";
-  const dpeLetter    = watch("dpeLetter");
+  const dpeLetter     = watch("dpeLetter");
+  const conditionVal  = watch("condition");
+  const mitoyenneteVal = watch("mitoyennete");
+  const orientationVal = watch("orientation");
+  const viewVal        = watch("view");
+
+  // Synchronise le formulaire si les defaultValues changent après le premier rendu
+  useEffect(() => {
+    if (defaultValues) {
+      reset({
+        condition: "AVERAGE",
+        hasParking: false, hasGarage: false, hasBalcony: false,
+        hasTerrace: false, hasCellar: false, hasPool: false, hasElevator: false,
+        ...defaultValues,
+      });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [defaultValues]);
 
   // ── DPE auto-fetch (Pappers Immobilier) ────────────────────────────────────
   const [dpeFetched, setDpeFetched]     = useState<"dpe" | "year" | "both" | null>(null);
@@ -111,7 +128,7 @@ export function PropertyForm({ onSubmit, loading, defaultValues }: PropertyFormP
         <CardContent className="grid grid-cols-2 md:grid-cols-3 gap-4">
           <div className="space-y-1">
             <Label>Type de bien</Label>
-            <Select onValueChange={(v) => setValue("propertyType", v as never)} defaultValue={defaultValues?.propertyType}>
+            <Select onValueChange={(v) => setValue("propertyType", v as never)} value={propertyType ?? ""}>
               <SelectTrigger><SelectValue placeholder="Sélectionner..." /></SelectTrigger>
               <SelectContent>{PROPERTY_TYPE_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
             </Select>
@@ -126,7 +143,7 @@ export function PropertyForm({ onSubmit, loading, defaultValues }: PropertyFormP
 
           <div className="space-y-1">
             <Label>État général</Label>
-            <Select onValueChange={(v) => setValue("condition", v as never)} defaultValue={defaultValues?.condition ?? "AVERAGE"}>
+            <Select onValueChange={(v) => setValue("condition", v as never)} value={conditionVal ?? "AVERAGE"}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>{CONDITION_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
             </Select>
@@ -180,7 +197,7 @@ export function PropertyForm({ onSubmit, loading, defaultValues }: PropertyFormP
               <Label>Mitoyenneté</Label>
               <Select
                 onValueChange={(v) => setValue("mitoyennete", v as never)}
-                defaultValue={defaultValues?.mitoyennete}
+                value={mitoyenneteVal ?? ""}
               >
                 <SelectTrigger><SelectValue placeholder="Type de maison" /></SelectTrigger>
                 <SelectContent>
@@ -224,14 +241,14 @@ export function PropertyForm({ onSubmit, loading, defaultValues }: PropertyFormP
           </div>
           <div className="space-y-1">
             <Label>Orientation</Label>
-            <Select onValueChange={(v) => setValue("orientation", v as never)} defaultValue={defaultValues?.orientation}>
+            <Select onValueChange={(v) => setValue("orientation", v as never)} value={orientationVal ?? ""}>
               <SelectTrigger><SelectValue placeholder="Orientation" /></SelectTrigger>
               <SelectContent>{ORIENTATION_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
             </Select>
           </div>
           <div className="space-y-1">
             <Label>Vue</Label>
-            <Select onValueChange={(v) => setValue("view", v)} defaultValue={defaultValues?.view}>
+            <Select onValueChange={(v) => setValue("view", v)} value={viewVal ?? ""}>
               <SelectTrigger><SelectValue placeholder="Type de vue" /></SelectTrigger>
               <SelectContent>{VIEW_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
             </Select>
