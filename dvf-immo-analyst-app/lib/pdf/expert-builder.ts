@@ -44,7 +44,7 @@ import { PDFDocument } from "pdf-lib";
     cp.drawRectangle({ x: 0, y: 0, width: PAGE_W, height: PAGE_H, color: C.coverBg });
     cp.drawRectangle({ x: 0, y: PAGE_H - 120, width: PAGE_W, height: 120, color: C.blue });
     cp.drawText("ESTIM’74 - HAUTE-SAVOIE (74) - DONNÉES DVF DGFiP 2014-2024", { x: ML, y: PAGE_H - 48, font: fonts.regular, size: FS.micro, color: C.white, opacity: 0.6 });
-    cp.drawText("RAPPORT D’EXPERTISE", { x: ML, y: PAGE_H - 86, font: fonts.bold, size: 26, color: C.white });
+    cp.drawText("AVIS DE VALEUR — RAPPORT D’EXPERTISE", { x: ML, y: PAGE_H - 86, font: fonts.bold, size: 20, color: C.white });
     cp.drawLine({ start: { x: ML, y: PAGE_H - 108 }, end: { x: PAGE_W - MR, y: PAGE_H - 108 }, color: C.white, thickness: 0.5, opacity: 0.3 });
     cp.drawText(propertyLabel.toUpperCase(), { x: ML, y: PAGE_H - 130, font: fonts.bold, size: FS.small, color: C.darkBlue });
     const addr = san([normalizeAddr(a.address as string), a.postalCode, a.city].filter(Boolean).join(", ") || "Adresse non renseignée");
@@ -62,6 +62,12 @@ import { PDFDocument } from "pdf-lib";
     cp.drawText(today, { x: ML, y: 63, font: fonts.bold, size: 13, color: C.dark });
     cp.drawText("RÉFÉRENCE", { x: PAGE_W - MR - 90, y: 80, font: fonts.bold, size: FS.micro, color: C.gray });
     cp.drawText(refId, { x: PAGE_W - MR - 90, y: 63, font: fonts.bold, size: 13, color: C.dark });
+    const clientParts = [a.clientFirstName, a.clientLastName].filter(Boolean).join(" ");
+    const clientLine = [clientParts, a.clientEmail as string, a.clientPhone as string].filter(Boolean).map((v) => san(v as string)).join("  —  ");
+    if (clientLine) {
+      cp.drawText("PRÉPARÉ POUR :", { x: PAGE_W / 2, y: 80, font: fonts.bold, size: FS.micro, color: C.gray });
+      cp.drawText(clientLine, { x: PAGE_W / 2, y: 63, font: fonts.bold, size: FS.small, color: C.dark });
+    }
 
     // ═══════════ PAGE 2: ESTIMATION + AJUSTEMENTS ════════════════════════
     w.addPage();

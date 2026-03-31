@@ -55,6 +55,12 @@ model Analysis {
   confidence      Float?
   confidenceLabel String?
 
+  // Destinataire de l'avis de valeur
+  clientFirstName String?
+  clientLastName  String?
+  clientEmail     String?
+  clientPhone     String?
+
   // Géocodage
   geoScore      Float?
   geoQuality    String?

@@ -6,7 +6,7 @@ export const PAGE_H = 841.89;
 export const ML = 40;  // margin left
 export const MR = 40;  // margin right
 export const MT = 44;  // margin top
-export const MB = 48;  // margin bottom
+export const MB = 76;  // margin bottom (footer area: ~55 pts for agent info)
 export const CW = PAGE_W - ML - MR; // content width = 515.28pt
 
 // ─── Color palette ────────────────────────────────────────────────────────────
@@ -251,15 +251,43 @@ export class Writer {
     this.y -= FS.body * 1.6;
   }
 
-  /** Draw footer on current page */
+  /** Draw footer on current page — agent info + IAD logo placeholder */
   footer(ref: string, today: string): void {
-    const fy = MB - 14;
-    this.hline(ML, fy + 10, CW, C.border);
-    this.text(
-      "ESTIM\u201974 - Estimation fond\u00E9e sur les prix sign\u00E9s DVF - Source DGFiP 2014-2024 - Usage professionnel",
-      ML, fy, this.fonts.italic, FS.micro, C.lightGray
-    );
-    this.textRight(`Ref. ${ref} - ${today}`, ML + CW, fy, this.fonts.regular, FS.micro, C.lightGray);
+    const fy = MB; // y of separator = 76 pts from bottom
+
+    // ── Separator ────────────────────────────────────────────────────────
+    this.hline(ML, fy, CW, C.border, 0.5);
+
+    // ── Photo placeholder (30×30) at far left ────────────────────────────
+    const photoX = ML;
+    const photoY = fy - 38;
+    this.rectStroke(photoX, photoY, 30, 30, C.lightGray, 0.5);
+    const photoTxt = "Photo";
+    const ptw = this.fonts.regular.widthOfTextAtSize(photoTxt, FS.micro);
+    this.page.drawText(photoTxt, { x: photoX + (30 - ptw) / 2, y: photoY + 11, font: this.fonts.regular, size: FS.micro, color: C.lightGray });
+
+    // ── Agent name / contact ──────────────────────────────────────────────
+    const aX = ML + 36;
+    this.page.drawText("Aur\u00E9lie LIVERSET", { x: aX, y: fy - 12, font: this.fonts.bold, size: FS.micro, color: C.dark });
+    this.page.drawText("aurelie.liverset@iadfrance.fr  |  07 82 72 78 83", { x: aX, y: fy - 22, font: this.fonts.regular, size: FS.micro, color: C.gray });
+    this.page.drawText("Conseill\u00E8re IAD France - Haute-Savoie (74)", { x: aX, y: fy - 32, font: this.fonts.italic, size: FS.micro, color: C.lightGray });
+
+    // ── ESTIM'74 ref note ─────────────────────────────────────────────────
+    this.page.drawText("ESTIM\u201974 - Donn\u00E9es DVF DGFiP 2014-2024 - Usage professionnel", { x: aX, y: fy - 44, font: this.fonts.italic, size: 6, color: C.lightGray });
+
+    // ── IAD logo placeholder (60×20) at right ────────────────────────────
+    const logoW = 64; const logoH = 22;
+    const logoX = PAGE_W - MR - logoW;
+    const logoY = fy - 28;
+    this.rectStroke(logoX, logoY, logoW, logoH, C.lightGray, 0.5);
+    const logoTxt = "IAD logo";
+    const ltw = this.fonts.regular.widthOfTextAtSize(logoTxt, FS.micro);
+    this.page.drawText(logoTxt, { x: logoX + (logoW - ltw) / 2, y: logoY + 8, font: this.fonts.regular, size: FS.micro, color: C.lightGray });
+
+    // ── Ref + date (right-aligned) ────────────────────────────────────────
+    if (ref && ref !== "...") {
+      this.textRight(`R\u00E9f. ${ref} - ${today}`, ML + CW, fy - 46, this.fonts.regular, FS.micro, C.lightGray);
+    }
   }
 
   /** Move cursor down by n points */

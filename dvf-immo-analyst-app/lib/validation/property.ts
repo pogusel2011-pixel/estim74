@@ -57,6 +57,12 @@ export const propertySchema = z.object({
   orientation: z.enum(["N", "NE", "E", "SE", "S", "SO", "O", "NO"]).optional(),
   view: z.string().optional(),
   mitoyennete: z.enum(["individuelle", "mitoyenne_un_cote", "mitoyenne_deux_cotes"]).optional(),
+
+  // Destinataire de l'avis de valeur (optionnel)
+  clientFirstName: z.string().optional().or(z.literal("")).transform((v) => v === "" ? undefined : v),
+  clientLastName:  z.string().optional().or(z.literal("")).transform((v) => v === "" ? undefined : v),
+  clientEmail:     z.string().optional().or(z.literal("")).transform((v) => v === "" ? undefined : v),
+  clientPhone:     z.string().optional().or(z.literal("")).transform((v) => v === "" ? undefined : v),
 });
 
 export type PropertyFormValues = z.infer<typeof propertySchema>;

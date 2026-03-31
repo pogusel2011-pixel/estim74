@@ -74,7 +74,7 @@ import { PDFDocument } from "pdf-lib";
     cp.drawRectangle({ x: 0, y: 0, width: PAGE_W, height: PAGE_H, color: C.coverBg });
     cp.drawRectangle({ x: 0, y: PAGE_H - 190, width: PAGE_W, height: 190, color: C.blue });
     cp.drawText("ESTIM’74", { x: ML, y: PAGE_H - 58, font: fonts.bold, size: 34, color: C.white });
-    cp.drawText("Estimation immobilière - Haute-Savoie (74)", { x: ML, y: PAGE_H - 76, font: fonts.regular, size: FS.small, color: C.darkBlue });
+    cp.drawText("Avis de Valeur — Haute-Savoie (74)", { x: ML, y: PAGE_H - 76, font: fonts.regular, size: FS.small, color: C.darkBlue });
     cp.drawLine({ start: { x: ML, y: PAGE_H - 93 }, end: { x: PAGE_W - MR, y: PAGE_H - 93 }, color: C.borderBlue, thickness: 0.5 });
     cp.drawText("RAPPORT D'ESTIMATION", { x: ML, y: PAGE_H - 116, font: fonts.bold, size: FS.small, color: C.gray });
     cp.drawText(propertyLabel.toUpperCase(), { x: ML, y: PAGE_H - 132, font: fonts.regular, size: FS.small, color: C.darkBlue });
@@ -90,7 +90,15 @@ import { PDFDocument } from "pdf-lib";
     cp.drawText("Date du rapport", { x: ML, y: bY + 36, font: fonts.bold, size: FS.micro, color: C.gray });
     cp.drawText(today, { x: ML, y: bY + 20, font: fonts.bold, size: FS.body, color: C.dark });
     cp.drawText("Préparé par :", { x: ML, y: bY + 1, font: fonts.regular, size: FS.body, color: C.gray });
+    cp.drawText(san("Aurélie LIVERSET — aurelie.liverset@iadfrance.fr — 07 82 72 78 83"), { x: ML + 80, y: bY + 1, font: fonts.bold, size: FS.small, color: C.dark });
     cp.drawLine({ start: { x: ML + 70, y: bY - 1 }, end: { x: ML + 260, y: bY - 1 }, color: C.borderBlue, thickness: 1 });
+    const clientParts = [a.clientFirstName, a.clientLastName].filter(Boolean).join(" ");
+    const clientLine = [clientParts, a.clientEmail as string, a.clientPhone as string].filter(Boolean).map((v) => san(v as string)).join(" — ");
+    if (clientLine) {
+      const cY = bY + 20;
+      cp.drawText("Préparé pour :", { x: ML, y: cY, font: fonts.regular, size: FS.body, color: C.gray });
+      cp.drawText(san(clientLine), { x: ML + 80, y: cY, font: fonts.bold, size: FS.small, color: C.dark });
+    }
 
     // ═══════════ PAGE 2: ESTIMATION + POINTS FORTS/VIGILANCES ════════════
     w.addPage();

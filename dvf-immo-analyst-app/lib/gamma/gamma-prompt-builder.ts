@@ -216,6 +216,10 @@ export function buildGammaExpertPrompt(input: GammaPromptInput): string {
   }
 
   lines.push(`---`);
+  lines.push(`**CONSEILLÈRE :** Aurélie LIVERSET`);
+  lines.push(`aurelie.liverset@iadfrance.fr — 07 82 72 78 83`);
+  lines.push(`IAD France — Haute-Savoie (74)`);
+  lines.push(``);
   lines.push(`*Données ESTIM'74 — Haute-Savoie (74) — DVF 2014–2024*`);
 
   return lines.join("\n");
@@ -338,6 +342,10 @@ export function buildGammaClientPrompt(input: GammaPromptInput): string {
 
   lines.push(``);
   lines.push(`---`);
+  lines.push(`**CONSEILLÈRE :** Aurélie LIVERSET`);
+  lines.push(`aurelie.liverset@iadfrance.fr — 07 82 72 78 83`);
+  lines.push(`IAD France — Haute-Savoie (74)`);
+  lines.push(``);
   lines.push(`*Estimation ESTIM'74 — Confidentiel — Document réservé au propriétaire*`);
 
   return lines.join("\n");
