@@ -137,8 +137,8 @@ export function buildGammaExpertPrompt(input: GammaPromptInput, baseUrl?: string
   if (condition) lines.push(`État : ${CONDITION_LABELS[condition] ?? condition}`);
   if (dpeLetter) lines.push(`DPE : ${dpeLetter}`);
   if (landSurface) lines.push(`Terrain : ${landSurface.toLocaleString("fr-FR")} m²`);
-  if (mitoyennete && mitoyennete !== "NONE") {
-    const mitoLabel = mitoyennete === "ONE_SIDE" ? "Mitoyen 1 côté" : "Mitoyen 2 côtés";
+  if (mitoyennete && mitoyennete !== "individuelle") {
+    const mitoLabel = mitoyennete === "mitoyenne_un_cote" ? "Mitoyenne d'un côté" : "Mitoyenne des deux côtés";
     lines.push(`Mitoyenneté : ${mitoLabel}`);
   }
   if (orientation) lines.push(`Orientation : ${orientation}`);
