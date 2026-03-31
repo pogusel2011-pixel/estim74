@@ -1,4 +1,6 @@
-import { PDFDocument, PDFPage, PDFFont, StandardFonts, rgb, Color } from "pdf-lib";
+import { PDFDocument, PDFPage, PDFFont, PDFImage, StandardFonts, rgb, Color } from "pdf-lib";
+import fs from "fs";
+import path from "path";
 
 // ─── A4 dimensions & layout constants ────────────────────────────────────────
 export const PAGE_W = 595.28;
@@ -165,10 +167,31 @@ export class Writer {
   fonts: Fonts;
   page!: PDFPage;
   y!: number; // current cursor (pdf coord, bottom-up)
+  agentPhoto: PDFImage | null = null;
+  iadLogo: PDFImage | null = null;
 
   constructor(pdf: PDFDocument, fonts: Fonts) {
     this.pdf = pdf;
     this.fonts = fonts;
+  }
+
+  /** Embed agent photo and IAD logo from local asset files (call once per document) */
+  async initImages(): Promise<void> {
+    try {
+      const assetsDir = path.join(process.cwd(), "lib/pdf/assets");
+      const photoB64 = fs.readFileSync(path.join(assetsDir, "agent-photo.b64"), "utf8").trim();
+      const logoB64 = fs.readFileSync(path.join(assetsDir, "iad-logo.b64"), "utf8").trim();
+      const photoBuf = Buffer.from(photoB64, "base64");
+      const logoBuf = Buffer.from(logoB64, "base64");
+      [this.agentPhoto, this.iadLogo] = await Promise.all([
+        this.pdf.embedJpg(photoBuf),
+        this.pdf.embedJpg(logoBuf),
+      ]);
+    } catch {
+      // If assets not found, footer falls back to placeholder boxes
+      this.agentPhoto = null;
+      this.iadLogo = null;
+    }
   }
 
   addPage(): PDFPage {
@@ -251,42 +274,52 @@ export class Writer {
     this.y -= FS.body * 1.6;
   }
 
-  /** Draw footer on current page — agent info + IAD logo placeholder */
+  /** Draw footer on current page — agent photo + contact + IAD logo */
   footer(ref: string, today: string): void {
     const fy = MB; // y of separator = 76 pts from bottom
 
     // ── Separator ────────────────────────────────────────────────────────
     this.hline(ML, fy, CW, C.border, 0.5);
 
-    // ── Photo placeholder (30×30) at far left ────────────────────────────
+    // ── Agent photo (40×40 square) at far left ───────────────────────────
+    const photoSize = 40;
     const photoX = ML;
-    const photoY = fy - 38;
-    this.rectStroke(photoX, photoY, 30, 30, C.lightGray, 0.5);
-    const photoTxt = "Photo";
-    const ptw = this.fonts.regular.widthOfTextAtSize(photoTxt, FS.micro);
-    this.page.drawText(photoTxt, { x: photoX + (30 - ptw) / 2, y: photoY + 11, font: this.fonts.regular, size: FS.micro, color: C.lightGray });
+    const photoY = fy - photoSize - 6;
+
+    if (this.agentPhoto) {
+      this.page.drawImage(this.agentPhoto, { x: photoX, y: photoY, width: photoSize, height: photoSize });
+    } else {
+      this.rectStroke(photoX, photoY, photoSize, photoSize, C.lightGray, 0.5);
+      const ptw = this.fonts.regular.widthOfTextAtSize("Photo", FS.micro);
+      this.page.drawText("Photo", { x: photoX + (photoSize - ptw) / 2, y: photoY + 16, font: this.fonts.regular, size: FS.micro, color: C.lightGray });
+    }
 
     // ── Agent name / contact ──────────────────────────────────────────────
-    const aX = ML + 36;
-    this.page.drawText("Aur\u00E9lie LIVERSET", { x: aX, y: fy - 12, font: this.fonts.bold, size: FS.micro, color: C.dark });
-    this.page.drawText("aurelie.liverset@iadfrance.fr  |  07 82 72 78 83", { x: aX, y: fy - 22, font: this.fonts.regular, size: FS.micro, color: C.gray });
-    this.page.drawText("Conseill\u00E8re IAD France - Haute-Savoie (74)", { x: aX, y: fy - 32, font: this.fonts.italic, size: FS.micro, color: C.lightGray });
+    const aX = ML + photoSize + 6;
+    this.page.drawText("Aur\u00E9lie LIVERSET", { x: aX, y: fy - 14, font: this.fonts.bold, size: FS.micro, color: C.dark });
+    this.page.drawText("aurelie.liverset@iadfrance.fr  |  07 82 72 78 83", { x: aX, y: fy - 25, font: this.fonts.regular, size: FS.micro, color: C.gray });
+    this.page.drawText("Conseill\u00E8re IAD France - Haute-Savoie (74)", { x: aX, y: fy - 36, font: this.fonts.italic, size: FS.micro, color: C.lightGray });
+    this.page.drawText("ESTIM\u201974 - Donn\u00E9es DVF DGFiP 2014-2024 - Usage professionnel", { x: aX, y: fy - 47, font: this.fonts.italic, size: 6, color: C.lightGray });
 
-    // ── ESTIM'74 ref note ─────────────────────────────────────────────────
-    this.page.drawText("ESTIM\u201974 - Donn\u00E9es DVF DGFiP 2014-2024 - Usage professionnel", { x: aX, y: fy - 44, font: this.fonts.italic, size: 6, color: C.lightGray });
-
-    // ── IAD logo placeholder (60×20) at right ────────────────────────────
-    const logoW = 64; const logoH = 22;
+    // ── IAD logo (right-aligned, ~50pt tall) ─────────────────────────────
+    const logoH = 50;
+    const logoW = this.iadLogo
+      ? Math.round(logoH * (this.iadLogo.width / this.iadLogo.height))
+      : 70;
     const logoX = PAGE_W - MR - logoW;
-    const logoY = fy - 28;
-    this.rectStroke(logoX, logoY, logoW, logoH, C.lightGray, 0.5);
-    const logoTxt = "IAD logo";
-    const ltw = this.fonts.regular.widthOfTextAtSize(logoTxt, FS.micro);
-    this.page.drawText(logoTxt, { x: logoX + (logoW - ltw) / 2, y: logoY + 8, font: this.fonts.regular, size: FS.micro, color: C.lightGray });
+    const logoY = fy - logoH - 4;
 
-    // ── Ref + date (right-aligned) ────────────────────────────────────────
+    if (this.iadLogo) {
+      this.page.drawImage(this.iadLogo, { x: logoX, y: logoY, width: logoW, height: logoH });
+    } else {
+      this.rectStroke(logoX, logoY, logoW, 22, C.lightGray, 0.5);
+      const ltw = this.fonts.regular.widthOfTextAtSize("IAD logo", FS.micro);
+      this.page.drawText("IAD logo", { x: logoX + (logoW - ltw) / 2, y: logoY + 8, font: this.fonts.regular, size: FS.micro, color: C.lightGray });
+    }
+
+    // ── Ref + date (right-aligned, above logo) ───────────────────────────
     if (ref && ref !== "...") {
-      this.textRight(`R\u00E9f. ${ref} - ${today}`, ML + CW, fy - 46, this.fonts.regular, FS.micro, C.lightGray);
+      this.textRight(`R\u00E9f. ${ref} - ${today}`, PAGE_W - MR, fy - 58, this.fonts.regular, FS.micro, C.lightGray);
     }
   }
 

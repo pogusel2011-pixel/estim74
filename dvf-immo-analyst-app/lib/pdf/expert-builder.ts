@@ -38,6 +38,7 @@ import { PDFDocument } from "pdf-lib";
     const pdf = await PDFDocument.create();
     const fonts = await loadFonts(pdf);
     const w = new Writer(pdf, fonts);
+    await w.initImages();
 
     // ═══════════ COVER ═══════════════════════════════════════════════════
     const cp = w.addPage();
