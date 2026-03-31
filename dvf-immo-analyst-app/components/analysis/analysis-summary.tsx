@@ -1,7 +1,7 @@
 import { formatDate } from "@/lib/utils";
-import { PROPERTY_TYPE_LABELS, CONDITION_LABELS } from "@/lib/constants";
+import { PROPERTY_TYPE_LABELS, CONDITION_LABELS, DPE_COLORS } from "@/lib/constants";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Home, Calendar, Ruler } from "lucide-react";
+import { MapPin, Calendar } from "lucide-react";
 
 function normalizeAddr(s: string | null | undefined): string {
   if (!s) return "";
@@ -15,28 +15,55 @@ export function AnalysisSummaryPanel({ analysis }: Props) {
   const statusVariant = status === "COMPLETE" ? "success" : status === "ARCHIVED" ? "secondary" : "outline";
   const statusLabel = status === "COMPLETE" ? "Complète" : status === "ARCHIVED" ? "Archivée" : "Brouillon";
 
+  const fullAddress = [
+    normalizeAddr(analysis.address as string),
+    [analysis.postalCode, analysis.city].filter(Boolean).join(" "),
+  ].filter(Boolean).join(", ") || "Adresse non renseignée";
+
+  const dpeLetter = analysis.dpeLetter as string | null | undefined;
+  const dpeColor = dpeLetter ? DPE_COLORS[dpeLetter] : undefined;
+
+  const chips: { label: string; accent?: string }[] = [
+    { label: PROPERTY_TYPE_LABELS[analysis.propertyType as string] ?? (analysis.propertyType as string) },
+    ...(analysis.surface ? [{ label: `${analysis.surface} m²` }] : []),
+    ...(analysis.rooms ? [{ label: `${analysis.rooms} pièce${(analysis.rooms as number) > 1 ? "s" : ""}` }] : []),
+    ...(analysis.bedrooms ? [{ label: `${analysis.bedrooms} ch.` }] : []),
+    ...(analysis.condition ? [{ label: CONDITION_LABELS[analysis.condition as string] ?? (analysis.condition as string) }] : []),
+    ...(analysis.yearBuilt ? [{ label: `Construit ${analysis.yearBuilt}` }] : []),
+  ];
+
   return (
-    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-      <div className="space-y-2">
-        <div className="flex items-center gap-2">
-          <Badge variant={statusVariant as never}>{statusLabel}</Badge>
-          <Badge variant="outline">{PROPERTY_TYPE_LABELS[analysis.propertyType as string] ?? analysis.propertyType as string}</Badge>
-        </div>
-        <h1 className="text-xl font-bold tracking-tight flex items-center gap-2">
-          <MapPin className="h-4 w-4 text-muted-foreground shrink-0" />
-          {[
-            normalizeAddr(analysis.address as string),
-            [analysis.postalCode, analysis.city].filter(Boolean).join(" "),
-          ].filter(Boolean).join(", ")}
-        </h1>
-        <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-          <span className="flex items-center gap-1"><Ruler className="h-3.5 w-3.5" />{analysis.surface as number} m²</span>
-          {!!analysis.rooms && <span className="flex items-center gap-1"><Home className="h-3.5 w-3.5" />{analysis.rooms as number} pièces</span>}
-          <span className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5" />{formatDate(analysis.createdAt as string)}</span>
-          {!!analysis.yearBuilt && <span>Construit en {analysis.yearBuilt as number}</span>}
-          {!!analysis.condition && <span>{CONDITION_LABELS[analysis.condition as string]}</span>}
-          {!!analysis.dpeLetter && <span className="font-medium">DPE {analysis.dpeLetter as string}</span>}
-        </div>
+    <div className="space-y-2.5">
+      <div className="flex items-center gap-2 flex-wrap">
+        <Badge variant={statusVariant as never}>{statusLabel}</Badge>
+        <span className="text-xs text-muted-foreground flex items-center gap-1">
+          <Calendar className="h-3 w-3" />
+          {formatDate(analysis.createdAt as string)}
+        </span>
+      </div>
+
+      <h1 className="text-2xl font-bold tracking-tight flex items-start gap-2 leading-tight">
+        <MapPin className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+        <span>{fullAddress}</span>
+      </h1>
+
+      <div className="flex flex-wrap gap-1.5 items-center">
+        {chips.map((chip, i) => (
+          <span
+            key={i}
+            className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-muted/70 text-foreground border border-border/60"
+          >
+            {chip.label}
+          </span>
+        ))}
+        {dpeLetter && dpeColor && (
+          <span
+            className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border"
+            style={{ backgroundColor: dpeColor + "22", color: dpeColor, borderColor: dpeColor + "55" }}
+          >
+            DPE {dpeLetter}
+          </span>
+        )}
       </div>
     </div>
   );

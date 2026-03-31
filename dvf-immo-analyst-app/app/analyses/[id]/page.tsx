@@ -221,9 +221,9 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
   const geoScore = serialized.geoScore as number | null | undefined;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-0">
       {/* Breadcrumb / retour */}
-      <div className="flex items-center gap-2">
+      <div className="pb-4">
         <Button asChild variant="ghost" size="sm" className="gap-1.5 text-muted-foreground hover:text-foreground -ml-2">
           <Link href="/analyses">
             <ArrowLeft className="h-4 w-4" />
@@ -234,7 +234,7 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
 
       {/* Bannière qualité géocodage */}
       {geoQuality === "warning" && (
-        <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+        <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 mb-4">
           <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5 text-amber-500" />
           <div>
             <p className="font-medium">⚠️ Adresse approximative — vérifier les coordonnées</p>
@@ -246,7 +246,7 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
         </div>
       )}
       {geoQuality === "error" && (
-        <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+        <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 mb-4">
           <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5 text-red-500" />
           <div>
             <p className="font-medium">Adresse non trouvée — vérifiez l'adresse saisie</p>
@@ -258,104 +258,64 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
         </div>
       )}
 
-      {/* En-tête */}
-      <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div className="flex-1 min-w-0">
-          <AnalysisSummaryPanel analysis={serialized} />
-        </div>
-        <div className="flex items-start gap-2 shrink-0 flex-wrap justify-end">
-          <ResimulateButton analysisId={serialized.id as string} />
-          <GptAnalyzeButton analysisId={serialized.id as string} />
-          <PdfExportButtons analysisId={serialized.id as string} />
-          <GammaButtons expertPrompt={gammaExpertPrompt} clientPrompt={gammaClientPrompt} />
+      {/* ── En-tête bien + actions ─────────────────────────────────────────── */}
+      <div className="rounded-xl bg-[#F8FAFC] border border-border/50 px-5 py-5 mb-6 shadow-sm">
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div className="flex-1 min-w-0">
+            <AnalysisSummaryPanel analysis={serialized} />
+          </div>
+          <div className="flex items-start gap-2 shrink-0 flex-wrap justify-end">
+            <ResimulateButton analysisId={serialized.id as string} />
+            <GptAnalyzeButton analysisId={serialized.id as string} />
+            <PdfExportButtons analysisId={serialized.id as string} />
+            <GammaButtons expertPrompt={gammaExpertPrompt} clientPrompt={gammaClientPrompt} />
+          </div>
         </div>
       </div>
 
-      {/* Valorisation */}
-      <ValuationCards
-        low={serialized.valuationLow as number | null}
-        mid={serialized.valuationMid as number | null}
-        high={serialized.valuationHigh as number | null}
-        psm={serialized.valuationPsm as number | null}
-        confidence={serialized.confidence as number | null}
-        confidenceLabel={serialized.confidenceLabel as string | null}
-        adjustments={safeAdjustments}
-        dvfSampleSize={serialized.dvfSampleSize as number | null}
-        perimeterKm={perimeterKm}
-        confidenceFactors={confidenceFactors}
-      />
+      {/* ── Valorisation ──────────────────────────────────────────────────── */}
+      <div className="mb-6">
+        <ValuationCards
+          low={serialized.valuationLow as number | null}
+          mid={serialized.valuationMid as number | null}
+          high={serialized.valuationHigh as number | null}
+          psm={serialized.valuationPsm as number | null}
+          confidence={serialized.confidence as number | null}
+          confidenceLabel={serialized.confidenceLabel as string | null}
+          adjustments={safeAdjustments}
+          dvfSampleSize={serialized.dvfSampleSize as number | null}
+          perimeterKm={perimeterKm}
+          confidenceFactors={confidenceFactors}
+        />
+      </div>
 
       {/* Proximité équipements */}
-      <ProximityBadges adjustments={safeAdjustments} />
+      <div className="mb-4">
+        <ProximityBadges adjustments={safeAdjustments} />
+      </div>
 
       {/* Prix d'annonce conseillé */}
       {serialized.valuationMid ? (
-        <ListingPriceCard
-          listingPriceLow={Math.round((serialized.valuationMid as number) * 1.02)}
-          listingPriceHigh={Math.round((serialized.valuationMid as number) * 1.03)}
-        />
+        <div className="mb-6">
+          <ListingPriceCard
+            listingPriceLow={Math.round((serialized.valuationMid as number) * 1.02)}
+            listingPriceHigh={Math.round((serialized.valuationMid as number) * 1.03)}
+          />
+        </div>
       ) : null}
 
-      {/* Tabs secondaires */}
-      <Tabs defaultValue="dvf" className="w-full">
-        <TabsList className="grid grid-cols-5 w-full max-w-2xl">
-          <TabsTrigger value="dvf">DVF</TabsTrigger>
-          <TabsTrigger value="listings">Annonces</TabsTrigger>
-          <TabsTrigger value="market">Marché</TabsTrigger>
-          <TabsTrigger value="methode">Méthode</TabsTrigger>
-          <TabsTrigger value="gpt">IA</TabsTrigger>
+      {/* ── Onglets ───────────────────────────────────────────────────────── */}
+      <Tabs defaultValue="market" className="w-full">
+        <TabsList className="grid grid-cols-5 w-full max-w-3xl h-10">
+          <TabsTrigger value="market" className="text-xs sm:text-sm">Marché</TabsTrigger>
+          <TabsTrigger value="signed" className="text-xs sm:text-sm">Ventes signées</TabsTrigger>
+          <TabsTrigger value="active" className="text-xs sm:text-sm">Marché actif</TabsTrigger>
+          <TabsTrigger value="methode" className="text-xs sm:text-sm">Calcul détaillé</TabsTrigger>
+          <TabsTrigger value="gpt" className="text-xs sm:text-sm">Analyse IA</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="dvf" className="space-y-4 mt-4">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            <DVFStatsPanel
-              stats={dvfStats}
-              sampleSize={serialized.dvfSampleSize as number | null}
-              perimeterKm={perimeterKm}
-              requestedRadiusKm={requestedRadiusKm}
-            />
-            <div className="lg:col-span-2">
-              {serialized.lat && serialized.lng ? (
-                <Card className="flex-1 h-full">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm flex items-center gap-2">
-                      <MapPin className="h-4 w-4 text-primary" />
-                      Transactions comparables{perimeterKm ? ` • Périmètre ${perimeterKm} km` : ""}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-3" style={{ height: 310 }}>
-                    <DVFComparablesMapDynamic
-                      comparables={dvfComparables}
-                      subjectLat={serialized.lat as number}
-                      subjectLng={serialized.lng as number}
-                      perimeterKm={perimeterKm}
-                    />
-                  </CardContent>
-                </Card>
-              ) : (
-                <Card className="flex-1">
-                  <CardContent className="pt-6 text-center text-sm text-muted-foreground">
-                    Coordonnées non disponibles
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          </div>
-          <DVFComparablesTable
-            comparables={dvfComparables}
-            hasLiveData={dvfComparables.some((c) => c.source === "live")}
-          />
-        </TabsContent>
-
-        <TabsContent value="listings" className="space-y-4 mt-4">
-          <ActiveListingsPanel
-            listings={safeListings}
-            apiAvailable={apiAvailable}
-          />
-          <DVFRecentSalesPanel comparables={dvfComparables} />
-        </TabsContent>
-
-        <TabsContent value="market" className="space-y-4 mt-4">
+        {/* ── 1. Marché ── */}
+        <TabsContent value="market" className="space-y-4 mt-5">
           <MarketReading marketReading={safeMarketReading} dvfMedianPsm={dvfStats?.medianPsm ?? null} propertyType={serialized.propertyType as string | undefined} />
           <DeptBenchmarkPanel
             benchmark={deptBenchmark}
@@ -375,7 +335,59 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
           />
         </TabsContent>
 
-        <TabsContent value="methode" className="space-y-4 mt-4">
+        {/* ── 2. Ventes signées (ex DVF) ── */}
+        <TabsContent value="signed" className="space-y-4 mt-5">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <DVFStatsPanel
+              stats={dvfStats}
+              sampleSize={serialized.dvfSampleSize as number | null}
+              perimeterKm={perimeterKm}
+              requestedRadiusKm={requestedRadiusKm}
+            />
+            <div className="lg:col-span-2">
+              {serialized.lat && serialized.lng ? (
+                <Card className="flex-1 h-full shadow-sm">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <MapPin className="h-4 w-4 text-primary" />
+                      Transactions comparables{perimeterKm ? ` • Périmètre ${perimeterKm} km` : ""}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-3" style={{ height: 310 }}>
+                    <DVFComparablesMapDynamic
+                      comparables={dvfComparables}
+                      subjectLat={serialized.lat as number}
+                      subjectLng={serialized.lng as number}
+                      perimeterKm={perimeterKm}
+                    />
+                  </CardContent>
+                </Card>
+              ) : (
+                <Card className="flex-1 shadow-sm">
+                  <CardContent className="pt-6 text-center text-sm text-muted-foreground">
+                    Coordonnées non disponibles
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          </div>
+          <DVFComparablesTable
+            comparables={dvfComparables}
+            hasLiveData={dvfComparables.some((c) => c.source === "live")}
+          />
+        </TabsContent>
+
+        {/* ── 3. Marché actif (ex Annonces) ── */}
+        <TabsContent value="active" className="space-y-4 mt-5">
+          <ActiveListingsPanel
+            listings={safeListings}
+            apiAvailable={apiAvailable}
+          />
+          <DVFRecentSalesPanel comparables={dvfComparables} />
+        </TabsContent>
+
+        {/* ── 4. Calcul détaillé (ex Méthode) ── */}
+        <TabsContent value="methode" className="space-y-4 mt-5">
           <MethodeCalculPanel
             dvfStats={dvfStats}
             listings={safeListings}
@@ -388,7 +400,8 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
           />
         </TabsContent>
 
-        <TabsContent value="gpt" className="mt-4">
+        {/* ── 5. Analyse IA (ex IA) ── */}
+        <TabsContent value="gpt" className="mt-5">
           <GPTActionsPanel
             analysisId={serialized.id as string}
             initialOutputs={safeGptOutputs}
