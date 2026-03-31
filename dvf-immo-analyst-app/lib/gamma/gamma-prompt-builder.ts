@@ -1,6 +1,8 @@
 import { Adjustment } from "@/types/valuation";
 import { DVFStats } from "@/types/dvf";
 import { GPTOutput } from "@/types/gpt";
+import { MarketReading } from "@/types/analysis";
+import { ActiveListing } from "@/types/listing";
 
 function fmt(n: number | null | undefined): string {
   if (n == null) return "—";
@@ -16,6 +18,12 @@ function pct(factor: number): string {
   const p = Math.round(factor * 100);
   const sign = p >= 0 ? "+" : "";
   return `${sign}${p}%`;
+}
+
+function pctRaw(n: number | null | undefined): string {
+  if (n == null) return "—";
+  const sign = n >= 0 ? "+" : "";
+  return `${sign}${n.toFixed(1)} %`;
 }
 
 interface GammaPromptInput {
@@ -63,7 +71,6 @@ export function buildGammaExpertPrompt(input: GammaPromptInput): string {
   const valuationMid = serialized.valuationMid as number | null;
   const valuationHigh = serialized.valuationHigh as number | null;
   const valuationPsm = serialized.valuationPsm as number | null;
-  // confidence stocké 0.0–1.0 en base — conversion en points (0–100) pour l'affichage
   const confidenceRaw = serialized.confidence as number | null;
   const confidencePts = confidenceRaw != null ? Math.round(confidenceRaw * 100) : null;
   const confidenceLabel = serialized.confidenceLabel as string | null;
@@ -85,6 +92,15 @@ export function buildGammaExpertPrompt(input: GammaPromptInput): string {
   const proximityAdj = adjustments.filter(a => a.category === "proximity");
 
   const dvfSampleSize = serialized.dvfSampleSize as number | null;
+
+  const marketReading = serialized.marketReading as MarketReading | null | undefined;
+  const dvfControl = marketReading?.dvfControl;
+  const pappersStats = marketReading?.pappersStats;
+
+  const rawListings = serialized.listings;
+  const listings: ActiveListing[] = Array.isArray(rawListings)
+    ? (rawListings as ActiveListing[]).filter(l => !l.outlier).slice(0, 5)
+    : [];
 
   const lines: string[] = [];
 
@@ -127,7 +143,10 @@ export function buildGammaExpertPrompt(input: GammaPromptInput): string {
     }
     if (proximityAdj.length > 0) {
       lines.push(`**Équipements à proximité :**`);
-      proximityAdj.forEach(a => lines.push(`- ${a.label} : ${pct(a.factor)}`));
+      proximityAdj.forEach(a => {
+        const sign = a.factor >= 0 ? "+" : "";
+        lines.push(`- ${a.label} : ${sign}${Math.round(a.factor * 100)}%`);
+      });
     }
     lines.push(``);
   }
@@ -139,6 +158,51 @@ export function buildGammaExpertPrompt(input: GammaPromptInput): string {
     if (dvfStats.meanPsm != null) lines.push(`- Prix moyen : ${fmtPsm(dvfStats.meanPsm)}`);
     if (dvfStats.stdPsm != null) lines.push(`- Écart-type : ${fmtPsm(dvfStats.stdPsm)}`);
     if (dvfStats.minPsm != null && dvfStats.maxPsm != null) lines.push(`- Fourchette marché : ${fmtPsm(dvfStats.minPsm)} — ${fmtPsm(dvfStats.maxPsm)}`);
+    lines.push(``);
+  }
+
+  if (dvfControl) {
+    lines.push(`## CONTRÔLE DVF — DYNAMIQUE DE MARCHÉ`);
+    if (dvfControl.trend6m != null) lines.push(`- Tendance 6 mois : ${pctRaw(dvfControl.trend6m)} (${dvfControl.count6m ?? "—"} ventes)`);
+    if (dvfControl.trend12m != null) lines.push(`- Tendance 12 mois : ${pctRaw(dvfControl.trend12m)} (${dvfControl.count12m ?? "—"} ventes)`);
+    if (dvfControl.communeMedianPsm != null) lines.push(`- Médiane commune : ${fmtPsm(dvfControl.communeMedianPsm)}`);
+    if (dvfControl.deptMedianPsm != null) lines.push(`- Médiane Haute-Savoie (74) : ${fmtPsm(dvfControl.deptMedianPsm)}`);
+    if (dvfControl.divergencePct != null) {
+      const sign = dvfControl.divergencePct >= 0 ? "+" : "";
+      lines.push(`- Écart commune / département : ${sign}${dvfControl.divergencePct.toFixed(1)} %`);
+    }
+    lines.push(``);
+  }
+
+  if (pappersStats) {
+    const propertyType = serialized.propertyType as string;
+    const prixM2 =
+      propertyType === "APARTMENT" ? (pappersStats.prixM2Apparts ?? pappersStats.prixM2)
+      : propertyType === "HOUSE" ? (pappersStats.prixM2Maisons ?? pappersStats.prixM2)
+      : pappersStats.prixM2;
+
+    lines.push(`## DONNÉES DE MARCHÉ — ${pappersStats.commune.toUpperCase()}`);
+    if (prixM2 != null) lines.push(`- Prix médian ${propertyType === "APARTMENT" ? "appartements" : propertyType === "HOUSE" ? "maisons" : ""} : ${fmtPsm(prixM2)}`);
+    if (pappersStats.prixM2 != null) lines.push(`- Médiane tous types : ${fmtPsm(pappersStats.prixM2)}`);
+    if (pappersStats.variation1An != null) lines.push(`- Évolution annuelle : ${pctRaw(pappersStats.variation1An)}`);
+    if (pappersStats.nbTransactions1An != null) lines.push(`- Transactions (12 mois) : ${pappersStats.nbTransactions1An}`);
+    if (pappersStats.dept) {
+      lines.push(`- Référence Haute-Savoie :`);
+      if (pappersStats.dept.prixM2 != null) lines.push(`  - Médiane dept : ${fmtPsm(pappersStats.dept.prixM2)}`);
+      if (pappersStats.dept.variation1An != null) lines.push(`  - Évolution annuelle dept : ${pctRaw(pappersStats.dept.variation1An)}`);
+    }
+    if (pappersStats.source === "departement") {
+      lines.push(`  *(Données au niveau département — commune non répertoriée)*`);
+    }
+    lines.push(``);
+  }
+
+  if (listings.length > 0) {
+    lines.push(`## ANNONCES ACTIVES (MoteurImmo) — ${listings.length} bien${listings.length > 1 ? "s" : ""} en concurrence`);
+    listings.forEach((l, i) => {
+      const dist = l.distance != null ? ` — ${(l.distance / 1000).toFixed(1)} km` : "";
+      lines.push(`${i + 1}. **${l.surface} m²** · ${fmt(l.price)} (${fmtPsm(l.pricePsm)})${dist}${l.rooms ? ` · ${l.rooms} pièces` : ""}${l.dpe ? ` · DPE ${l.dpe}` : ""}`);
+    });
     lines.push(``);
   }
 
@@ -177,6 +241,17 @@ export function buildGammaClientPrompt(input: GammaPromptInput): string {
   const valuationHigh = serialized.valuationHigh as number | null;
   const listingPriceLow = valuationMid ? Math.round(valuationMid * 1.02) : null;
   const listingPriceHigh = valuationMid ? Math.round(valuationMid * 1.03) : null;
+
+  const marketReading = serialized.marketReading as MarketReading | null | undefined;
+  const pappersStats = marketReading?.pappersStats;
+  const dvfControl = marketReading?.dvfControl;
+
+  const propertyType = serialized.propertyType as string;
+  const prixM2Commune = pappersStats
+    ? (propertyType === "APARTMENT" ? (pappersStats.prixM2Apparts ?? pappersStats.prixM2)
+       : propertyType === "HOUSE" ? (pappersStats.prixM2Maisons ?? pappersStats.prixM2)
+       : pappersStats.prixM2)
+    : null;
 
   const features: string[] = [];
   if (serialized.hasParking) features.push("Parking");
@@ -243,6 +318,24 @@ export function buildGammaClientPrompt(input: GammaPromptInput): string {
   lines.push(`## VOTRE MARCHÉ EN BREF`);
   lines.push(`Estimation réalisée à partir de milliers de ventes réelles en Haute-Savoie (74).`);
   lines.push(`Données DVF officielles 2014–2024.`);
+
+  if (prixM2Commune != null || dvfControl?.trend12m != null) {
+    lines.push(``);
+    if (prixM2Commune != null && pappersStats) {
+      lines.push(`À **${pappersStats.commune}**, le prix médian est actuellement de **${fmtPsm(prixM2Commune)}**.`);
+    }
+    if (pappersStats?.variation1An != null) {
+      const trend = pappersStats.variation1An >= 0 ? "en hausse" : "en baisse";
+      lines.push(`Le marché local est ${trend} de **${Math.abs(pappersStats.variation1An).toFixed(1)} %** sur un an.`);
+    } else if (dvfControl?.trend12m != null) {
+      const trend = dvfControl.trend12m >= 0 ? "en hausse" : "en baisse";
+      lines.push(`Le marché local est ${trend} de **${Math.abs(dvfControl.trend12m).toFixed(1)} %** sur 12 mois.`);
+    }
+    if (pappersStats?.nbTransactions1An != null) {
+      lines.push(`${pappersStats.nbTransactions1An} transactions enregistrées sur les 12 derniers mois.`);
+    }
+  }
+
   lines.push(``);
   lines.push(`---`);
   lines.push(`*Estimation ESTIM'74 — Confidentiel — Document réservé au propriétaire*`);
