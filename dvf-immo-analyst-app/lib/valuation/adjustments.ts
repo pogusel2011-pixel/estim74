@@ -244,15 +244,6 @@ export function computeAdjustments(property: PropertyInput, amenities?: AmenityR
           factor = 0.015;
           label = `Rivière à ${fDist(d)}`;
         }
-      } else if (am.category === "stream") {
-        // Ruisseau : proximité agréable sans la puissance d'un lac
-        if (d <= 100) {
-          factor = 0.015;
-          label = `Ruisseau à ${fDist(d)}`;
-        } else if (d <= 500) {
-          factor = 0.01;
-          label = `Ruisseau à ${fDist(d)}`;
-        }
       } else if (am.category === "ski") {
         if (d <= 5000) {
           factor = 0.05;

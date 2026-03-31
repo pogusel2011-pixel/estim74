@@ -1,19 +1,28 @@
 /**
  * Proximity amenities scoring for Haute-Savoie market.
  * Fetches nearby POIs via the OpenStreetMap Overpass API.
+ *
+ * Règles de fiabilité :
+ *  - Les plans d'eau sont classés "lac" UNIQUEMENT si OSM les marque `water=lake`
+ *    ou `natural=lake`. Les zones `natural=water` génériques (bassins de rétention,
+ *    zones inondables, bras de rivière cartographiés en polygone…) sont ignorées
+ *    pour éviter les faux positifs.
+ *  - Les rivières ne sont retenues que si elles ont un nom (champ `name` présent)
+ *    pour exclure les cours d'eau non-officiels ou les artefacts de cartographie.
+ *  - Les ruisseaux (`waterway=stream`) ne sont pas affichés ni utilisés dans les
+ *    ajustements — trop peu fiables à faible échelle.
  */
 
 export interface AmenityResult {
-  category: "lake" | "river" | "stream" | "ski" | "motorway" | "school" | "shop" | "train";
+  category: "lake" | "river" | "ski" | "motorway" | "school" | "shop" | "train";
   label: string;
   distanceM: number;
 }
 
-/** Maximum search radius per category (must be ≥ max adjustment threshold). */
+/** Rayon de recherche par catégorie (en mètres). */
 const RADII: Record<AmenityResult["category"], number> = {
   lake:     3000,
   river:    1500,
-  stream:    500,
   ski:      6000,
   motorway: 2500,
   school:   1500,
@@ -22,10 +31,9 @@ const RADII: Record<AmenityResult["category"], number> = {
 };
 
 export const AMENITY_LABELS: Record<AmenityResult["category"], string> = {
-  lake:     "Vue/accès lac",
+  lake:     "Lac à proximité",
   river:    "Rivière à proximité",
-  stream:   "Ruisseau à proximité",
-  ski:      "Proximité ski",
+  ski:      "Domaine skiable à proximité",
   motorway: "Accès autoroute",
   school:   "École à proximité",
   shop:     "Commerces proches",
@@ -43,14 +51,14 @@ function haversineM(lat1: number, lng1: number, lat2: number, lng2: number): num
 }
 
 function buildQuery(lat: number, lng: number): string {
-  const { lake, river, stream, ski, motorway, school, shop, train } = RADII;
+  const { lake, river, ski, motorway, school, shop, train } = RADII;
   return `[out:json][timeout:12];
 (
-  way(around:${lake},${lat},${lng})[natural=water];
-  relation(around:${lake},${lat},${lng})[natural=water];
+  way(around:${lake},${lat},${lng})[natural=water][water=lake];
+  relation(around:${lake},${lat},${lng})[natural=water][water=lake];
   way(around:${lake},${lat},${lng})[natural=lake];
-  way(around:${river},${lat},${lng})[waterway=river];
-  way(around:${stream},${lat},${lng})[waterway=stream];
+  relation(around:${lake},${lat},${lng})[natural=lake];
+  way(around:${river},${lat},${lng})[waterway=river][name];
   node(around:${ski},${lat},${lng})[aerialway];
   way(around:${ski},${lat},${lng})[aerialway];
   way(around:${motorway},${lat},${lng})[highway=motorway];
@@ -87,9 +95,10 @@ function elementCoords(el: OverpassElement): { lat: number; lng: number } | null
 }
 
 function tagToCategory(tags: Record<string, string>): AmenityResult["category"] | null {
-  if (tags.natural === "water" || tags.natural === "lake") return "lake";
-  if (tags.waterway === "river") return "river";
-  if (tags.waterway === "stream") return "stream";
+  // Lac : uniquement si OSM marque explicitement water=lake ou natural=lake
+  if (tags.water === "lake" || tags.natural === "lake") return "lake";
+  // Rivière nommée uniquement (name obligatoire dans la requête, double vérification)
+  if (tags.waterway === "river" && tags.name) return "river";
   if (tags.aerialway) return "ski";
   if (tags.highway === "motorway" || tags.highway === "motorway_link") return "motorway";
   if (tags.amenity === "school" || tags.amenity === "kindergarten" || tags.amenity === "college") return "school";
@@ -98,12 +107,17 @@ function tagToCategory(tags: Record<string, string>): AmenityResult["category"] 
   return null;
 }
 
-/** Simple in-memory cache keyed by ~1 km precision coordinates. */
+/** Simple cache en mémoire keyed par coordonnées à ~1 km de précision. */
 const _cache = new Map<string, AmenityResult[]>();
 
 /**
- * Fetches nearby amenities for a coordinate using the Overpass API.
- * Falls back gracefully to [] on timeout or network error.
+ * Récupère les équipements proches via Overpass (OpenStreetMap).
+ * Retourne [] silencieusement en cas de timeout ou d'erreur réseau.
+ *
+ * Classification stricte :
+ *  - "lac"     → uniquement water=lake ou natural=lake (pas natural=water générique)
+ *  - "rivière" → uniquement waterway=river avec un nom officiel
+ *  - Les ruisseaux/zones humides ne sont pas retournés
  */
 export async function fetchAmenities(lat: number, lng: number): Promise<AmenityResult[]> {
   const key = `${lat.toFixed(2)},${lng.toFixed(2)}`;
@@ -155,7 +169,8 @@ export async function fetchAmenities(lat: number, lng: number): Promise<AmenityR
 
     _cache.set(key, results);
     console.log(
-      `[amenities] ${results.length} catégorie(s) détectée(s) près de (${lat.toFixed(4)}, ${lng.toFixed(4)}): ${results.map((r) => `${r.category}@${r.distanceM}m`).join(", ") || "—"}`
+      `[amenities] ${results.length} catégorie(s) près de (${lat.toFixed(4)}, ${lng.toFixed(4)}): ` +
+      (results.map((r) => `${r.category}@${r.distanceM}m`).join(", ") || "—")
     );
     return results;
   } catch (err) {
