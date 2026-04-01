@@ -174,12 +174,13 @@ export function computeAdjustments(property: PropertyInput, amenities?: AmenityR
       mitoyenne_deux_cotes: "Mitoyenne des deux côtés",
     };
     const mf = mitoyenneFactors[property.mitoyennete] ?? 0;
+    console.log(`[estimate] mitoyennete: ${property.mitoyennete} → ${mf !== 0 ? (mf * 100).toFixed(0) + "%" : "0% (individuelle, pas d'ajustement)"}`);
     if (mf !== 0) {
       adjustments.push({
         label: mitoyenneLabels[property.mitoyennete] ?? property.mitoyennete,
         factor: mf,
         impact: mf,
-        category: "features",
+        category: "mitoyennete",
       });
     }
   }

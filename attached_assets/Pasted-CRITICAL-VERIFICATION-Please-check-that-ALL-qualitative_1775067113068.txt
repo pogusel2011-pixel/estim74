@@ -1,0 +1,73 @@
+CRITICAL VERIFICATION — Please check that ALL 
+qualitative adjustments are correctly displayed 
+AND actually applied in the €/m² calculation.
+
+1. MITOYENNETE MISSING IN CALCUL DÉTAILLÉ:
+   The mitoyennete adjustment is not showing 
+   in the "Calcul détaillé" tab.
+   
+   Check in components/analysis/methode-calcul-panel.tsx:
+   - Is mitoyennete included in the adjustments list?
+   - If not, add it with correct label and percentage:
+     "individuelle" → 0% (not shown)
+     "mitoyenne_un_cote" → -4% 
+     "mitoyenne_deux_cotes" → -7%
+
+2. VERIFY ALL ADJUSTMENTS ARE IN CALCUL DÉTAILLÉ:
+   Check that these ALL appear when applicable:
+   ✓ État du bien
+   ✓ DPE
+   ✓ Étage
+   ✓ Parking
+   ✓ Garage
+   ✓ Balcon
+   ✓ Terrasse
+   ✓ Cave
+   ✓ Piscine
+   ✓ Orientation
+   ✓ Vue
+   ✓ Jardin/terrain
+   ✓ Mitoyenneté ← MISSING
+   ✓ Proximité lac
+   ✓ Proximité ski
+   ✓ Proximité autoroute
+   ✓ Proximité école
+   ✓ Proximité commerces
+   ✓ Proximité gare
+
+3. VERIFY MITOYENNETE IS IN THE CALCULATION:
+   In lib/valuation/adjustments.ts:
+   - Confirm mitoyennete adjustment exists
+   - Confirm it is called in computeAdjustments()
+   - Confirm it is passed correctly from the 
+     estimate route to computeAdjustments()
+   - Add a log: "[estimate] mitoyennete: X → Y%"
+
+4. VERIFY ALL ADJUSTMENTS ARE APPLIED:
+   In lib/valuation/valuation.ts:
+   Check that computeAdjustments() receives 
+   ALL these fields from PropertyInput:
+   - condition (état)
+   - dpeLetter
+   - floor + totalFloors + hasElevator
+   - hasParking, hasGarage, hasBalcony
+   - hasTerrace, hasCellar, hasPool
+   - orientation, view, landSurface
+   - mitoyennete ← verify this one specifically
+   - amenities (proximity data from Overpass)
+
+5. VERIFY THE GLOBAL CAP:
+   Confirm the ±20% global cap is correctly 
+   applied AFTER all adjustments are summed.
+   Log the total before and after cap.
+
+6. TEST with a house that has:
+   - mitoyennete: "mitoyenne_un_cote" (-4%)
+   - garage (+3%)
+   - excellent state (+5%)
+   Expected total: +4% (before cap)
+   
+   Confirm the log shows all 3 adjustments 
+   and correct total.
+
+Report exactly what was missing and what was fixed.

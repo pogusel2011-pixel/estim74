@@ -118,19 +118,25 @@ export function MethodeCalculPanel({
   };
 
   const adjRows: { critere: string; adj: Adjustment | null }[] = [
-    { critere: "État du bien", adj: findAdj(["condition"]) },
-    { critere: "DPE (énergie)", adj: findAdj(["energy"]) },
-    { critere: "Étage", adj: findAdj(["floor"]) },
-    { critere: "Parking", adj: findAdj([], "parking") },
-    { critere: "Garage", adj: findAdj([], "garage") },
-    { critere: "Balcon", adj: findAdj([], "balcon") },
-    { critere: "Terrasse", adj: findAdj([], "terrasse") },
-    { critere: "Cave", adj: findAdj([], "cave") },
-    { critere: "Piscine", adj: findAdj([], "piscine") },
-    { critere: "Orientation", adj: findAdj(["orientation"]) },
-    { critere: "Vue", adj: findAdj(["view"]) },
+    { critere: "État du bien",    adj: findAdj(["condition"]) },
+    { critere: "DPE (énergie)",  adj: findAdj(["energy"]) },
+    { critere: "Étage",          adj: findAdj(["floor"]) },
+    { critere: "Parking",        adj: findAdj([], "parking") },
+    { critere: "Garage",         adj: findAdj([], "garage") },
+    { critere: "Balcon",         adj: findAdj([], "balcon") },
+    { critere: "Terrasse",       adj: findAdj([], "terrasse") },
+    { critere: "Cave",           adj: findAdj([], "cave") },
+    { critere: "Piscine",        adj: findAdj([], "piscine") },
+    { critere: "Orientation",    adj: findAdj(["orientation"]) },
+    { critere: "Vue",            adj: findAdj(["view"]) },
     { critere: "Jardin / terrain", adj: findAdj([], "jardin") ?? findAdj([], "terrain") },
+    { critere: "Mitoyenneté",    adj: findAdj(["mitoyennete"]) ?? findAdj([], "mitoyenne") },
   ];
+
+  // Ajustements de proximité — affichés individuellement après les critères fixes
+  const proximityRows: { critere: string; adj: Adjustment }[] = adjustments
+    .filter((a) => a.category === "proximity")
+    .map((a) => ({ critere: a.label, adj: a }));
 
   const totalAdjFactor = adjustments.reduce((s, a) => s + a.factor, 0);
   const spread = Math.abs(valuationHigh - valuationLow) / valuationMid;
@@ -362,6 +368,38 @@ export function MethodeCalculPanel({
                       </tr>
                     );
                   })}
+                  {proximityRows.length > 0 && (
+                    <>
+                      <tr className="bg-blue-50/50">
+                        <td colSpan={4} className="py-1 px-1 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                          Équipements de proximité
+                        </td>
+                      </tr>
+                      {proximityRows.map(({ critere, adj }) => {
+                        const impact = Math.round(adj.factor * basePsm);
+                        return (
+                          <tr key={critere} className="border-b last:border-0">
+                            <td className="py-1.5 text-sm pl-2">{critere}</td>
+                            <td className="py-1.5 text-center">
+                              <CheckCircle2 className="h-4 w-4 text-green-600 inline-block" />
+                            </td>
+                            <td className={[
+                              "py-1.5 text-right font-medium",
+                              adj.factor > 0 ? "text-green-600" : "text-red-600",
+                            ].join(" ")}>
+                              {pct(adj.factor)}
+                            </td>
+                            <td className={[
+                              "py-1.5 text-right font-medium",
+                              impact > 0 ? "text-green-600" : "text-red-600",
+                            ].join(" ")}>
+                              {(impact >= 0 ? "+" : "") + impact.toLocaleString("fr-FR") + " €/m²"}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </>
+                  )}
                   {adjustments.length > 0 && (
                     <tr className="bg-gray-50">
                       <td className="py-1.5 font-semibold" colSpan={2}>Total ajustements</td>
