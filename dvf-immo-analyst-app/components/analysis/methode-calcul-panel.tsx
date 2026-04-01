@@ -363,7 +363,7 @@ export function MethodeCalculPanel({
                           impact < 0 ? "text-red-600" : "",
                           !adj ? "text-muted-foreground" : "",
                         ].join(" ")}>
-                          {adj ? (impact >= 0 ? "+" : "") + impact.toLocaleString("fr-FR") + " €/m²" : "—"}
+                          {adj ? (impact >= 0 ? "+" : "") + Math.round(impact).toString().replace(/\B(?=(\d{3})+(?!\d))/g, "\u202F") + " €/m²" : "—"}
                         </td>
                       </tr>
                     );
@@ -393,7 +393,7 @@ export function MethodeCalculPanel({
                               "py-1.5 text-right font-medium",
                               impact > 0 ? "text-green-600" : "text-red-600",
                             ].join(" ")}>
-                              {(impact >= 0 ? "+" : "") + impact.toLocaleString("fr-FR") + " €/m²"}
+                              {(impact >= 0 ? "+" : "") + Math.round(impact).toString().replace(/\B(?=(\d{3})+(?!\d))/g, "\u202F") + " €/m²"}
                             </td>
                           </tr>
                         );
@@ -413,7 +413,7 @@ export function MethodeCalculPanel({
                         "py-1.5 text-right font-bold",
                         totalAdjFactor >= 0 ? "text-green-700" : "text-red-700",
                       ].join(" ")}>
-                        {(totalAdjFactor >= 0 ? "+" : "") + Math.round(totalAdjFactor * basePsm).toLocaleString("fr-FR")} €/m²
+                        {(totalAdjFactor >= 0 ? "+" : "") + Math.round(totalAdjFactor * basePsm).toString().replace(/\B(?=(\d{3})+(?!\d))/g, "\u202F")} €/m²
                       </td>
                     </tr>
                   )}

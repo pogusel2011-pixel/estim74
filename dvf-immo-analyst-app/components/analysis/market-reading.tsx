@@ -2,6 +2,7 @@ import { MarketReading as MarketReadingType } from "@/types/analysis";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { TrendingUp, TrendingDown, Minus, BarChart2, AlertTriangle, CheckCircle2, Database, Building2 } from "lucide-react";
+import { formatPsm, formatNum } from "@/lib/utils";
 
 interface Props { marketReading?: MarketReadingType | null; dvfMedianPsm?: number | null; propertyType?: string; }
 
@@ -9,7 +10,7 @@ function fmtPct(v: number) {
   return (v > 0 ? "+" : "") + v.toFixed(1) + "%";
 }
 function fmtPsm(v: number) {
-  return v.toLocaleString("fr-FR") + " €/m²";
+  return formatPsm(v);
 }
 
 export function MarketReading({ marketReading, dvfMedianPsm, propertyType }: Props) {
@@ -197,7 +198,7 @@ export function MarketReading({ marketReading, dvfMedianPsm, propertyType }: Pro
 
             {pp.nbTransactions1An != null && (
               <p className="text-xs text-muted-foreground">
-                Volume : <span className="font-medium text-foreground">{pp.nbTransactions1An.toLocaleString("fr-FR")} transactions</span> sur 12 mois
+                Volume : <span className="font-medium text-foreground">{formatNum(pp.nbTransactions1An)} transactions</span> sur 12 mois
               </p>
             )}
 

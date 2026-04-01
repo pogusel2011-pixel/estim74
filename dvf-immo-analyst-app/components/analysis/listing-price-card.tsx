@@ -6,7 +6,7 @@ interface Props {
 }
 
 function fPrice(n: number): string {
-  return n.toLocaleString("fr-FR").replace(/\u202f/g, "\u00a0") + "\u00a0\u20AC";
+  return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, "\u202F") + "\u00A0\u20AC";
 }
 
 export function ListingPriceCard({ listingPriceLow, listingPriceHigh }: Props) {

@@ -18,7 +18,7 @@ interface Props {
   propertyType?: string;
 }
 
-const formatPsm = (n: number) => n.toLocaleString("fr-FR") + " €/m²";
+const formatPsm = (n: number) => Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, "\u202F") + "\u00A0€/m²";
 
 export function MarketTrendChart({ lat, lng, radiusKm = 5, propertyType }: Props) {
   const [data, setData] = useState<YearlyStat[]>([]);
@@ -133,7 +133,7 @@ export function MarketTrendChart({ lat, lng, radiusKm = 5, propertyType }: Props
 
         {/* Annual volumes */}
         <div className="mt-4 border-t pt-3">
-          <p className="text-xs text-muted-foreground mb-2 font-medium">Transactions par année ({totalTx.toLocaleString("fr-FR")} au total)</p>
+          <p className="text-xs text-muted-foreground mb-2 font-medium">Transactions par année ({Math.round(totalTx).toString().replace(/\B(?=(\d{3})+(?!\d))/g, "\u202F")} au total)</p>
           <div className="flex flex-wrap gap-x-4 gap-y-1">
             {data.map(d => (
               <span key={d.year} className="text-xs text-muted-foreground">

@@ -5,6 +5,11 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+/** Séparateur milliers cohérent serveur/navigateur (évite l'hydration mismatch) */
+function sep(n: number): string {
+  return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, "\u202F");
+}
+
 export function formatPrice(value: number, compact = false): string {
   if (compact && value >= 1_000_000) {
     return `${(value / 1_000_000).toFixed(2).replace(".", ",")} M€`;
@@ -12,11 +17,15 @@ export function formatPrice(value: number, compact = false): string {
   if (compact && value >= 1_000) {
     return `${Math.round(value / 1_000)} k€`;
   }
-  return new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(value);
+  return `${sep(value)}\u00A0€`;
 }
 
 export function formatPsm(value: number): string {
-  return `${new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(value)} €/m²`;
+  return `${sep(value)}\u00A0€/m²`;
+}
+
+export function formatNum(value: number): string {
+  return sep(value);
 }
 
 export function formatDate(dateStr: string): string {
