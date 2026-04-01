@@ -6,6 +6,7 @@ import { PDFDocument } from "pdf-lib";
   import { DVFComparable, DVFStats } from "@/types/dvf";
   import { Adjustment } from "@/types/valuation";
   import { Writer, loadFonts, drawTable, san, fPrice, fPsm, fDateShort, wrapText, C, FS, ML, MR, CW, PAGE_W, PAGE_H, numFr, normalizeAddr } from "./helpers";
+  import { getIrisDisplayLabel } from "@/lib/geo/iris-loader";
 
   async function getTrend(lat: number, lng: number, km: number, type?: string) {
     try {
@@ -297,6 +298,10 @@ import { PDFDocument } from "pdf-lib";
       w.footer(refId, today);
       w.sectionTitle(`3. Les ${top5.length} ventes comparables les plus pertinentes`);
       w.gap(8);
+      const irisDisplayLabelC = a.irisCode ? getIrisDisplayLabel(a.irisCode as string) : null;
+      if (irisDisplayLabelC) {
+        w.kv("Secteur IRIS", san(irisDisplayLabelC));
+      }
       drawTable(w, {
         cols: [
           { header: "Date", width: 64, align: "left" as const },

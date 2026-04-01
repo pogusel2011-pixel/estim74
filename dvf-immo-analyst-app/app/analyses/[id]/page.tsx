@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { headers } from "next/headers";
 import Link from "next/link";
+import { getIrisDisplayLabel, getIrisRecord } from "@/lib/geo/iris-loader";
 import { AlertTriangle, ArrowLeft, MapPin, Map } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
@@ -119,17 +120,27 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
   let liveFinalRadiusKm: number | null = null;
   let liveRequestedRadiusKm: number | null = null;
 
+  // IRIS — zone géographique du bien (lookup depuis CSV, synchrone)
+  const storedIrisCode = serialized.irisCode as string | null | undefined;
+  const irisDisplayLabel = storedIrisCode ? getIrisDisplayLabel(storedIrisCode) : null;
+  const irisRecord = storedIrisCode ? getIrisRecord(storedIrisCode) : null;
+  // irisLabel = nom du quartier uniquement (ex: "Vieille Ville"), undefined pour communes non irisées
+  const irisLabel = irisRecord && irisRecord.TYP_IRIS !== "Z" ? irisRecord.LIB_IRIS : undefined;
+
   if (!dvfStats && serialized.lat && serialized.lng) {
     try {
       const dvfTypes = propertyTypeToDvfTypes(serialized.propertyType as PropertyType);
       const requestedRadius = (serialized.perimeterKm as number | null) ?? 0.5;
       const monthsBack = (serialized.dvfPeriodMonths as number | null) ?? 24;
-      const { mutations, source, radiusKm: finalRadius } = await getDVFMutations(
+      const { mutations, source, radiusKm: finalRadius, dvfSearchPath } = await getDVFMutations(
         serialized.lat as number,
         serialized.lng as number,
         requestedRadius,
         monthsBack,
-        dvfTypes
+        dvfTypes,
+        serialized.city as string | undefined,
+        serialized.postalCode as string | undefined,
+        irisLabel,
       );
       liveRequestedRadiusKm = requestedRadius;
       liveFinalRadiusKm = finalRadius;
@@ -140,6 +151,7 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
       if (dvfStats) {
         dvfStats.source = source;
         dvfStats.excludedCount = enriched.length - cleanEnriched.length;
+        dvfStats.searchPath = dvfSearchPath;
       }
       dvfComparables = toComparables(enriched, serialized.surface as number, serialized.rooms as number | undefined);
     } catch (err) {
@@ -278,7 +290,7 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
 
       {/* ── 1. HEADER — Identité du bien ─────────────────────────────────── */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200/80 px-6 py-6 mb-5">
-        <AnalysisSummaryPanel analysis={serialized} analysisId={serialized.id as string} />
+        <AnalysisSummaryPanel analysis={serialized} analysisId={serialized.id as string} irisDisplayLabel={irisDisplayLabel} />
       </div>
 
       {/* ── 2. TOOLBAR — Actions ─────────────────────────────────────────── */}

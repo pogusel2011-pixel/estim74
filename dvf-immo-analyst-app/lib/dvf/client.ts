@@ -1,21 +1,23 @@
 import { DVFMutation } from "@/types/dvf";
-import { loadCsvMutations } from "./csv-loader";
+import { loadCsvMutations, loadCsvMutationsByCommune } from "./csv-loader";
 import { fetchPappersSales } from "@/lib/pappers/client";
 import { BUSINESS_RULES } from "@/lib/rules/business-rules";
+import { getInseeCodesForCity } from "@/lib/geo/iris_utils";
 
 const MIN_SAMPLES = BUSINESS_RULES.MIN_SAMPLE_SIZE.value;
 const EXPANSION_STEP_KM = BUSINESS_RULES.GEO_RADIUS_EXPANSION_STEP.value;
 const MAX_RADIUS_KM = BUSINESS_RULES.GEO_RADIUS_MAX.value;
 
 /**
- * Point d'entrée principal :
- * 1. Charge les mutations depuis le CSV local (source prioritaire, 2020-2025)
- * 2. Si CSV < MIN_SAMPLES → appelle Pappers Immobilier comme fallback
- * 3. Fusion + déduplique les sources
- * 4. Auto-expand le rayon par pas de 0.5 km (jusqu'à 5 km) si encore < MIN_SAMPLES
+ * Point d'entrée principal — recherche DVF à 3 niveaux :
  *
- * @param city       Nom de la commune — active le filtre INSEE secondaire
+ * A) IRIS proxy   : rayon serré (≤ initialRadiusKm) = approximation du quartier/zone IRIS
+ * B) Commune entière : toutes les mutations de la commune (par code INSEE)
+ * C) Expansion radiale : rayon croissant jusqu'à MAX_RADIUS_KM (franchit les limites communales)
+ *
+ * @param city       Nom de la commune — active la recherche commune et le filtre INSEE
  * @param postalCode Code postal — précise la recherche INSEE
+ * @param irisLabel  Nom de la zone IRIS du bien (pour le libellé du chemin de recherche)
  */
 export async function getDVFMutations(
   lat: number,
@@ -25,30 +27,94 @@ export async function getDVFMutations(
   propertyTypes?: string[],
   city?: string,
   postalCode?: string,
-): Promise<{ mutations: DVFMutation[]; source: "csv" | "api" | "mixed"; radiusKm: number }> {
+  irisLabel?: string,
+): Promise<{ mutations: DVFMutation[]; source: "csv" | "api" | "mixed"; radiusKm: number; dvfSearchPath: string }> {
+
+  // Pré-chargement des codes INSEE de la commune (pour Step B)
+  let depcoms: string[] = [];
+  if (city) {
+    try {
+      depcoms = await getInseeCodesForCity(city, postalCode);
+    } catch {
+      // non-bloquant
+    }
+  }
+
+  const irisPrefix = irisLabel ? `IRIS ${irisLabel}` : null;
+
+  // ── A) IRIS proxy : rayon serré (proxy du quartier IRIS) ─────────────────
+  {
+    const csvRaw = await loadCsvMutations(
+      lat, lng, initialRadiusKm, monthsBack, propertyTypes, city, postalCode,
+    );
+    const mutations: DVFMutation[] = csvRaw.map((m) => ({ ...m, _source: "csv" as const }));
+
+    if (mutations.length >= MIN_SAMPLES) {
+      const dvfSearchPath = irisPrefix ?? `Rayon ${initialRadiusKm} km`;
+      return { mutations, source: "csv", radiusKm: initialRadiusKm, dvfSearchPath };
+    }
+
+    console.log(
+      `[DVF] Étape A (rayon ${initialRadiusKm} km) : ${mutations.length} tx — passage étape B`,
+    );
+  }
+
+  // ── B) Commune entière (par code INSEE) ──────────────────────────────────
+  if (depcoms.length > 0) {
+    const csvRaw = await loadCsvMutationsByCommune(
+      depcoms, monthsBack, propertyTypes, lat, lng,
+    );
+    const mutations: DVFMutation[] = csvRaw.map((m) => ({ ...m, _source: "csv" as const }));
+
+    if (mutations.length >= MIN_SAMPLES) {
+      const communeLabel = city ?? depcoms[0];
+      const dvfSearchPath = irisPrefix
+        ? `${irisPrefix} → Commune ${communeLabel}`
+        : `Commune ${communeLabel}`;
+      console.log(`[DVF] Étape B (commune entière) : ${mutations.length} tx`);
+      return { mutations, source: "csv", radiusKm: 0, dvfSearchPath };
+    }
+
+    console.log(
+      `[DVF] Étape B (commune ${depcoms.join(", ")}) : ${csvRaw.length} tx — passage étape C`,
+    );
+  }
+
+  // ── C) Expansion radiale (peut franchir les limites communales) ──────────
   let radiusKm = initialRadiusKm;
 
   while (true) {
     const result = await _fetchAtRadius(
-      lat, lng, radiusKm, monthsBack, propertyTypes, city, postalCode
+      lat, lng, radiusKm, monthsBack, propertyTypes, city, postalCode,
     );
 
     if (result.mutations.length >= MIN_SAMPLES) {
+      const communeLabel = city ?? "";
+      const previousSteps = irisPrefix
+        ? `${irisPrefix} → ${communeLabel ? `Commune ${communeLabel} → ` : ""}`
+        : depcoms.length > 0 && communeLabel
+          ? `Commune ${communeLabel} → `
+          : "";
+      const dvfSearchPath = radiusKm !== initialRadiusKm
+        ? `${previousSteps}${radiusKm} km (élargi depuis ${initialRadiusKm} km)`
+        : `${previousSteps}${radiusKm} km`;
+
       if (radiusKm !== initialRadiusKm) {
         console.log(
           `[DVF] Rayon élargi de ${initialRadiusKm} km à ${radiusKm} km ` +
-          `(${result.mutations.length} transactions)`
+          `(${result.mutations.length} transactions)`,
         );
       }
-      return { ...result, radiusKm };
+      return { ...result, radiusKm, dvfSearchPath };
     }
 
     const nextRadius = Math.round((radiusKm + EXPANSION_STEP_KM) * 10) / 10;
     if (nextRadius > MAX_RADIUS_KM) {
+      const dvfSearchPath = `Rayon max ${radiusKm} km`;
       console.warn(
-        `[DVF] Rayon max (${MAX_RADIUS_KM} km) atteint avec ${result.mutations.length} transactions`
+        `[DVF] Rayon max (${MAX_RADIUS_KM} km) atteint avec ${result.mutations.length} transactions`,
       );
-      return { ...result, radiusKm };
+      return { ...result, radiusKm, dvfSearchPath };
     }
 
     radiusKm = nextRadius;
@@ -58,7 +124,7 @@ export async function getDVFMutations(
 /**
  * Stratégie CSV-first à un rayon donné :
  * 1. Interroge le CSV local (données 2020-2025, source fiable)
- * 2. Si CSV ≥ MIN_SAMPLES → retourne CSV uniquement (rapide, pas d'appel API)
+ * 2. Si CSV ≥ MIN_SAMPLES → retourne CSV uniquement
  * 3. Si CSV insuffisant → appelle Pappers Immobilier comme complément
  * 4. Fusionne et déduplique les deux sources
  */
@@ -71,25 +137,22 @@ async function _fetchAtRadius(
   city?: string,
   postalCode?: string,
 ): Promise<{ mutations: DVFMutation[]; source: "csv" | "api" | "mixed" }> {
-  // Étape 1 : CSV local (priorité absolue)
   const csvRaw = await loadCsvMutations(
-    lat, lng, radiusKm, monthsBack, propertyTypes, city, postalCode
+    lat, lng, radiusKm, monthsBack, propertyTypes, city, postalCode,
   );
   const csvMutations: DVFMutation[] = csvRaw.map((m) => ({ ...m, _source: "csv" as const }));
 
-  // Étape 2 : CSV suffisant → on n'appelle pas l'API
   if (csvMutations.length >= MIN_SAMPLES) {
     return { mutations: csvMutations, source: "csv" };
   }
 
-  // Étape 3 : CSV insuffisant → Pappers comme fallback
   console.log(
     `[DVF] CSV insuffisant (${csvMutations.length} tx, rayon ${radiusKm} km) ` +
-    `— interrogation Pappers Immobilier`
+    `— interrogation Pappers Immobilier`,
   );
 
   const radiusM = Math.round(radiusKm * 1000);
-  const typeLocal = propertyTypes?.[0]; // ex: "Appartement"
+  const typeLocal = propertyTypes?.[0];
   const pappersRaw = await fetchPappersSales(lat, lng, radiusM, typeLocal, monthsBack);
 
   if (csvMutations.length === 0 && pappersRaw.length === 0) {

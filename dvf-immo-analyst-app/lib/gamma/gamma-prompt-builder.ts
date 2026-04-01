@@ -3,6 +3,7 @@ import { DVFStats } from "@/types/dvf";
 import { GPTOutput } from "@/types/gpt";
 import { MarketReading } from "@/types/analysis";
 import { ActiveListing } from "@/types/listing";
+import { getIrisDisplayLabel } from "@/lib/geo/iris-loader";
 
 function fmt(n: number | null | undefined): string {
   if (n == null) return "—";
@@ -57,6 +58,7 @@ export function buildGammaExpertPrompt(input: GammaPromptInput, baseUrl?: string
   const city = serialized.city as string;
   const postalCode = serialized.postalCode as string | null;
   const address = serialized.address as string | null;
+  const irisDisplayLabelGamma = serialized.irisCode ? getIrisDisplayLabel(serialized.irisCode as string) : null;
   const rooms = serialized.rooms as number | null;
   const bedrooms = serialized.bedrooms as number | null;
   const yearBuilt = serialized.yearBuilt as number | null;
@@ -135,6 +137,7 @@ export function buildGammaExpertPrompt(input: GammaPromptInput, baseUrl?: string
   }
   lines.push(`## BIEN ESTIMÉ`);
   lines.push(`**${type}** — ${surface} m² — ${address ? address + ", " : ""}${city}${postalCode ? " (" + postalCode + ")" : ""}`);
+  if (irisDisplayLabelGamma) lines.push(`Secteur IRIS : ${irisDisplayLabelGamma}`);
   if (rooms) lines.push(`${rooms} pièce${rooms > 1 ? "s" : ""}${bedrooms ? " dont " + bedrooms + " chambre" + (bedrooms > 1 ? "s" : "") : ""}`);
   if (floor != null && totalFloors != null) lines.push(`Étage ${floor}/${totalFloors}`);
   if (yearBuilt) lines.push(`Construit en ${yearBuilt}`);
@@ -267,6 +270,7 @@ export function buildGammaClientPrompt(input: GammaPromptInput, baseUrl?: string
   const surface = serialized.surface as number;
   const city = serialized.city as string;
   const address = serialized.address as string | null;
+  const irisDisplayLabelGammaC = serialized.irisCode ? getIrisDisplayLabel(serialized.irisCode as string) : null;
   const rooms = serialized.rooms as number | null;
   const bedrooms = serialized.bedrooms as number | null;
   const yearBuilt = serialized.yearBuilt as number | null;
@@ -339,6 +343,7 @@ export function buildGammaClientPrompt(input: GammaPromptInput, baseUrl?: string
   }
   lines.push(`## VOTRE BIEN`);
   lines.push(`**${type}** de **${surface} m²** — ${address ? address + ", " : ""}${city}`);
+  if (irisDisplayLabelGammaC) lines.push(`Secteur IRIS : ${irisDisplayLabelGammaC}`);
 
   const descParts: string[] = [];
   if (rooms) descParts.push(`${rooms} pièce${rooms > 1 ? "s" : ""}${bedrooms ? " dont " + bedrooms + " chambre" + (bedrooms > 1 ? "s" : "") : ""}`);

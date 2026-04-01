@@ -161,3 +161,44 @@ export async function loadCsvMutations(
 
   return filtered;
 }
+
+/**
+ * Retourne toutes les mutations de la commune (par code INSEE), sans limite de rayon.
+ * Utilisé comme étape intermédiaire entre la recherche IRIS (rayon serré) et l'expansion radiale.
+ * Les mutations avec coordonnées sont triées par distance croissante si lat/lng fournis.
+ */
+export async function loadCsvMutationsByCommune(
+  depcoms: string[],
+  monthsBack: number,
+  propertyTypes?: string[],
+  lat?: number,
+  lng?: number,
+): Promise<DVFMutation[]> {
+  if (depcoms.length === 0) return [];
+
+  const all = await loadAllCsvMutations();
+
+  const dateMin = new Date();
+  dateMin.setMonth(dateMin.getMonth() - monthsBack);
+
+  const filtered = all.filter((m) => {
+    if (m.nature_mutation !== "Vente") return false;
+    if (!m.valeur_fonciere || m.valeur_fonciere <= 0) return false;
+    if (propertyTypes && (!m.type_local || !propertyTypes.includes(m.type_local))) return false;
+    const mDate = new Date(m.date_mutation);
+    if (mDate < dateMin) return false;
+    return depcoms.includes(m.code_commune);
+  });
+
+  if (lat !== undefined && lng !== undefined) {
+    for (const m of filtered) {
+      if (m.lat && m.lon && m.distance_m == null) {
+        m.distance_m = haversineDistance(lat, lng, m.lat, m.lon);
+      }
+    }
+    filtered.sort((a, b) => (a.distance_m ?? Infinity) - (b.distance_m ?? Infinity));
+  }
+
+  console.log(`[DVF CSV] Commune (${depcoms.join(", ")}) : ${filtered.length} mutations`);
+  return filtered;
+}

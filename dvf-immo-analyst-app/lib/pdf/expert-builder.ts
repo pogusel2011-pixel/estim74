@@ -1,5 +1,6 @@
 import { PDFDocument } from "pdf-lib";
   import { PROPERTY_TYPE_LABELS, CONDITION_LABELS } from "@/lib/constants";
+  import { getIrisDisplayLabel } from "@/lib/geo/iris-loader";
   import { markListingOutliers } from "@/lib/listings/outliers";
   import { DVFStats, DVFComparable } from "@/types/dvf";
   import { ActiveListing } from "@/types/listing";
@@ -238,6 +239,11 @@ import { PDFDocument } from "pdf-lib";
     w.footer(refId, today);
     w.sectionTitle("3. Méthode et calcul");
     w.gap(6);
+
+    const irisDisplayLabel = a.irisCode ? getIrisDisplayLabel(a.irisCode as string) : null;
+    if (irisDisplayLabel) {
+      w.kv("Secteur IRIS", san(irisDisplayLabel));
+    }
 
     // Badge A
     w.rect(ML, w.y - 14, 18, 16, C.blue);

@@ -17,6 +17,7 @@ import { prisma } from "@/lib/prisma";
 import { geocodeAddress, isGeoError } from "@/lib/geo/address";
 import { getInseeByPostalCodeAndCommune, getInseeByPostalCode } from "@/lib/geo/cp-insee";
 import { fetchAmenities } from "@/lib/geo/amenities";
+import { lookupIrisForProperty } from "@/lib/geo/iris-loader";
 
 export async function POST(req: Request) {
   try {
@@ -72,12 +73,27 @@ export async function POST(req: Request) {
 
     const propertyWithGeo = { ...property, lat, lng } as unknown as PropertyInput;
 
-    // 2. DVF — mutations (avec auto-expansion du rayon si < 5 transactions)
-    // On passe city + postalCode pour activer le filtre INSEE secondaire (mutations sans coords)
+    // 1b. IRIS — zone géographique du bien (non bloquant, timeout 2.5s)
+    let irisCode: string | null = null;
+    let irisLabel: string | undefined;
+    if (communeCode) {
+      try {
+        const irisInfo = await lookupIrisForProperty(lat, lng, communeCode);
+        if (irisInfo) {
+          irisCode = irisInfo.codeIris;
+          irisLabel = irisInfo.isIrised ? irisInfo.libIris : undefined;
+          console.log(`[IRIS] Zone : ${irisCode} — ${irisInfo.libIris} (${irisInfo.libCom})`);
+        }
+      } catch (e) {
+        console.warn("[IRIS] Lookup non bloquant échoué:", e);
+      }
+    }
+
+    // 2. DVF — mutations (avec priorité IRIS → Commune → rayon expansif)
     const dvfTypes = propertyTypeToDvfTypes(property.propertyType);
-    const { mutations, source, radiusKm: finalRadiusKm } = await getDVFMutations(
+    const { mutations, source, radiusKm: finalRadiusKm, dvfSearchPath } = await getDVFMutations(
       lat, lng, radiusKm, monthsBack, dvfTypes,
-      property.city, property.postalCode
+      property.city, property.postalCode, irisLabel
     );
     let enrichedMutations = computePrixM2(mutations);
     // Toujours marquer les outliers (IQR×2) — ils restent visibles dans le tableau avec badge
@@ -91,6 +107,7 @@ export async function POST(req: Request) {
     if (dvfStats) {
       dvfStats.source = source;
       dvfStats.excludedCount = excludedCount;
+      dvfStats.searchPath = dvfSearchPath;
     }
 
     // Comparables : inclure TOUTES les mutations (outliers inclus, badgés dans le tableau)
@@ -248,6 +265,7 @@ export async function POST(req: Request) {
           lat,
           lng,
           communeCode: communeCode ?? null,
+          irisCode: irisCode ?? null,
           clientFirstName: property.clientFirstName,
           clientLastName: property.clientLastName,
           clientAddress: property.clientAddress,

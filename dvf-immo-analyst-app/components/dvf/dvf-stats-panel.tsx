@@ -84,9 +84,11 @@ export function DVFStatsPanel({ stats, sampleSize, perimeterKm, requestedRadiusK
     { label: "Période", value: formatDate(stats.oldestDate) + " – " + formatDate(stats.newestDate) },
     {
       label: "Périmètre",
-      value: wasExpanded
-        ? `${perimeterDisplay} (demandé : ${requestedRadiusKm} km)`
-        : perimeterDisplay,
+      value: stats.searchPath
+        ? stats.searchPath
+        : wasExpanded
+          ? `${perimeterDisplay} (demandé : ${requestedRadiusKm} km)`
+          : perimeterDisplay,
     },
     { label: "Source", value: stats.source === "csv" ? "CSV local 2020–2025" : stats.source === "api" ? "DVF Live (API)" : "CSV local + DVF Live" },
   ];

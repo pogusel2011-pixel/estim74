@@ -64,6 +64,8 @@ export interface DVFStats {
    * calcul de l'intervalle de confiance statistique à 95% : IC = ±1.96 × fsd)
    */
   fsd?: number;
+  /** Chemin de recherche DVF utilisé : "IRIS [nom]", "Commune entière", "Rayon X km" */
+  searchPath?: string;
 }
 
 export interface DVFComparable {

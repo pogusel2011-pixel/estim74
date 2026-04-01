@@ -11,9 +11,10 @@ function normalizeAddr(s: string | null | undefined): string {
 interface Props {
   analysis: Record<string, unknown>;
   analysisId?: string;
+  irisDisplayLabel?: string | null;
 }
 
-export function AnalysisSummaryPanel({ analysis, analysisId }: Props) {
+export function AnalysisSummaryPanel({ analysis, analysisId, irisDisplayLabel }: Props) {
   const status = analysis.status as string;
   const statusVariant = status === "COMPLETE" ? "success" : status === "ARCHIVED" ? "secondary" : "outline";
   const statusLabel = status === "COMPLETE" ? "Complète" : status === "ARCHIVED" ? "Archivée" : "Brouillon";
@@ -59,6 +60,13 @@ export function AnalysisSummaryPanel({ analysis, analysisId }: Props) {
         <MapPin className="h-5 w-5 text-[#2563EB] shrink-0 mt-0.5" />
         <span>{fullAddress}</span>
       </h1>
+
+      {irisDisplayLabel && (
+        <p className="text-sm text-slate-500 flex items-center gap-1.5">
+          <span>📍</span>
+          <span>Secteur : <span className="font-medium text-slate-700">{irisDisplayLabel}</span></span>
+        </p>
+      )}
 
       <div className="flex flex-wrap gap-1.5 items-center">
         {chips.map((chip, i) => (
