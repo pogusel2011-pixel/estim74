@@ -46,16 +46,17 @@ import { PropertyType } from "@/types/property";
 
 export const dynamic = "force-dynamic";
 
-/** Formate une adresse pour l'URL Pappers immobilier (slug kebab-case sans accents). */
+/** Formate une adresse pour l'URL Pappers immobilier (slug kebab-case sans accents).
+ * Ex: "47 chemin de crêt vial" + "74540" → "47-chemin-de-cret-vial-74540"
+ */
 function formatAddressForPappers(address: string | null, postalCode: string | null): string {
   const full = [address, postalCode].filter(Boolean).join(" ");
   return full
     .toLowerCase()
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9\s]/g, "")
-    .trim()
-    .replace(/\s+/g, "-");
+    .replace(/[\u0300-\u036f]/g, "")   // supprime les diacritiques (é→e, ê→e, à→a…)
+    .replace(/[^a-z0-9]+/g, "-")       // toute séquence non-alphanumérique → un seul tiret
+    .replace(/^-|-$/g, "");            // retire les tirets en début/fin
 }
 
 /** Safely parses a Prisma Json? field into an array — returns [] on null/non-array/error. */
