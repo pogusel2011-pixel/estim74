@@ -86,20 +86,38 @@ import { PDFDocument } from "pdf-lib";
     const chips = [surface ? `${surface} m²` : null, a.rooms ? `${a.rooms} pièces` : null, a.yearBuilt ? `Construit en ${a.yearBuilt}` : null, conditionLabel || null, a.dpeLetter ? `DPE ${a.dpeLetter}` : null].filter(Boolean) as string[];
     let chx = ML;
     chips.forEach((chip) => { cp.drawText(chip, { x: chx + 7, y: PAGE_H - 218, font: fonts.regular, size: FS.small, color: C.dark }); chx += fonts.regular.widthOfTextAtSize(chip, FS.small) + 20; });
-    const bY = 80;
-    cp.drawLine({ start: { x: ML, y: bY + 56 }, end: { x: PAGE_W - MR, y: bY + 56 }, color: C.borderBlue, thickness: 0.5 });
-    cp.drawText("Date du rapport", { x: ML, y: bY + 36, font: fonts.bold, size: FS.micro, color: C.gray });
-    cp.drawText(today, { x: ML, y: bY + 20, font: fonts.bold, size: FS.body, color: C.dark });
-    cp.drawText("Préparé par :", { x: ML, y: bY + 1, font: fonts.regular, size: FS.body, color: C.gray });
-    cp.drawText(san("Aurélie LIVERSET — aurelie.liverset@iadfrance.fr — 07 82 72 78 83"), { x: ML + 80, y: bY + 1, font: fonts.bold, size: FS.small, color: C.dark });
-    cp.drawLine({ start: { x: ML + 70, y: bY - 1 }, end: { x: ML + 260, y: bY - 1 }, color: C.borderBlue, thickness: 1 });
+    // ── Cover bottom: séparateur + bloc agent + bloc client ──────────────
+    const SEP_Y = 148;
+    cp.drawLine({ start: { x: ML, y: SEP_Y }, end: { x: PAGE_W - MR, y: SEP_Y }, color: C.borderBlue, thickness: 0.5 });
+
+    // Date du rapport (colonne gauche, au-dessus du séparateur)
+    cp.drawText("Date du rapport", { x: ML, y: SEP_Y - 12, font: fonts.bold, size: FS.micro, color: C.gray });
+    cp.drawText(today, { x: ML, y: SEP_Y - 28, font: fonts.bold, size: FS.body, color: C.dark });
+
+    // Photo + texte agent (colonne gauche, sous le séparateur)
+    const photoSize = 40;
+    const photoY = 57;
+    if (w.agentPhoto) {
+      cp.drawImage(w.agentPhoto, { x: ML, y: photoY, width: photoSize, height: photoSize });
+    }
+    const agentTxtX = w.agentPhoto ? ML + photoSize + 8 : ML;
+    cp.drawText(san("Aurelie LIVERSET"),               { x: agentTxtX, y: 92, font: fonts.bold,    size: FS.body,  color: C.dark });
+    cp.drawText(san("aurelie.liverset@iadfrance.fr"),  { x: agentTxtX, y: 80, font: fonts.regular, size: FS.small, color: C.gray });
+    cp.drawText(san("07 82 72 78 83"),                 { x: agentTxtX, y: 69, font: fonts.regular, size: FS.small, color: C.gray });
+    cp.drawText(san("IAD France - Haute-Savoie (74)"), { x: agentTxtX, y: 58, font: fonts.regular, size: FS.small, color: C.gray });
+
+    // Logo IAD (colonne droite)
+    if (w.iadLogo) {
+      cp.drawImage(w.iadLogo, { x: PAGE_W - MR - 80, y: 69, width: 80, height: 25 });
+    }
+
+    // Bloc client — colonne centrale (PRÉPARÉ POUR)
     const clientName = [a.clientFirstName, a.clientLastName].filter(Boolean).map((v) => san(v as string)).join(" ");
     if (clientName) {
-      // Bloc destinataire — colonne droite (PAGE_W/2) pour ne pas chevaucher la colonne gauche
       const cx = PAGE_W / 2;
-      cp.drawText("Pr\u00e9par\u00e9 pour :", { x: cx, y: bY + 36, font: fonts.bold, size: FS.micro, color: C.gray });
-      cp.drawText(clientName, { x: cx, y: bY + 22, font: fonts.bold, size: FS.small, color: C.dark });
-      let cLineY = bY + 10;
+      cp.drawText(san("Pr\u00e9par\u00e9 pour :"), { x: cx, y: SEP_Y - 12, font: fonts.bold,    size: FS.micro, color: C.gray });
+      cp.drawText(clientName,                        { x: cx, y: SEP_Y - 26, font: fonts.bold,    size: FS.small, color: C.dark });
+      let cLineY = SEP_Y - 39;
       if (a.clientAddress) { cp.drawText(san(a.clientAddress as string), { x: cx, y: cLineY, font: fonts.regular, size: FS.micro, color: C.gray }); cLineY -= 11; }
       if (a.clientEmail)   { cp.drawText(san(a.clientEmail as string),   { x: cx, y: cLineY, font: fonts.regular, size: FS.micro, color: C.gray }); cLineY -= 11; }
       if (a.clientPhone)   { cp.drawText(san(a.clientPhone as string),   { x: cx, y: cLineY, font: fonts.regular, size: FS.micro, color: C.gray }); }

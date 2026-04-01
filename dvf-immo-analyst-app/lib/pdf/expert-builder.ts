@@ -58,17 +58,28 @@ import { PDFDocument } from "pdf-lib";
     const feats = [a.hasParking && "Parking", a.hasGarage && "Garage", a.hasBalcony && "Balcon", a.hasTerrace && "Terrasse", a.hasPool && "Piscine", a.hasElevator && "Ascenseur", a.hasCellar && "Cave"].filter(Boolean) as string[];
     let fx = ML;
     feats.forEach((f) => { cp.drawText(f, { x: fx, y: PAGE_H - 238, font: fonts.regular, size: FS.small, color: C.gray }); fx += fonts.regular.widthOfTextAtSize(f, FS.small) + 14; });
+    // ── Cover bottom: séparateur, date/ref, agent, logo, client ─────────
     cp.drawLine({ start: { x: ML, y: 100 }, end: { x: PAGE_W - MR, y: 100 }, color: C.borderBlue, thickness: 0.5 });
+
+    // Date (gauche) + Référence (droite)
     cp.drawText("GÉNÉRÉ LE", { x: ML, y: 80, font: fonts.bold, size: FS.micro, color: C.gray });
-    cp.drawText(today, { x: ML, y: 63, font: fonts.bold, size: 13, color: C.dark });
+    cp.drawText(today,       { x: ML, y: 63, font: fonts.bold, size: 13, color: C.dark });
     cp.drawText("RÉFÉRENCE", { x: PAGE_W - MR - 90, y: 80, font: fonts.bold, size: FS.micro, color: C.gray });
-    cp.drawText(refId, { x: PAGE_W - MR - 90, y: 63, font: fonts.bold, size: 13, color: C.dark });
+    cp.drawText(refId,       { x: PAGE_W - MR - 90, y: 63, font: fonts.bold, size: 13, color: C.dark });
+
+    // Nom agent (gauche, dessous la date) + Logo IAD (droite, dessous la ref)
+    cp.drawText(san("Aurelie LIVERSET"),               { x: ML, y: 42, font: fonts.bold,    size: FS.body,  color: C.dark });
+    cp.drawText(san("IAD France - Haute-Savoie (74)"), { x: ML, y: 29, font: fonts.regular, size: FS.small, color: C.gray });
+    if (w.iadLogo) {
+      cp.drawImage(w.iadLogo, { x: PAGE_W - MR - 80, y: 26, width: 80, height: 25 });
+    }
+
+    // Bloc client — colonne centrale (PRÉPARÉ POUR)
     const clientName = [a.clientFirstName, a.clientLastName].filter(Boolean).map((v) => san(v as string)).join(" ");
     if (clientName) {
-      // Bloc destinataire — colonne centrale, aligné avec GÉNÉRÉ LE (y=80) et RÉFÉRENCE (y=80)
       const cx = PAGE_W / 2;
-      cp.drawText("PR\u00C9PAR\u00C9 POUR :", { x: cx, y: 80, font: fonts.bold, size: FS.micro, color: C.gray });
-      cp.drawText(clientName,                  { x: cx, y: 66, font: fonts.bold, size: FS.small, color: C.dark });
+      cp.drawText("PR\u00C9PAR\u00C9 POUR :", { x: cx, y: 80, font: fonts.bold,    size: FS.micro, color: C.gray });
+      cp.drawText(clientName,                  { x: cx, y: 66, font: fonts.bold,    size: FS.small, color: C.dark });
       let cLineY = 55;
       if (a.clientAddress) { cp.drawText(san(a.clientAddress as string), { x: cx, y: cLineY, font: fonts.regular, size: FS.micro, color: C.gray }); cLineY -= 11; }
       if (a.clientEmail)   { cp.drawText(san(a.clientEmail as string),   { x: cx, y: cLineY, font: fonts.regular, size: FS.micro, color: C.gray }); cLineY -= 11; }
