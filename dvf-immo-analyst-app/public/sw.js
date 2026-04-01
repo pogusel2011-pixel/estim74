@@ -1,4 +1,4 @@
-const CACHE_NAME = "estim74-v1";
+const CACHE_NAME = "estim74-v2";
 
 // Pages pré-cachées au démarrage du SW
 const PRECACHE_URLS = ["/", "/analyses"];
