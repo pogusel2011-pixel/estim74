@@ -248,15 +248,13 @@ export function buildGammaExpertPrompt(input: GammaPromptInput, baseUrl?: string
     lines.push(`*Avis de valeur établi à l'attention de : ${clientAttention}*`);
     lines.push(``);
   }
-  lines.push(`[EMPLACEMENT PHOTO CONSEILLÈRE — à insérer manuellement]`);
+  lines.push(`![Photo Aurélie LIVERSET](https://19e4ba95-cd54-4a58-b759-4fa8b36c72ae-00-16vx7xeo4kgx5.janeway.replit.dev/agent-photo.jpg)`);
   lines.push(`**CONSEILLÈRE :** Aurélie LIVERSET`);
   lines.push(`aurelie.liverset@iadfrance.fr — 07 82 72 78 83`);
   lines.push(`IAD France — Haute-Savoie (74)`);
-  lines.push(`[EMPLACEMENT LOGO IAD — à insérer manuellement]`);
+  lines.push(`![Logo IAD France](https://19e4ba95-cd54-4a58-b759-4fa8b36c72ae-00-16vx7xeo4kgx5.janeway.replit.dev/iad-logo.png)`);
   lines.push(``);
   lines.push(`*Données ESTIM'74 — Haute-Savoie (74) — DVF 2020–2025*`);
-  lines.push(``);
-  lines.push(`> Note : Remplacer les emplacements photo et logo par les vraies images après génération.`);
 
   return lines.join("\n");
 }
@@ -409,15 +407,13 @@ export function buildGammaClientPrompt(input: GammaPromptInput, baseUrl?: string
     lines.push(`*Avis de valeur établi à l'attention de : ${clientAttention}*`);
     lines.push(``);
   }
-  lines.push(`[EMPLACEMENT PHOTO CONSEILLÈRE — à insérer manuellement]`);
+  lines.push(`![Photo Aurélie LIVERSET](https://19e4ba95-cd54-4a58-b759-4fa8b36c72ae-00-16vx7xeo4kgx5.janeway.replit.dev/agent-photo.jpg)`);
   lines.push(`**CONSEILLÈRE :** Aurélie LIVERSET`);
   lines.push(`aurelie.liverset@iadfrance.fr — 07 82 72 78 83`);
   lines.push(`IAD France — Haute-Savoie (74)`);
-  lines.push(`[EMPLACEMENT LOGO IAD — à insérer manuellement]`);
+  lines.push(`![Logo IAD France](https://19e4ba95-cd54-4a58-b759-4fa8b36c72ae-00-16vx7xeo4kgx5.janeway.replit.dev/iad-logo.png)`);
   lines.push(``);
   lines.push(`*Avis de Valeur ESTIM'74 — Confidentiel — Document réservé au propriétaire*`);
-  lines.push(``);
-  lines.push(`> Note : Remplacer les emplacements photo et logo par les vraies images après génération.`);
 
   return lines.join("\n");
 }
