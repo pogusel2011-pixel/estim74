@@ -248,7 +248,7 @@ export function buildGammaExpertPrompt(input: GammaPromptInput, baseUrl?: string
     lines.push(`*Avis de valeur établi à l'attention de : ${clientAttention}*`);
     lines.push(``);
   }
-  lines.push(`![Photo Aurélie LIVERSET](https://19e4ba95-cd54-4a58-b759-4fa8b36c72ae-00-16vx7xeo4kgx5.janeway.replit.dev/agent-photo.jpg)`);
+  lines.push(`![Photo Aurélie LIVERSET](https://drive.google.com/uc?export=view&id=1oV7eOY0udKKgC4kvZ2d7N1FwfbaCfjlP)`);
   lines.push(`**CONSEILLÈRE :** Aurélie LIVERSET`);
   lines.push(`aurelie.liverset@iadfrance.fr — 07 82 72 78 83`);
   lines.push(`IAD France — Haute-Savoie (74)`);
@@ -407,7 +407,7 @@ export function buildGammaClientPrompt(input: GammaPromptInput, baseUrl?: string
     lines.push(`*Avis de valeur établi à l'attention de : ${clientAttention}*`);
     lines.push(``);
   }
-  lines.push(`![Photo Aurélie LIVERSET](https://19e4ba95-cd54-4a58-b759-4fa8b36c72ae-00-16vx7xeo4kgx5.janeway.replit.dev/agent-photo.jpg)`);
+  lines.push(`![Photo Aurélie LIVERSET](https://drive.google.com/uc?export=view&id=1oV7eOY0udKKgC4kvZ2d7N1FwfbaCfjlP)`);
   lines.push(`**CONSEILLÈRE :** Aurélie LIVERSET`);
   lines.push(`aurelie.liverset@iadfrance.fr — 07 82 72 78 83`);
   lines.push(`IAD France — Haute-Savoie (74)`);
