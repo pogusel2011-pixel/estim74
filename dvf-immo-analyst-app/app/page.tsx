@@ -3,7 +3,7 @@ import Link from "next/link";
 import { ArrowRight, BarChart3, Database, Loader2, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatPsm, formatNum, percentile } from "@/lib/utils";
+import { formatPsm, percentile } from "@/lib/utils";
 import { loadAllCsvMutations } from "@/lib/dvf/csv-loader";
 import { computePrixM2 } from "@/lib/dvf/outliers";
 
@@ -48,7 +48,7 @@ async function DVFStats() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard
           label="Transactions totales"
-          value={formatNum(all.length)}
+          value={all.length.toLocaleString("fr-FR")}
           sub="2020–2025"
         />
         <StatCard
@@ -64,8 +64,8 @@ async function DVFStats() {
         {lastYear && prevYear && (
           <StatCard
             label={`Ventes ${lastYear.year}`}
-            value={formatNum(lastYear.count)}
-            sub={`${formatNum(prevYear.count)} en ${prevYear.year}`}
+            value={lastYear.count.toLocaleString("fr-FR")}
+            sub={`${prevYear.count.toLocaleString("fr-FR")} en ${prevYear.year}`}
           />
         )}
       </div>
@@ -91,7 +91,7 @@ async function DVFStats() {
                     </span>
                   </span>
                   <span className="text-muted-foreground tabular-nums">
-                    {formatNum(c.count)} tx
+                    {c.count.toLocaleString("fr-FR")} tx
                   </span>
                 </li>
               ))}
@@ -117,7 +117,7 @@ async function DVFStats() {
                       <div className="h-full bg-primary/70 rounded-full" style={{ width: `${pct}%` }} />
                     </div>
                     <span className="w-16 text-right text-muted-foreground tabular-nums">
-                      {formatNum(y.count)}
+                      {y.count.toLocaleString("fr-FR")}
                     </span>
                   </div>
                 );

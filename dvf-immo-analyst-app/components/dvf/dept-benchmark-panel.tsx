@@ -1,7 +1,7 @@
 import { DeptBenchmark } from "@/types/dvf";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { formatPsm, formatNum } from "@/lib/utils";
+import { formatPsm } from "@/lib/utils";
 import { MapPin, TrendingUp, TrendingDown, Minus } from "lucide-react";
 
 interface Props {
@@ -77,7 +77,7 @@ export function DeptBenchmarkPanel({ benchmark, subjectPsm }: Props) {
             <div className="flex justify-between text-sm gap-2">
               <dt className="text-muted-foreground shrink-0">Transactions analysées</dt>
               <dd className="font-medium text-right text-muted-foreground">
-                {formatNum(benchmark.totalTransactions)}
+                {benchmark.totalTransactions.toLocaleString("fr-FR")}
               </dd>
             </div>
           )}
