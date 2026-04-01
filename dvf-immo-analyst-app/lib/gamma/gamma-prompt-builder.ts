@@ -116,19 +116,23 @@ export function buildGammaExpertPrompt(input: GammaPromptInput, baseUrl?: string
   lines.push(`Crée une présentation professionnelle d'expertise immobilière pour un agent immobilier ou un notaire. Style : sobre, technique, chiffré, crédible. Police professionnelle, palette bleue marine.`);
   lines.push(``);
   lines.push(`## PAGE DE COUVERTURE`);
-  lines.push(`[EMPLACEMENT PHOTO CONSEILLÈRE — à insérer manuellement]`);
-  lines.push(`**CONSEILLÈRE :** Aurélie LIVERSET — IAD France — Haute-Savoie (74)`);
-  lines.push(`[EMPLACEMENT LOGO IAD — à insérer manuellement]`);
+  lines.push(`CONSEILLÈRE : Aurélie LIVERSET`);
+  lines.push(`Email : aurelie.liverset@iadfrance.fr`);
+  lines.push(`Tél : 07 82 72 78 83`);
+  lines.push(`IAD France — Haute-Savoie (74)`);
+  lines.push(``);
+  lines.push(`[INSTRUCTION GAMMA — COVER PAGE]`);
+  lines.push(`En bas à gauche de la page de couverture : insérer la photo de la conseillère (format portrait, petit carré arrondi).`);
+  lines.push(`En bas à droite : insérer le logo IAD France (fond blanc, format horizontal).`);
+  lines.push(`Ces éléments doivent apparaître sur TOUTES les pages en pied de page.`);
   lines.push(``);
   if (clientName) {
-    lines.push(`**PRÉPARÉ POUR :** ${clientName}`);
+    lines.push(`PRÉPARÉ POUR : ${clientName}`);
     if (clientAddress) lines.push(clientAddress);
     if (clientEmail) lines.push(clientEmail);
     if (clientPhone) lines.push(clientPhone);
-  } else {
-    lines.push(`**PRÉPARÉ POUR :** [Nom du client — à compléter]`);
+    lines.push(``);
   }
-  lines.push(``);
   lines.push(`## BIEN ESTIMÉ`);
   lines.push(`**${type}** — ${surface} m² — ${address ? address + ", " : ""}${city}${postalCode ? " (" + postalCode + ")" : ""}`);
   if (rooms) lines.push(`${rooms} pièce${rooms > 1 ? "s" : ""}${bedrooms ? " dont " + bedrooms + " chambre" + (bedrooms > 1 ? "s" : "") : ""}`);
@@ -318,19 +322,23 @@ export function buildGammaClientPrompt(input: GammaPromptInput, baseUrl?: string
   lines.push(`Crée une présentation élégante et rassurante pour présenter un avis de valeur immobilier à un propriétaire. Style : chaleureux, clair, moderne, sans jargon technique. Palette verte ou bleue apaisante.`);
   lines.push(``);
   lines.push(`## PAGE DE COUVERTURE`);
-  lines.push(`[EMPLACEMENT PHOTO CONSEILLÈRE — à insérer manuellement]`);
-  lines.push(`**Aurélie LIVERSET** — Conseillère IAD France — Haute-Savoie (74)`);
-  lines.push(`[EMPLACEMENT LOGO IAD — à insérer manuellement]`);
+  lines.push(`CONSEILLÈRE : Aurélie LIVERSET`);
+  lines.push(`Email : aurelie.liverset@iadfrance.fr`);
+  lines.push(`Tél : 07 82 72 78 83`);
+  lines.push(`IAD France — Haute-Savoie (74)`);
+  lines.push(``);
+  lines.push(`[INSTRUCTION GAMMA — COVER PAGE]`);
+  lines.push(`En bas à gauche de la page de couverture : insérer la photo de la conseillère (format portrait, petit carré arrondi).`);
+  lines.push(`En bas à droite : insérer le logo IAD France (fond blanc, format horizontal).`);
+  lines.push(`Ces éléments doivent apparaître sur TOUTES les pages en pied de page.`);
   lines.push(``);
   if (clientName) {
-    lines.push(`**PRÉPARÉ POUR :** ${clientName}`);
+    lines.push(`PRÉPARÉ POUR : ${clientName}`);
     if (clientAddress) lines.push(clientAddress);
     if (clientEmail) lines.push(clientEmail);
     if (clientPhone) lines.push(clientPhone);
-  } else {
-    lines.push(`**PRÉPARÉ POUR :** [Nom du client — à compléter]`);
+    lines.push(``);
   }
-  lines.push(``);
   lines.push(`## VOTRE BIEN`);
   lines.push(`**${type}** de **${surface} m²** — ${address ? address + ", " : ""}${city}`);
 
