@@ -74,6 +74,7 @@ export async function POST(req: Request) {
         hasElevator: body.hasElevator ?? false,
         orientation: body.orientation,
         view: body.view,
+        mitoyennete: body.mitoyennete,
         status: "DRAFT",
       },
     });
