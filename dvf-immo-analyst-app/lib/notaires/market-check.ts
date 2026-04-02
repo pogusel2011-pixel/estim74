@@ -1,6 +1,7 @@
 import { MarketReading } from "@/types/analysis";
 import { loadAllCsvMutations } from "@/lib/dvf/csv-loader";
 import { fetchDeptStats } from "@/lib/dvf/dept-stats";
+import { loadDbMarketStats, loadDbDeptStats } from "@/lib/dvf/db-stats";
 import { percentile } from "@/lib/utils";
 
 /**
@@ -59,6 +60,14 @@ export async function fetchNotairesMarket(
   if (cached && Date.now() - cached.ts < CACHE_TTL_MS) return cached.result;
 
   try {
+    // ── Mode base de données (Neon) ──────────────────────────────────────
+    if (process.env.DVF_SOURCE === "database") {
+      const deptBenchmark = await loadDbDeptStats(propertyType);
+      const result = await loadDbMarketStats(postalCode, propertyType, deptBenchmark);
+      if (result) global.__marketCheckCache!.set(cacheKey, { result, ts: Date.now() });
+      return result;
+    }
+
     const [all, deptBenchmark] = await Promise.all([
       loadAllCsvMutations(),
       fetchDeptStats(propertyType),
