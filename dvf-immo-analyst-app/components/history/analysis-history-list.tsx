@@ -122,7 +122,7 @@ export function AnalysisHistoryList({ analyses: initial }: Props) {
           <Card key={a.id} className="hover:shadow-md transition-all hover:border-primary/30 group">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <Link href={"/analyses/" + a.id + "/edit"} className="flex-1 min-w-0">
+                <Link href={"/analyses/" + a.id} className="flex-1 min-w-0">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2 flex-wrap">
                       <Badge variant="outline" className="text-xs">{PROPERTY_TYPE_LABELS[a.propertyType] ?? a.propertyType}</Badge>

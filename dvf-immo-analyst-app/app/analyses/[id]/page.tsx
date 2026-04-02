@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { headers } from "next/headers";
 import Link from "next/link";
 import { getIrisDisplayLabel } from "@/lib/geo/iris-loader";
-import { AlertTriangle, ArrowLeft, MapPin, Map } from "lucide-react";
+import { AlertTriangle, ArrowLeft, MapPin, Map, Pencil } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
 import { ResimulateButton } from "@/components/analysis/resimulate-button";
@@ -293,9 +293,15 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200/80 px-5 py-4 mb-5">
         <div className="flex flex-wrap items-start gap-x-0 gap-y-3">
 
-          {/* Groupe gauche — Re-simuler */}
-          <div className="flex items-center pr-4 mr-4 border-r border-slate-200">
+          {/* Groupe gauche — Re-simuler + Modifier */}
+          <div className="flex items-center gap-2 pr-4 mr-4 border-r border-slate-200">
             <ResimulateButton analysisId={serialized.id as string} />
+            <Button asChild variant="outline" size="sm" className="gap-1.5 text-slate-600 border-slate-300">
+              <Link href={`/analyses/${serialized.id}/edit`}>
+                <Pencil className="h-3.5 w-3.5" />
+                Modifier le bien
+              </Link>
+            </Button>
           </div>
 
           {/* Groupe centre — GPT */}
