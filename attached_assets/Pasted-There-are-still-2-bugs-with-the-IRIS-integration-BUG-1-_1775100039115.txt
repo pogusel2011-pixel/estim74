@@ -1,0 +1,62 @@
+There are still 2 bugs with the IRIS integration:
+
+BUG 1 — WRONG IRIS DETECTION (critical):
+Address "14 rue du Fier, 74960, Annecy" 
+(ancien quartier Meythet) shows 
+"Courier — Annecy" instead of 
+"Meythet Nord-Est" or "Meythet Sud" or 
+"Meythet Nord-Ouest"
+
+The root cause is that the IRIS lookup uses 
+only the commune name or a simple text match 
+instead of GPS coordinates.
+
+THE CORRECT METHOD:
+The IRIS file has 51 zones for Annecy (DEPCOM 74010).
+To find the correct IRIS for an address, you MUST 
+use the GPS coordinates (lat/lng) from BAN geocoding
+and find which IRIS polygon contains that point.
+
+HOWEVER since we don't have the IRIS polygon 
+geometries (only the reference table), use this 
+approach instead:
+
+1. Use the BAN geocoding result which returns 
+   the exact street/quartier information
+2. The BAN API returns a field "context" or 
+   "locality" that contains the sub-commune name
+3. Match this against LIB_IRIS names
+
+OR better:
+Use the DVF mutations themselves — each mutation 
+has a code_commune AND coordinates (lat/lng).
+Find the 3 nearest DVF mutations to the property,
+check which IRIS zone name appears most frequently
+in their addresses, use that IRIS zone.
+
+OR simplest fix:
+Call this official API to get IRIS from coordinates:
+GET https://geo.api.gouv.fr/communes?lat=[lat]&lon=[lng]&fields=code,nom,codesPostaux&format=json
+Then cross-reference with our IRIS CSV using 
+the commune code.
+
+For Meythet specifically:
+lat≈45.916, lng≈6.082 
+→ should return IRIS "Meythet Nord-Est" 
+  or "Meythet Sud" (DEPCOM 74010)
+
+BUG 2 — PDF EXPERT SHOWS WRONG IRIS NAME:
+The PDF Expert shows "Secteur IRIS" with wrong 
+value. Once BUG 1 is fixed, the PDF should 
+automatically show the correct IRIS name.
+
+Please fix BUG 1 first and test with:
+"14 rue du Fier, 74960 Annecy" (Meythet)
+→ Expected: "Meythet Nord-Est" or "Meythet Sud"
+
+"30 avenue du Beauregard, 74960 Annecy" (Cran-Gevrier)  
+→ Expected: "Le Jourdil-Beauregard" or 
+  "Le Vallon-Riante Colline"
+
+"12 rue Vaugelas, 74000 Annecy" (centre)
+→ Expected: "Vieille Ville" or "Courier"

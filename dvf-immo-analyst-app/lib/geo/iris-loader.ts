@@ -69,49 +69,113 @@ export function getIrisDisplayLabel(codeIris: string): string | null {
   return `${rec.LIB_IRIS} — ${rec.LIBCOM}`;
 }
 
-/** Try PyRIS API (primary IRIS lookup by coordinates) */
+/** Normalize zone name for fuzzy matching (lowercase, no accents, no punctuation) */
+function normName(s: string): string {
+  return s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+/**
+ * Given an IRIS code (possibly old pre-merger code) and zone name from an external API,
+ * resolve the matching IrisRecord in our 2025 CSV for the given DEPCOM.
+ * Strategy:
+ *  1. Exact code match in CSV
+ *  2. Exact zone name match within DEPCOM zones
+ *  3. Partial zone name match within DEPCOM zones
+ */
+function resolveIrisRecord(
+  apiCode: string | null | undefined,
+  apiName: string | null | undefined,
+  zones: IrisRecord[],
+): IrisRecord | null {
+  // 1. Exact code match
+  if (apiCode) {
+    const byCode = irisByCode?.get(apiCode);
+    if (byCode) return byCode;
+  }
+
+  // 2 & 3. Name-based matching within the commune
+  if (apiName && zones.length > 0) {
+    const needle = normName(apiName);
+
+    // Exact normalised name match
+    const exact = zones.find((z) => normName(z.LIB_IRIS) === needle);
+    if (exact) return exact;
+
+    // Partial: needle starts with zone name or zone name starts with needle
+    const partial = zones.find(
+      (z) =>
+        needle.startsWith(normName(z.LIB_IRIS)) ||
+        normName(z.LIB_IRIS).startsWith(needle),
+    );
+    if (partial) return partial;
+  }
+
+  return null;
+}
+
+/** PyRIS point-in-polygon lookup */
 async function tryPyRIS(
   lat: number,
   lng: number,
-): Promise<string | null> {
+): Promise<{ code: string | null; name: string | null }> {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 4000);
+  const timer = setTimeout(() => controller.abort(), 5000);
   try {
     const res = await fetch(
       `https://pyris.eig-forever.ovh/api/v1/address2iris?lon=${lng}&lat=${lat}`,
       { signal: controller.signal },
     );
     clearTimeout(timer);
-    if (!res.ok) return null;
-    const data = (await res.json()) as { iris?: string };
-    return data.iris ?? null;
-  } catch {
+    if (!res.ok) {
+      console.warn(`[IRIS] PyRIS HTTP ${res.status}`);
+      return { code: null, name: null };
+    }
+    const data = (await res.json()) as {
+      iris?: string;
+      nom_iris?: string;
+      nom_commune?: string;
+    };
+    console.log("[IRIS] PyRIS raw:", JSON.stringify(data));
+    return { code: data.iris ?? null, name: data.nom_iris ?? null };
+  } catch (e) {
     clearTimeout(timer);
-    return null;
+    console.warn("[IRIS] PyRIS erreur:", (e as Error).message);
+    return { code: null, name: null };
   }
 }
 
-/** Try IGN apicarto IRIS API (secondary lookup) */
+/** IGN apicarto IRIS point-in-polygon lookup */
 async function tryIgnIris(
   lat: number,
   lng: number,
-): Promise<string | null> {
+): Promise<{ code: string | null; name: string | null }> {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 4000);
+  const timer = setTimeout(() => controller.abort(), 5000);
   try {
     const res = await fetch(
       `https://apicarto.ign.fr/api/cadastre/iris?lon=${lng}&lat=${lat}&format=json`,
       { signal: controller.signal },
     );
     clearTimeout(timer);
-    if (!res.ok) return null;
+    if (!res.ok) {
+      console.warn(`[IRIS] IGN apicarto HTTP ${res.status}`);
+      return { code: null, name: null };
+    }
     const data = (await res.json()) as {
-      features?: { properties?: { code_iris?: string } }[];
+      features?: { properties?: { code_iris?: string; nom_iris?: string } }[];
     };
-    return data.features?.[0]?.properties?.code_iris ?? null;
-  } catch {
+    console.log("[IRIS] IGN raw:", JSON.stringify(data?.features?.[0]?.properties));
+    const props = data.features?.[0]?.properties;
+    return { code: props?.code_iris ?? null, name: props?.nom_iris ?? null };
+  } catch (e) {
     clearTimeout(timer);
-    return null;
+    console.warn("[IRIS] IGN apicarto erreur:", (e as Error).message);
+    return { code: null, name: null };
   }
 }
 
@@ -125,40 +189,31 @@ export async function lookupIrisForProperty(
   const zones = irisByDepcom?.get(depcom) ?? [];
   if (zones.length === 0) return null;
 
-  // Communes non irisées (zone unique ou type Z) → retour direct, pas besoin d'API
+  // Communes non irisées (zone unique ou type Z) → retour direct
   if (zones.length === 1 || zones[0].TYP_IRIS === "Z") {
     const z = zones[0];
     return { codeIris: z.CODE_IRIS, libIris: z.LIB_IRIS, libCom: z.LIBCOM, isIrised: false };
   }
 
-  // Communes multi-zones : résolution par coordonnées via API externe
-  // Tentative 1 : PyRIS
-  const pyrisCode = await tryPyRIS(lat, lng);
-  if (pyrisCode) {
-    const record = irisByCode?.get(pyrisCode);
-    if (record) {
-      console.log(`[IRIS] PyRIS → ${pyrisCode} — ${record.LIB_IRIS} (${record.LIBCOM})`);
-      return { codeIris: record.CODE_IRIS, libIris: record.LIB_IRIS, libCom: record.LIBCOM, isIrised: true };
-    }
-    console.warn(`[IRIS] PyRIS a retourné ${pyrisCode} mais code absent du CSV — essai IGN`);
-  } else {
-    console.warn("[IRIS] PyRIS indisponible — essai IGN apicarto");
+  // Tentative 1 — PyRIS (point-in-polygon officiel)
+  const pyris = await tryPyRIS(lat, lng);
+  const rec1 = resolveIrisRecord(pyris.code, pyris.name, zones);
+  if (rec1) {
+    console.log(`[IRIS] Résolu via PyRIS : ${rec1.CODE_IRIS} — ${rec1.LIB_IRIS} (${rec1.LIBCOM})`);
+    return { codeIris: rec1.CODE_IRIS, libIris: rec1.LIB_IRIS, libCom: rec1.LIBCOM, isIrised: true };
   }
 
-  // Tentative 2 : IGN apicarto
-  const ignCode = await tryIgnIris(lat, lng);
-  if (ignCode) {
-    const record = irisByCode?.get(ignCode);
-    if (record) {
-      console.log(`[IRIS] IGN → ${ignCode} — ${record.LIB_IRIS} (${record.LIBCOM})`);
-      return { codeIris: record.CODE_IRIS, libIris: record.LIB_IRIS, libCom: record.LIBCOM, isIrised: true };
-    }
-    console.warn(`[IRIS] IGN a retourné ${ignCode} mais code absent du CSV`);
-  } else {
-    console.warn("[IRIS] IGN apicarto indisponible");
+  // Tentative 2 — IGN apicarto
+  const ign = await tryIgnIris(lat, lng);
+  const rec2 = resolveIrisRecord(ign.code, ign.name, zones);
+  if (rec2) {
+    console.log(`[IRIS] Résolu via IGN : ${rec2.CODE_IRIS} — ${rec2.LIB_IRIS} (${rec2.LIBCOM})`);
+    return { codeIris: rec2.CODE_IRIS, libIris: rec2.LIB_IRIS, libCom: rec2.LIBCOM, isIrised: true };
   }
 
-  // Aucune API n'a répondu : ne pas deviner — retour null pour éviter un faux secteur
-  console.warn(`[IRIS] Impossible de déterminer la zone IRIS pour ${depcom} (${lat},${lng}) — secteur non affiché`);
+  // Aucune API n'a permis d'identifier la zone → ne pas deviner
+  console.warn(
+    `[IRIS] Aucune zone identifiée pour (${lat.toFixed(4)}, ${lng.toFixed(4)}) DEPCOM=${depcom} — secteur non affiché`,
+  );
   return null;
 }
