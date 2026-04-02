@@ -69,7 +69,7 @@ export function getIrisDisplayLabel(codeIris: string): string | null {
   return `${rec.LIB_IRIS} — ${rec.LIBCOM}`;
 }
 
-/** Normalize zone name for fuzzy matching (lowercase, no accents, no punctuation) */
+/** Normalize zone name for fuzzy matching */
 function normName(s: string): string {
   return s
     .toLowerCase()
@@ -80,33 +80,24 @@ function normName(s: string): string {
 }
 
 /**
- * Given an IRIS code (possibly old pre-merger code) and zone name from an external API,
- * resolve the matching IrisRecord in our 2025 CSV for the given DEPCOM.
- * Strategy:
- *  1. Exact code match in CSV
- *  2. Exact zone name match within DEPCOM zones
- *  3. Partial zone name match within DEPCOM zones
+ * Resolve IrisRecord from API-returned code + name.
+ * 1. Exact code match (handles current 2025 codes)
+ * 2. Exact normalised name match within DEPCOM zones
+ * 3. Partial name match (handles pre-merger codes with correct names)
  */
-function resolveIrisRecord(
+function resolveByCodeOrName(
   apiCode: string | null | undefined,
   apiName: string | null | undefined,
   zones: IrisRecord[],
 ): IrisRecord | null {
-  // 1. Exact code match
   if (apiCode) {
     const byCode = irisByCode?.get(apiCode);
     if (byCode) return byCode;
   }
-
-  // 2 & 3. Name-based matching within the commune
   if (apiName && zones.length > 0) {
     const needle = normName(apiName);
-
-    // Exact normalised name match
     const exact = zones.find((z) => normName(z.LIB_IRIS) === needle);
     if (exact) return exact;
-
-    // Partial: needle starts with zone name or zone name starts with needle
     const partial = zones.find(
       (z) =>
         needle.startsWith(normName(z.LIB_IRIS)) ||
@@ -114,68 +105,91 @@ function resolveIrisRecord(
     );
     if (partial) return partial;
   }
-
   return null;
 }
 
-/** PyRIS point-in-polygon lookup */
-async function tryPyRIS(
-  lat: number,
-  lng: number,
-): Promise<{ code: string | null; name: string | null }> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 5000);
+/** PyRIS point-in-polygon */
+async function tryPyRIS(lat: number, lng: number): Promise<{ code: string | null; name: string | null }> {
+  const ac = new AbortController();
+  const t = setTimeout(() => ac.abort(), 2500);
   try {
     const res = await fetch(
       `https://pyris.eig-forever.ovh/api/v1/address2iris?lon=${lng}&lat=${lat}`,
-      { signal: controller.signal },
+      { signal: ac.signal },
     );
-    clearTimeout(timer);
-    if (!res.ok) {
-      console.warn(`[IRIS] PyRIS HTTP ${res.status}`);
-      return { code: null, name: null };
-    }
-    const data = (await res.json()) as {
-      iris?: string;
-      nom_iris?: string;
-      nom_commune?: string;
-    };
-    console.log("[IRIS] PyRIS raw:", JSON.stringify(data));
+    clearTimeout(t);
+    if (!res.ok) { console.warn(`[IRIS] PyRIS HTTP ${res.status}`); return { code: null, name: null }; }
+    const data = (await res.json()) as { iris?: string; nom_iris?: string };
+    console.log("[IRIS] PyRIS →", data.iris, data.nom_iris);
     return { code: data.iris ?? null, name: data.nom_iris ?? null };
-  } catch (e) {
-    clearTimeout(timer);
-    console.warn("[IRIS] PyRIS erreur:", (e as Error).message);
+  } catch {
+    clearTimeout(t);
     return { code: null, name: null };
   }
 }
 
-/** IGN apicarto IRIS point-in-polygon lookup */
-async function tryIgnIris(
-  lat: number,
-  lng: number,
-): Promise<{ code: string | null; name: string | null }> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 5000);
+/** IGN apicarto IRIS */
+async function tryIgn(lat: number, lng: number): Promise<{ code: string | null; name: string | null }> {
+  const ac = new AbortController();
+  const t = setTimeout(() => ac.abort(), 2500);
   try {
     const res = await fetch(
       `https://apicarto.ign.fr/api/cadastre/iris?lon=${lng}&lat=${lat}&format=json`,
-      { signal: controller.signal },
+      { signal: ac.signal },
     );
-    clearTimeout(timer);
-    if (!res.ok) {
-      console.warn(`[IRIS] IGN apicarto HTTP ${res.status}`);
-      return { code: null, name: null };
-    }
-    const data = (await res.json()) as {
-      features?: { properties?: { code_iris?: string; nom_iris?: string } }[];
-    };
-    console.log("[IRIS] IGN raw:", JSON.stringify(data?.features?.[0]?.properties));
-    const props = data.features?.[0]?.properties;
-    return { code: props?.code_iris ?? null, name: props?.nom_iris ?? null };
-  } catch (e) {
-    clearTimeout(timer);
-    console.warn("[IRIS] IGN apicarto erreur:", (e as Error).message);
+    clearTimeout(t);
+    if (!res.ok) { console.warn(`[IRIS] IGN HTTP ${res.status}`); return { code: null, name: null }; }
+    const data = (await res.json()) as { features?: { properties?: { code_iris?: string; nom_iris?: string } }[] };
+    const p = data.features?.[0]?.properties;
+    console.log("[IRIS] IGN →", p?.code_iris, p?.nom_iris);
+    return { code: p?.code_iris ?? null, name: p?.nom_iris ?? null };
+  } catch {
+    clearTimeout(t);
     return { code: null, name: null };
+  }
+}
+
+/** Nominatim (OpenStreetMap) reverse geocoding — suburb/quarter name matching */
+async function tryNominatim(lat: number, lng: number, zones: IrisRecord[]): Promise<IrisRecord | null> {
+  const ac = new AbortController();
+  const t = setTimeout(() => ac.abort(), 3000);
+  try {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=15&accept-language=fr`,
+      {
+        signal: ac.signal,
+        headers: { "User-Agent": "Estim74/1.0 (aurelie.liverset@iadfrance.fr)" },
+      },
+    );
+    clearTimeout(t);
+    if (!res.ok) { console.warn(`[IRIS] Nominatim HTTP ${res.status}`); return null; }
+    const data = (await res.json()) as {
+      address?: {
+        suburb?: string;
+        city_district?: string;
+        quarter?: string;
+        neighbourhood?: string;
+        town?: string;
+      };
+    };
+    // Candidates: suburb, city_district, quarter, neighbourhood
+    const candidates = [
+      data.address?.suburb,
+      data.address?.city_district,
+      data.address?.quarter,
+      data.address?.neighbourhood,
+    ].filter(Boolean) as string[];
+
+    console.log("[IRIS] Nominatim →", candidates);
+
+    for (const candidate of candidates) {
+      const match = resolveByCodeOrName(null, candidate, zones);
+      if (match) return match;
+    }
+    return null;
+  } catch {
+    clearTimeout(t);
+    return null;
   }
 }
 
@@ -195,25 +209,29 @@ export async function lookupIrisForProperty(
     return { codeIris: z.CODE_IRIS, libIris: z.LIB_IRIS, libCom: z.LIBCOM, isIrised: false };
   }
 
-  // Tentative 1 — PyRIS (point-in-polygon officiel)
+  // Tentative 1 — PyRIS (point-in-polygon)
   const pyris = await tryPyRIS(lat, lng);
-  const rec1 = resolveIrisRecord(pyris.code, pyris.name, zones);
+  const rec1 = resolveByCodeOrName(pyris.code, pyris.name, zones);
   if (rec1) {
-    console.log(`[IRIS] Résolu via PyRIS : ${rec1.CODE_IRIS} — ${rec1.LIB_IRIS} (${rec1.LIBCOM})`);
+    console.log(`[IRIS] ✓ PyRIS → ${rec1.CODE_IRIS} — ${rec1.LIB_IRIS}`);
     return { codeIris: rec1.CODE_IRIS, libIris: rec1.LIB_IRIS, libCom: rec1.LIBCOM, isIrised: true };
   }
 
   // Tentative 2 — IGN apicarto
-  const ign = await tryIgnIris(lat, lng);
-  const rec2 = resolveIrisRecord(ign.code, ign.name, zones);
+  const ign = await tryIgn(lat, lng);
+  const rec2 = resolveByCodeOrName(ign.code, ign.name, zones);
   if (rec2) {
-    console.log(`[IRIS] Résolu via IGN : ${rec2.CODE_IRIS} — ${rec2.LIB_IRIS} (${rec2.LIBCOM})`);
+    console.log(`[IRIS] ✓ IGN → ${rec2.CODE_IRIS} — ${rec2.LIB_IRIS}`);
     return { codeIris: rec2.CODE_IRIS, libIris: rec2.LIB_IRIS, libCom: rec2.LIBCOM, isIrised: true };
   }
 
-  // Aucune API n'a permis d'identifier la zone → ne pas deviner
-  console.warn(
-    `[IRIS] Aucune zone identifiée pour (${lat.toFixed(4)}, ${lng.toFixed(4)}) DEPCOM=${depcom} — secteur non affiché`,
-  );
+  // Tentative 3 — Nominatim (suburb/quarter name matching)
+  const rec3 = await tryNominatim(lat, lng, zones);
+  if (rec3) {
+    console.log(`[IRIS] ✓ Nominatim → ${rec3.CODE_IRIS} — ${rec3.LIB_IRIS}`);
+    return { codeIris: rec3.CODE_IRIS, libIris: rec3.LIB_IRIS, libCom: rec3.LIBCOM, isIrised: true };
+  }
+
+  console.warn(`[IRIS] Aucune zone identifiée pour (${lat.toFixed(4)},${lng.toFixed(4)}) DEPCOM=${depcom}`);
   return null;
 }

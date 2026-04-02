@@ -73,15 +73,13 @@ export async function POST(req: Request) {
 
     const propertyWithGeo = { ...property, lat, lng } as unknown as PropertyInput;
 
-    // 1b. IRIS — zone géographique du bien (non bloquant, timeout 2.5s)
+    // 1b. IRIS — zone géographique du bien (non bloquant, affichage uniquement)
     let irisCode: string | null = null;
-    let irisLabel: string | undefined;
     if (communeCode) {
       try {
         const irisInfo = await lookupIrisForProperty(lat, lng, communeCode);
         if (irisInfo) {
           irisCode = irisInfo.codeIris;
-          irisLabel = irisInfo.isIrised ? irisInfo.libIris : undefined;
           console.log(`[IRIS] Zone : ${irisCode} — ${irisInfo.libIris} (${irisInfo.libCom})`);
         }
       } catch (e) {
@@ -89,11 +87,11 @@ export async function POST(req: Request) {
       }
     }
 
-    // 2. DVF — mutations (avec priorité IRIS → Commune → rayon expansif)
+    // 2. DVF — mutations (recherche purement radiale, IRIS n'affecte pas les transactions)
     const dvfTypes = propertyTypeToDvfTypes(property.propertyType);
     const { mutations, source, radiusKm: finalRadiusKm, dvfSearchPath } = await getDVFMutations(
       lat, lng, radiusKm, monthsBack, dvfTypes,
-      property.city, property.postalCode, irisLabel
+      property.city, property.postalCode,
     );
     let enrichedMutations = computePrixM2(mutations);
     // Toujours marquer les outliers (IQR×2) — ils restent visibles dans le tableau avec badge

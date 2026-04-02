@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { headers } from "next/headers";
 import Link from "next/link";
-import { getIrisDisplayLabel, getIrisRecord } from "@/lib/geo/iris-loader";
+import { getIrisDisplayLabel } from "@/lib/geo/iris-loader";
 import { AlertTriangle, ArrowLeft, MapPin, Map } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
@@ -123,9 +123,6 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
   // IRIS — zone géographique du bien (lookup depuis CSV, synchrone)
   const storedIrisCode = serialized.irisCode as string | null | undefined;
   const irisDisplayLabel = storedIrisCode ? getIrisDisplayLabel(storedIrisCode) : null;
-  const irisRecord = storedIrisCode ? getIrisRecord(storedIrisCode) : null;
-  // irisLabel = nom du quartier uniquement (ex: "Vieille Ville"), undefined pour communes non irisées
-  const irisLabel = irisRecord && irisRecord.TYP_IRIS !== "Z" ? irisRecord.LIB_IRIS : undefined;
 
   if (!dvfStats && serialized.lat && serialized.lng) {
     try {
@@ -140,7 +137,6 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
         dvfTypes,
         serialized.city as string | undefined,
         serialized.postalCode as string | undefined,
-        irisLabel,
       );
       liveRequestedRadiusKm = requestedRadius;
       liveFinalRadiusKm = finalRadius;

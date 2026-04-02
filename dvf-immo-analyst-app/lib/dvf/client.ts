@@ -9,15 +9,14 @@ const EXPANSION_STEP_KM = BUSINESS_RULES.GEO_RADIUS_EXPANSION_STEP.value;
 const MAX_RADIUS_KM = BUSINESS_RULES.GEO_RADIUS_MAX.value;
 
 /**
- * Point d'entrée principal — recherche DVF à 3 niveaux :
+ * Point d'entrée principal — recherche DVF à 3 niveaux (purement radiale) :
  *
- * A) IRIS proxy   : rayon serré (≤ initialRadiusKm) = approximation du quartier/zone IRIS
+ * A) Rayon initial  : rayon serré autour du bien (≤ initialRadiusKm)
  * B) Commune entière : toutes les mutations de la commune (par code INSEE)
- * C) Expansion radiale : rayon croissant jusqu'à MAX_RADIUS_KM (franchit les limites communales)
+ * C) Expansion radiale : rayon croissant jusqu'à MAX_RADIUS_KM
  *
- * @param city       Nom de la commune — active la recherche commune et le filtre INSEE
- * @param postalCode Code postal — précise la recherche INSEE
- * @param irisLabel  Nom de la zone IRIS du bien (pour le libellé du chemin de recherche)
+ * La zone IRIS est utilisée uniquement pour l'affichage du badge,
+ * elle n'influence PAS la sélection des transactions DVF.
  */
 export async function getDVFMutations(
   lat: number,
@@ -27,7 +26,6 @@ export async function getDVFMutations(
   propertyTypes?: string[],
   city?: string,
   postalCode?: string,
-  irisLabel?: string,
 ): Promise<{ mutations: DVFMutation[]; source: "csv" | "api" | "mixed"; radiusKm: number; dvfSearchPath: string }> {
 
   // Pré-chargement des codes INSEE de la commune (pour Step B)
@@ -40,9 +38,7 @@ export async function getDVFMutations(
     }
   }
 
-  const irisPrefix = irisLabel ? `IRIS ${irisLabel}` : null;
-
-  // ── A) IRIS proxy : rayon serré (proxy du quartier IRIS) ─────────────────
+  // ── A) Rayon initial ─────────────────────────────────────────────────────
   {
     const csvRaw = await loadCsvMutations(
       lat, lng, initialRadiusKm, monthsBack, propertyTypes, city, postalCode,
@@ -50,7 +46,7 @@ export async function getDVFMutations(
     const mutations: DVFMutation[] = csvRaw.map((m) => ({ ...m, _source: "csv" as const }));
 
     if (mutations.length >= MIN_SAMPLES) {
-      const dvfSearchPath = irisPrefix ?? `Rayon ${initialRadiusKm} km`;
+      const dvfSearchPath = `Rayon ${initialRadiusKm} km`;
       return { mutations, source: "csv", radiusKm: initialRadiusKm, dvfSearchPath };
     }
 
@@ -68,9 +64,7 @@ export async function getDVFMutations(
 
     if (mutations.length >= MIN_SAMPLES) {
       const communeLabel = city ?? depcoms[0];
-      const dvfSearchPath = irisPrefix
-        ? `${irisPrefix} → Commune ${communeLabel}`
-        : `Commune ${communeLabel}`;
+      const dvfSearchPath = `Commune ${communeLabel}`;
       console.log(`[DVF] Étape B (commune entière) : ${mutations.length} tx`);
       return { mutations, source: "csv", radiusKm: 0, dvfSearchPath };
     }
@@ -90,14 +84,12 @@ export async function getDVFMutations(
 
     if (result.mutations.length >= MIN_SAMPLES) {
       const communeLabel = city ?? "";
-      const previousSteps = irisPrefix
-        ? `${irisPrefix} → ${communeLabel ? `Commune ${communeLabel} → ` : ""}`
-        : depcoms.length > 0 && communeLabel
-          ? `Commune ${communeLabel} → `
-          : "";
+      const communePrefix = depcoms.length > 0 && communeLabel
+        ? `Commune ${communeLabel} → `
+        : "";
       const dvfSearchPath = radiusKm !== initialRadiusKm
-        ? `${previousSteps}${radiusKm} km (élargi depuis ${initialRadiusKm} km)`
-        : `${previousSteps}${radiusKm} km`;
+        ? `${communePrefix}${radiusKm} km (élargi depuis ${initialRadiusKm} km)`
+        : `${communePrefix}${radiusKm} km`;
 
       if (radiusKm !== initialRadiusKm) {
         console.log(
