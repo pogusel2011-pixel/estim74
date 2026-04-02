@@ -1,7 +1,6 @@
 import fs from "fs";
 import path from "path";
 import { parse } from "csv-parse/sync";
-import { loadAllCsvMutations } from "@/lib/dvf/csv-loader";
 
 export interface IrisRecord {
   CODE_IRIS: string;
@@ -74,7 +73,7 @@ export function getIrisDisplayLabel(codeIris: string): string | null {
   return `${rec.LIB_IRIS} — ${rec.LIBCOM}`;
 }
 
-// ─── IRIS zone centroids (fetched from OpenDataSoft, cached to disk) ─────────
+// ─── IRIS zone centroids (fallback only) ─────────────────────────────────────
 
 interface Centroid { lat: number; lng: number }
 let centroidsCache: Map<string, Centroid> | null = null;
@@ -87,7 +86,6 @@ async function loadIrisCentroids(): Promise<Map<string, Centroid>> {
   if (centroidsLoading) return centroidsLoading;
 
   centroidsLoading = (async () => {
-    // 1. Try local cache first
     if (fs.existsSync(CENTROID_CACHE_FILE)) {
       try {
         const raw = JSON.parse(fs.readFileSync(CENTROID_CACHE_FILE, "utf-8")) as Record<string, Centroid>;
@@ -99,7 +97,6 @@ async function loadIrisCentroids(): Promise<Map<string, Centroid>> {
       }
     }
 
-    // 2. Fetch from OpenDataSoft (free, public, no key)
     const result: Record<string, Centroid> = {};
     let offset = 0;
     const limit = 100;
@@ -113,10 +110,7 @@ async function loadIrisCentroids(): Promise<Map<string, Centroid>> {
           `?limit=${limit}&refine=dep_code%3A74&fields=iris_code%2Cgeo_point_2d&offset=${offset}`;
         const res = await fetch(url, { signal: ac.signal });
         clearTimeout(t);
-        if (!res.ok) {
-          console.warn(`[IRIS] OpenDataSoft HTTP ${res.status}`);
-          break;
-        }
+        if (!res.ok) { console.warn(`[IRIS] OpenDataSoft HTTP ${res.status}`); break; }
         const data = (await res.json()) as {
           results: { iris_code?: string | string[]; geo_point_2d?: { lat: number; lon: number } }[];
           total_count: number;
@@ -127,12 +121,10 @@ async function loadIrisCentroids(): Promise<Map<string, Centroid>> {
             result[code] = { lat: rec.geo_point_2d.lat, lng: rec.geo_point_2d.lon };
           }
         }
-        console.log(`[IRIS] Centroides : ${Object.keys(result).length}/${data.total_count}`);
         if (data.results.length < limit) break;
         offset += limit;
       }
 
-      // Save to disk
       if (Object.keys(result).length > 0) {
         fs.writeFileSync(CENTROID_CACHE_FILE, JSON.stringify(result));
         console.log(`[IRIS] ${Object.keys(result).length} centroides sauvegardés`);
@@ -148,7 +140,7 @@ async function loadIrisCentroids(): Promise<Map<string, Centroid>> {
   return centroidsLoading;
 }
 
-// ─── Haversine distance ────────────────────────────────────────────────────
+// ─── Haversine distance ─────────────────────────────────────────────────────
 
 function haversine(lat1: number, lng1: number, lat2: number, lng2: number): number {
   const R = 6371;
@@ -160,21 +152,92 @@ function haversine(lat1: number, lng1: number, lat2: number, lng2: number): numb
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-// ─── DVF mutation IRIS assignment via nearest centroid ────────────────────
+// ─── Geo-intersect lookup (point-in-polygon via OpenDataSoft) ────────────────
 
 /**
- * Given a location (lat, lng) and a list of IRIS zones for the commune,
- * return the zone whose centroid is closest to (lat, lng).
- * Falls back to first zone if no centroid data available.
+ * Query OpenDataSoft for which IRIS zone *contains* the property point.
+ * Uses the actual IGN polygon boundaries — 100% accurate.
+ * Result is cached per coordinate pair.
  */
-async function assignIrisByNearestCentroid(
+const geoLookupCache = new Map<string, IrisRecord | null>();
+
+async function lookupIrisByGeoIntersect(
   lat: number,
   lng: number,
   zones: IrisRecord[],
 ): Promise<IrisRecord | null> {
-  if (zones.length === 0) return null;
-  if (zones.length === 1) return zones[0];
+  // Round to ~10 m precision for cache key
+  const key = `${lat.toFixed(4)},${lng.toFixed(4)}`;
+  if (geoLookupCache.has(key)) return geoLookupCache.get(key)!;
 
+  try {
+    const ac = new AbortController();
+    const t = setTimeout(() => ac.abort(), 6000);
+
+    // ODSQL intersects() checks if the geo_shape polygon contains the POINT
+    const where = encodeURIComponent(`intersects(geo_shape, geom'POINT(${lng} ${lat})')`);
+    const url =
+      `https://public.opendatasoft.com/api/explore/v2.1/catalog/datasets/georef-france-iris/records` +
+      `?where=${where}&limit=1&fields=iris_code%2Clib_iris`;
+
+    const res = await fetch(url, { signal: ac.signal });
+    clearTimeout(t);
+
+    if (!res.ok) {
+      console.warn(`[IRIS] GeoIntersect HTTP ${res.status}`);
+      geoLookupCache.set(key, null);
+      return null;
+    }
+
+    const data = (await res.json()) as {
+      results: { iris_code?: string | string[]; lib_iris?: string | string[] }[];
+    };
+
+    if (!data.results?.length) {
+      console.warn(`[IRIS] GeoIntersect: aucune zone trouvée pour (${lat}, ${lng})`);
+      geoLookupCache.set(key, null);
+      return null;
+    }
+
+    const rec = data.results[0];
+    const rawCode = Array.isArray(rec.iris_code) ? rec.iris_code[0] : rec.iris_code;
+    if (!rawCode) {
+      geoLookupCache.set(key, null);
+      return null;
+    }
+
+    // Match against our local CSV (which is authoritative for names)
+    const localZone = irisByCode?.get(rawCode) ?? null;
+    if (localZone) {
+      console.log(`[IRIS] ✓ GeoIntersect → ${localZone.CODE_IRIS} — ${localZone.LIB_IRIS}`);
+      geoLookupCache.set(key, localZone);
+      return localZone;
+    }
+
+    // Code from API not in local CSV: check if it's within the commune's zones
+    const rawLib = Array.isArray(rec.lib_iris) ? rec.lib_iris[0] : rec.lib_iris;
+    const comZone = zones.find(z => z.CODE_IRIS === rawCode);
+    if (comZone) {
+      geoLookupCache.set(key, comZone);
+      return comZone;
+    }
+
+    console.warn(`[IRIS] GeoIntersect: code ${rawCode} (${rawLib}) hors CSV local`);
+    geoLookupCache.set(key, null);
+    return null;
+  } catch (e) {
+    console.warn("[IRIS] GeoIntersect erreur:", e);
+    return null;
+  }
+}
+
+// ─── Fallback: nearest centroid ─────────────────────────────────────────────
+
+async function lookupIrisByNearestCentroid(
+  lat: number,
+  lng: number,
+  zones: IrisRecord[],
+): Promise<IrisRecord | null> {
   const centroids = await loadIrisCentroids();
   let best: IrisRecord | null = null;
   let bestDist = Infinity;
@@ -183,106 +246,13 @@ async function assignIrisByNearestCentroid(
     const c = centroids.get(zone.CODE_IRIS);
     if (!c) continue;
     const d = haversine(lat, lng, c.lat, c.lng);
-    if (d < bestDist) {
-      bestDist = d;
-      best = zone;
-    }
+    if (d < bestDist) { bestDist = d; best = zone; }
   }
 
   return best;
 }
 
-// ─── DVF-based IRIS lookup ────────────────────────────────────────────────
-
-/**
- * Load nearest DVF mutations from the CSV and use their coordinates
- * (with centroid-based zone assignment) to vote on the most likely
- * IRIS zone for a property at (lat, lng).
- *
- * This is fully offline — uses only the local DVF CSV + centroid cache.
- */
-async function lookupIrisByDvfMutations(
-  lat: number,
-  lng: number,
-  zones: IrisRecord[],
-): Promise<IrisRecord | null> {
-  if (zones.length === 0) return null;
-  if (zones.length === 1) return zones[0];
-
-  try {
-    // Use the global in-memory cache (loaded once, shared across all requests)
-    const allMutations = await loadAllCsvMutations();
-    const centroids = await loadIrisCentroids();
-
-    // No centroids = can't assign zones
-    if (centroids.size === 0) return null;
-
-    // Find the K nearest mutations with valid coordinates (full scan, in-memory)
-    const K = 10;
-    const candidates: { lat: number; lng: number; dist: number }[] = [];
-
-    for (const mut of allMutations) {
-      if (!mut.lat || !mut.lon) continue;
-
-      const d = haversine(lat, lng, mut.lat, mut.lon);
-      if (d > 3) continue; // Ignore anything > 3 km
-
-      if (candidates.length < K) {
-        candidates.push({ lat: mut.lat, lng: mut.lon, dist: d });
-        candidates.sort((a, b) => a.dist - b.dist);
-      } else if (d < candidates[K - 1].dist) {
-        candidates[K - 1] = { lat: mut.lat, lng: mut.lon, dist: d };
-        candidates.sort((a, b) => a.dist - b.dist);
-      }
-    }
-
-    if (candidates.length === 0) return null;
-    console.log(
-      `[IRIS] DVF: ${candidates.length} mutations proches ` +
-      `(jusqu'à ${candidates[candidates.length - 1].dist.toFixed(2)} km)`,
-    );
-
-    // Assign each mutation to the nearest IRIS zone using centroids → vote
-    const votes = new Map<string, number>();
-
-    for (const mut of candidates) {
-      let bestZone: IrisRecord | null = null;
-      let bestDist = Infinity;
-      for (const zone of zones) {
-        const c = centroids.get(zone.CODE_IRIS);
-        if (!c) continue;
-        const d = haversine(mut.lat, mut.lng, c.lat, c.lng);
-        if (d < bestDist) { bestDist = d; bestZone = zone; }
-      }
-      if (bestZone) {
-        votes.set(bestZone.CODE_IRIS, (votes.get(bestZone.CODE_IRIS) ?? 0) + 1);
-      }
-    }
-
-    if (votes.size === 0) return null;
-
-    // Majority vote → winner
-    let winnerCode: string | null = null;
-    let maxVotes = 0;
-    votes.forEach((count, code) => {
-      if (count > maxVotes) { maxVotes = count; winnerCode = code; }
-    });
-
-    if (!winnerCode) return null;
-    const winner = irisByCode?.get(winnerCode) ?? null;
-    if (winner) {
-      console.log(
-        `[IRIS] ✓ DVF vote → ${winner.CODE_IRIS} — ${winner.LIB_IRIS} (${maxVotes}/${candidates.length})`,
-      );
-    }
-    return winner ?? null;
-  } catch (e) {
-    console.warn("[IRIS] Erreur DVF lookup:", e);
-    return null;
-  }
-}
-
-// ─── Main public lookup ────────────────────────────────────────────────────
+// ─── Main public lookup ─────────────────────────────────────────────────────
 
 export async function lookupIrisForProperty(
   lat: number,
@@ -300,21 +270,22 @@ export async function lookupIrisForProperty(
     return { codeIris: z.CODE_IRIS, libIris: z.LIB_IRIS, libCom: z.LIBCOM, isIrised: false };
   }
 
-  // ── Approche 1 : DVF mutations + vote par centroïde (priorité) ────────────
-  const dvfRec = await lookupIrisByDvfMutations(lat, lng, zones);
-  if (dvfRec) {
+  // ── Approche 1 : point-in-polygon via OpenDataSoft (périmètre officiel IGN) ─
+  const geoRec = await lookupIrisByGeoIntersect(lat, lng, zones);
+  if (geoRec) {
+    console.log(`[IRIS] Zone : ${geoRec.CODE_IRIS} — ${geoRec.LIB_IRIS} (${geoRec.LIBCOM})`);
     return {
-      codeIris: dvfRec.CODE_IRIS,
-      libIris: dvfRec.LIB_IRIS,
-      libCom: dvfRec.LIBCOM,
+      codeIris: geoRec.CODE_IRIS,
+      libIris: geoRec.LIB_IRIS,
+      libCom: geoRec.LIBCOM,
       isIrised: true,
     };
   }
 
-  // ── Approche 2 : centroïde le plus proche (fallback direct) ───────────────
-  const centroidRec = await assignIrisByNearestCentroid(lat, lng, zones);
+  // ── Approche 2 : centroïde le plus proche (fallback si API indisponible) ────
+  const centroidRec = await lookupIrisByNearestCentroid(lat, lng, zones);
   if (centroidRec) {
-    console.log(`[IRIS] ✓ Centroïde → ${centroidRec.CODE_IRIS} — ${centroidRec.LIB_IRIS}`);
+    console.log(`[IRIS] ✓ Centroïde (fallback) → ${centroidRec.CODE_IRIS} — ${centroidRec.LIB_IRIS}`);
     return {
       codeIris: centroidRec.CODE_IRIS,
       libIris: centroidRec.LIB_IRIS,
