@@ -5,35 +5,55 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatPsm, percentile } from "@/lib/utils";
 import { loadAllCsvMutations } from "@/lib/dvf/csv-loader";
+import { loadDbOverviewStats } from "@/lib/dvf/db-stats";
 import { computePrixM2 } from "@/lib/dvf/outliers";
 
 export const dynamic = "force-dynamic";
 
 async function DVFStats() {
-  const all = await loadAllCsvMutations();
-  const withPsm = computePrixM2(all).filter(m => m.prix_m2 != null && m.prix_m2 > 0);
-  const psms = withPsm.map(m => m.prix_m2!);
-  const medianPsm = Math.round(percentile(psms, 50));
-  const p75Psm = Math.round(percentile(psms, 75));
+  let totalTransactions: number;
+  let medianPsm: number;
+  let p75Psm: number;
+  let top5: { commune: string; count: number }[];
+  let yearlyVol: { year: number; count: number }[];
 
-  const byCommune = new Map<string, number>();
-  for (const m of all) {
-    if (!m.nom_commune) continue;
-    byCommune.set(m.nom_commune, (byCommune.get(m.nom_commune) ?? 0) + 1);
-  }
-  const top5 = Array.from(byCommune.entries())
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 5)
-    .map(([commune, count]) => ({ commune, count }));
+  if (process.env.DVF_SOURCE === "database") {
+    // ── Mode Neon : agrégations SQL, zéro chargement en mémoire ──
+    const stats = await loadDbOverviewStats();
+    totalTransactions = stats.totalTransactions;
+    medianPsm = stats.medianPsm;
+    p75Psm = stats.p75Psm;
+    top5 = stats.top5Communes;
+    yearlyVol = stats.yearlyVolume;
+  } else {
+    // ── Mode CSV local ──
+    const all = await loadAllCsvMutations();
+    const withPsm = computePrixM2(all).filter(m => m.prix_m2 != null && m.prix_m2 > 0);
+    const psms = withPsm.map(m => m.prix_m2!);
+    totalTransactions = all.length;
+    medianPsm = Math.round(percentile(psms, 50));
+    p75Psm = Math.round(percentile(psms, 75));
 
-  const byYear = new Map<number, number>();
-  for (const m of all) {
-    const year = new Date(m.date_mutation).getFullYear();
-    if (year >= 2014) byYear.set(year, (byYear.get(year) ?? 0) + 1);
+    const byCommune = new Map<string, number>();
+    for (const m of all) {
+      if (!m.nom_commune) continue;
+      byCommune.set(m.nom_commune, (byCommune.get(m.nom_commune) ?? 0) + 1);
+    }
+    top5 = Array.from(byCommune.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([commune, count]) => ({ commune, count }));
+
+    const byYear = new Map<number, number>();
+    for (const m of all) {
+      const year = new Date(m.date_mutation).getFullYear();
+      if (year >= 2014) byYear.set(year, (byYear.get(year) ?? 0) + 1);
+    }
+    yearlyVol = Array.from(byYear.entries())
+      .sort((a, b) => a[0] - b[0])
+      .map(([year, count]) => ({ year, count }));
   }
-  const yearlyVol = Array.from(byYear.entries())
-    .sort((a, b) => a[0] - b[0])
-    .map(([year, count]) => ({ year, count }));
+
   const lastYear = yearlyVol[yearlyVol.length - 1];
   const prevYear = yearlyVol[yearlyVol.length - 2];
   const maxCount = Math.max(...yearlyVol.map(v => v.count));
@@ -48,7 +68,7 @@ async function DVFStats() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard
           label="Transactions totales"
-          value={all.length.toLocaleString("fr-FR")}
+          value={totalTransactions.toLocaleString("fr-FR")}
           sub="2020–2025"
         />
         <StatCard
