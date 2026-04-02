@@ -242,7 +242,10 @@ import { PDFDocument } from "pdf-lib";
 
     const irisDisplayLabel = a.irisCode ? getIrisDisplayLabel(a.irisCode as string) : null;
     if (irisDisplayLabel) {
-      w.kv("Secteur IRIS", san(irisDisplayLabel));
+      const irisLine = san("Secteur IRIS : " + irisDisplayLabel);
+      w.rect(ML, w.y - 14, CW, 16, C.headerBg);
+      w.text(irisLine, ML + 8, w.y - 4, fonts.bold, FS.body, C.blue);
+      w.y -= 24;
     }
 
     // Badge A

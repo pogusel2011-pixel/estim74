@@ -69,6 +69,52 @@ export function getIrisDisplayLabel(codeIris: string): string | null {
   return `${rec.LIB_IRIS} — ${rec.LIBCOM}`;
 }
 
+/** Try PyRIS API (primary IRIS lookup by coordinates) */
+async function tryPyRIS(
+  lat: number,
+  lng: number,
+): Promise<string | null> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 4000);
+  try {
+    const res = await fetch(
+      `https://pyris.eig-forever.ovh/api/v1/address2iris?lon=${lng}&lat=${lat}`,
+      { signal: controller.signal },
+    );
+    clearTimeout(timer);
+    if (!res.ok) return null;
+    const data = (await res.json()) as { iris?: string };
+    return data.iris ?? null;
+  } catch {
+    clearTimeout(timer);
+    return null;
+  }
+}
+
+/** Try IGN apicarto IRIS API (secondary lookup) */
+async function tryIgnIris(
+  lat: number,
+  lng: number,
+): Promise<string | null> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 4000);
+  try {
+    const res = await fetch(
+      `https://apicarto.ign.fr/api/cadastre/iris?lon=${lng}&lat=${lat}&format=json`,
+      { signal: controller.signal },
+    );
+    clearTimeout(timer);
+    if (!res.ok) return null;
+    const data = (await res.json()) as {
+      features?: { properties?: { code_iris?: string } }[];
+    };
+    return data.features?.[0]?.properties?.code_iris ?? null;
+  } catch {
+    clearTimeout(timer);
+    return null;
+  }
+}
+
 export async function lookupIrisForProperty(
   lat: number,
   lng: number,
@@ -79,44 +125,40 @@ export async function lookupIrisForProperty(
   const zones = irisByDepcom?.get(depcom) ?? [];
   if (zones.length === 0) return null;
 
+  // Communes non irisées (zone unique ou type Z) → retour direct, pas besoin d'API
   if (zones.length === 1 || zones[0].TYP_IRIS === "Z") {
     const z = zones[0];
     return { codeIris: z.CODE_IRIS, libIris: z.LIB_IRIS, libCom: z.LIBCOM, isIrised: false };
   }
 
-  try {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 2500);
-    const res = await fetch(
-      `https://pyris.eig-forever.ovh/api/v1/address2iris?lon=${lng}&lat=${lat}`,
-      { signal: controller.signal },
-    );
-    clearTimeout(timer);
-
-    if (res.ok) {
-      const data = (await res.json()) as {
-        iris?: string;
-        nom_iris?: string;
-        nom_commune?: string;
-      };
-      const codeIris = data.iris;
-      if (codeIris) {
-        const record = irisByCode?.get(codeIris);
-        const libIris = record?.LIB_IRIS ?? data.nom_iris ?? zones[0].LIB_IRIS;
-        const libCom = record?.LIBCOM ?? data.nom_commune ?? zones[0].LIBCOM;
-        console.log(`[IRIS] Zone détectée : ${codeIris} — ${libIris} (${libCom})`);
-        return { codeIris, libIris, libCom, isIrised: true };
-      }
+  // Communes multi-zones : résolution par coordonnées via API externe
+  // Tentative 1 : PyRIS
+  const pyrisCode = await tryPyRIS(lat, lng);
+  if (pyrisCode) {
+    const record = irisByCode?.get(pyrisCode);
+    if (record) {
+      console.log(`[IRIS] PyRIS → ${pyrisCode} — ${record.LIB_IRIS} (${record.LIBCOM})`);
+      return { codeIris: record.CODE_IRIS, libIris: record.LIB_IRIS, libCom: record.LIBCOM, isIrised: true };
     }
-  } catch {
-    console.warn("[IRIS] PyRIS API indisponible, fallback commune");
+    console.warn(`[IRIS] PyRIS a retourné ${pyrisCode} mais code absent du CSV — essai IGN`);
+  } else {
+    console.warn("[IRIS] PyRIS indisponible — essai IGN apicarto");
   }
 
-  const fallback = zones.find((z) => z.TYP_IRIS === "H") ?? zones[0];
-  return {
-    codeIris: fallback.CODE_IRIS,
-    libIris: fallback.LIB_IRIS,
-    libCom: fallback.LIBCOM,
-    isIrised: true,
-  };
+  // Tentative 2 : IGN apicarto
+  const ignCode = await tryIgnIris(lat, lng);
+  if (ignCode) {
+    const record = irisByCode?.get(ignCode);
+    if (record) {
+      console.log(`[IRIS] IGN → ${ignCode} — ${record.LIB_IRIS} (${record.LIBCOM})`);
+      return { codeIris: record.CODE_IRIS, libIris: record.LIB_IRIS, libCom: record.LIBCOM, isIrised: true };
+    }
+    console.warn(`[IRIS] IGN a retourné ${ignCode} mais code absent du CSV`);
+  } else {
+    console.warn("[IRIS] IGN apicarto indisponible");
+  }
+
+  // Aucune API n'a répondu : ne pas deviner — retour null pour éviter un faux secteur
+  console.warn(`[IRIS] Impossible de déterminer la zone IRIS pour ${depcom} (${lat},${lng}) — secteur non affiché`);
+  return null;
 }

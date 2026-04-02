@@ -113,6 +113,20 @@ export function DVFStatsPanel({ stats, sampleSize, perimeterKm, requestedRadiusK
         </CardTitle>
       </CardHeader>
       <CardContent>
+        {/* Bandeau recherche DVF */}
+        {(stats.searchPath || perimeterKm) && (
+          <div className="mb-3 px-2.5 py-2 rounded-lg bg-blue-50 border border-blue-100 text-xs text-blue-800 flex items-start gap-1.5">
+            <span className="shrink-0 mt-0.5">🔍</span>
+            <span>
+              <span className="font-semibold">Recherche&nbsp;: </span>
+              {stats.searchPath
+                ? stats.searchPath
+                : wasExpanded
+                  ? `Rayon ${perimeterKm} km (élargi depuis ${requestedRadiusKm} km)`
+                  : `Rayon ${perimeterKm} km`}
+            </span>
+          </div>
+        )}
         <dl className="space-y-2">
           {rows.map(({ label, value, highlight, stat }) => (
             <div

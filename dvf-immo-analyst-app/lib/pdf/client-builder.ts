@@ -300,7 +300,10 @@ import { PDFDocument } from "pdf-lib";
       w.gap(8);
       const irisDisplayLabelC = a.irisCode ? getIrisDisplayLabel(a.irisCode as string) : null;
       if (irisDisplayLabelC) {
-        w.kv("Secteur IRIS", san(irisDisplayLabelC));
+        const irisLineC = san("Secteur IRIS : " + irisDisplayLabelC);
+        w.rect(ML, w.y - 14, CW, 16, C.headerBg);
+        w.text(irisLineC, ML + 8, w.y - 4, fonts.bold, FS.body, C.blue);
+        w.y -= 24;
       }
       drawTable(w, {
         cols: [
