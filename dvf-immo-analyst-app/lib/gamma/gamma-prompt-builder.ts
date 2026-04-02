@@ -189,6 +189,27 @@ export function buildGammaExpertPrompt(input: GammaPromptInput, baseUrl?: string
     if (dvfStats.stdPsm != null) lines.push(`- Écart-type : ${fmtPsm(dvfStats.stdPsm)}`);
     if (dvfStats.minPsm != null && dvfStats.maxPsm != null) lines.push(`- Fourchette marché : ${fmtPsm(dvfStats.minPsm)} — ${fmtPsm(dvfStats.maxPsm)}`);
     lines.push(``);
+
+    // ── Périmètre de recherche DVF ──
+    lines.push(`### Périmètre de recherche DVF`);
+    if (irisDisplayLabelGamma) lines.push(`- Secteur IRIS : ${irisDisplayLabelGamma}`);
+    if (dvfStats.searchPath) {
+      lines.push(`- Périmètre retenu : ${dvfStats.searchPath}`);
+    } else if (perimeterKm) {
+      lines.push(`- Périmètre retenu : ${perimeterKm} km`);
+    }
+    if (dvfStats.excludedCount != null && dvfStats.excludedCount > 0) {
+      lines.push(`- Transactions : ${(dvfSampleSize ?? dvfStats.count) + dvfStats.excludedCount} brutes → ${dvfSampleSize ?? dvfStats.count} retenues (${dvfStats.excludedCount} exclues)`);
+    } else if (dvfSampleSize != null) {
+      lines.push(`- Transactions retenues : ${dvfSampleSize}`);
+    }
+    if (dvfStats.periodMonths || (dvfStats.oldestDate && dvfStats.newestDate)) {
+      const period = dvfStats.oldestDate && dvfStats.newestDate
+        ? `${dvfStats.oldestDate.slice(0, 7)} – ${dvfStats.newestDate.slice(0, 7)}`
+        : null;
+      if (period) lines.push(`- Période couverte : ${period}`);
+    }
+    lines.push(``);
   }
 
   if (dvfControl) {

@@ -398,6 +398,7 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
               sampleSize={serialized.dvfSampleSize as number | null}
               perimeterKm={perimeterKm}
               requestedRadiusKm={requestedRadiusKm}
+              trend12m={safeMarketReading?.dvfControl?.trend12m ?? null}
             />
             <div className="lg:col-span-2">
               {serialized.lat && serialized.lng ? (

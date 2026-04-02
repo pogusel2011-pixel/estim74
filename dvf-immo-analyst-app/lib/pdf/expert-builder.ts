@@ -240,12 +240,32 @@ import { PDFDocument } from "pdf-lib";
     w.sectionTitle("3. Méthode et calcul");
     w.gap(6);
 
+    // ── Bloc périmètre de recherche DVF ──────────────────────────────
     const irisDisplayLabel = a.irisCode ? getIrisDisplayLabel(a.irisCode as string) : null;
-    if (irisDisplayLabel) {
-      const irisLine = san("Secteur IRIS : " + irisDisplayLabel);
-      w.rect(ML, w.y - 14, CW, 16, C.headerBg);
-      w.text(irisLine, ML + 8, w.y - 4, fonts.bold, FS.body, C.blue);
-      w.y -= 24;
+    {
+      const blockH = 14 + (irisDisplayLabel ? 14 : 0) + (dvfStats?.searchPath ? 14 : 0) + 14;
+      w.rect(ML, w.y - blockH, CW, blockH + 2, C.headerBg);
+      w.rect(ML, w.y - blockH, 3, blockH + 2, C.blue);
+      w.page.drawText(san("PÉRIMÈTRE DE RECHERCHE DVF"), { x: ML + 10, y: w.y - 10, font: fonts.bold, size: FS.micro, color: C.blue });
+      let bY = w.y - 22;
+      if (irisDisplayLabel) {
+        w.page.drawText(san("Secteur IRIS : " + irisDisplayLabel), { x: ML + 10, y: bY, font: fonts.bold, size: FS.body, color: C.dark });
+        bY -= 13;
+      }
+      const searchPathLine = dvfStats?.searchPath
+        ? san("Périmètre retenu : " + dvfStats.searchPath)
+        : perimeterKm
+          ? san("Périmètre retenu : " + perimeterKm + " km")
+          : null;
+      if (searchPathLine) {
+        w.page.drawText(searchPathLine, { x: ML + 10, y: bY, font: fonts.regular, size: FS.body, color: C.dark });
+        bY -= 13;
+      }
+      const transLine = dvfExclus > 0
+        ? san(`Transactions : ${dvfRetenues + dvfExclus} brutes → ${dvfRetenues} retenues (${dvfExclus} exclue${dvfExclus > 1 ? "s" : ""})`)
+        : san(`Transactions retenues : ${dvfRetenues}`);
+      w.page.drawText(transLine, { x: ML + 10, y: bY, font: fonts.regular, size: FS.body, color: C.gray });
+      w.y = bY - 14;
     }
 
     // Badge A
