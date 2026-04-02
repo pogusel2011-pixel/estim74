@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { loadAllCsvMutations } from "@/lib/dvf/csv-loader";
+import { loadDbOverviewStats } from "@/lib/dvf/db-stats";
 import { computePrixM2 } from "@/lib/dvf/outliers";
 import { percentile } from "@/lib/utils";
 
@@ -7,6 +8,18 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
+    if (process.env.DVF_SOURCE === "database") {
+      const stats = await loadDbOverviewStats();
+      return NextResponse.json({
+        totalTransactions: stats.totalTransactions,
+        transactionsWithPsm: stats.transactionsWithPsm,
+        medianPsm: stats.medianPsm,
+        meanPsm: stats.medianPsm, // approximation — mean not computed separately in DB mode
+        top5Communes: stats.top5Communes,
+        yearlyVolume: stats.yearlyVolume,
+      });
+    }
+
     const all = await loadAllCsvMutations();
     const withPsm = computePrixM2(all).filter(m => m.prix_m2 != null && m.prix_m2 > 0);
 
@@ -14,7 +27,6 @@ export async function GET() {
     const medianPsm = Math.round(percentile(psms, 50));
     const meanPsm = Math.round(psms.reduce((a, b) => a + b, 0) / psms.length);
 
-    // Count by commune
     const byCommune = new Map<string, number>();
     for (const m of all) {
       if (!m.nom_commune) continue;
@@ -25,7 +37,6 @@ export async function GET() {
       .slice(0, 5)
       .map(([commune, count]) => ({ commune, count }));
 
-    // Count by year
     const byYear = new Map<number, number>();
     for (const m of all) {
       const year = new Date(m.date_mutation).getFullYear();
