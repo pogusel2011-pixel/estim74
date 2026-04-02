@@ -29,11 +29,22 @@ function loadIrisSync(): void {
   }
 
   const content = fs.readFileSync(filePath, "utf-8");
-  const rows = parse(content, {
+  const rawRows = parse(content, {
     columns: true,
     skip_empty_lines: true,
     delimiter: ",",
-  }) as IrisRecord[];
+    cast: false, // always keep raw strings
+  }) as Record<string, string>[];
+
+  // Normalize keys to canonical string format regardless of whether the CSV
+  // stored them as integers or strings (e.g. 74010 → "74010", 740100502 → "740100502").
+  const rows: IrisRecord[] = rawRows.map((r) => ({
+    CODE_IRIS: String(r.CODE_IRIS ?? "").padStart(9, "0"),
+    LIB_IRIS:  r.LIB_IRIS  ?? "",
+    TYP_IRIS:  r.TYP_IRIS  ?? "",
+    DEPCOM:    String(r.DEPCOM  ?? "").padStart(5, "0"),
+    LIBCOM:    r.LIBCOM    ?? "",
+  }));
 
   irisCache = rows;
   irisByDepcom = new Map();
@@ -53,17 +64,20 @@ function loadIrisSync(): void {
 
 export function getIrisForCommune(depcom: string): IrisRecord[] {
   loadIrisSync();
-  return irisByDepcom?.get(depcom) ?? [];
+  const key = String(depcom).padStart(5, "0");
+  return irisByDepcom?.get(key) ?? [];
 }
 
 export function getIrisLabel(codeIris: string): string | null {
   loadIrisSync();
-  return irisByCode?.get(codeIris)?.LIB_IRIS ?? null;
+  const key = String(codeIris).padStart(9, "0");
+  return irisByCode?.get(key)?.LIB_IRIS ?? null;
 }
 
 export function getIrisRecord(codeIris: string): IrisRecord | null {
   loadIrisSync();
-  return irisByCode?.get(codeIris) ?? null;
+  const key = String(codeIris).padStart(9, "0");
+  return irisByCode?.get(key) ?? null;
 }
 
 export function getIrisDisplayLabel(codeIris: string): string | null {
@@ -200,11 +214,13 @@ async function lookupIrisByGeoIntersect(
     }
 
     const rec = data.results[0];
-    const rawCode = Array.isArray(rec.iris_code) ? rec.iris_code[0] : rec.iris_code;
-    if (!rawCode) {
+    const rawCodeRaw = Array.isArray(rec.iris_code) ? rec.iris_code[0] : rec.iris_code;
+    if (!rawCodeRaw) {
       geoLookupCache.set(key, null);
       return null;
     }
+    // Normalize the API response code to match our padded map keys
+    const rawCode = String(rawCodeRaw).padStart(9, "0");
 
     // Match against our local CSV (which is authoritative for names)
     const localZone = irisByCode?.get(rawCode) ?? null;
@@ -261,7 +277,8 @@ export async function lookupIrisForProperty(
 ): Promise<{ codeIris: string; libIris: string; libCom: string; isIrised: boolean } | null> {
   loadIrisSync();
 
-  const zones = irisByDepcom?.get(depcom) ?? [];
+  const depcomKey = String(depcom).padStart(5, "0");
+  const zones = irisByDepcom?.get(depcomKey) ?? [];
   if (zones.length === 0) return null;
 
   // Communes non irisées (zone unique ou type Z) → retour direct sans lookup

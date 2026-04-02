@@ -1,0 +1,396 @@
+CODE_IRIS,LIB_IRIS,TYP_IRIS,DEPCOM,LIBCOM
+740010000,Abondance (commune non irisée),Z,74001,Abondance
+740020000,Alby-sur-Chéran (commune non irisée),Z,74002,Alby-sur-Chéran
+740030000,Alex (commune non irisée),Z,74003,Alex
+740040000,Allèves (commune non irisée),Z,74004,Allèves
+740050000,Allinges (commune non irisée),Z,74005,Allinges
+740060000,Allonzier-la-Caille (commune non irisée),Z,74006,Allonzier-la-Caille
+740070000,Amancy (commune non irisée),Z,74007,Amancy
+740080101,Ouest,H,74008,Ambilly
+740080102,Est,H,74008,Ambilly
+740090000,Andilly (commune non irisée),Z,74009,Andilly
+740100101,Courier,H,74010,Annecy
+740100102,Bonlieu,H,74010,Annecy
+740100103,Vieille Ville,H,74010,Annecy
+740100201,Semnoz,D,74010,Annecy
+740100202,Marquisats,A,74010,Annecy
+740100203,Vovray,A,74010,Annecy
+740100204,Loverchy,H,74010,Annecy
+740100205,Gare,H,74010,Annecy
+740100301,SNR,A,74010,Annecy
+740100302,Hirondelles,H,74010,Annecy
+740100303,Romains,H,74010,Annecy
+740100304,Galbert,H,74010,Annecy
+740100401,Albigny,H,74010,Annecy
+740100402,Salomons,H,74010,Annecy
+740100403,Parmelan,H,74010,Annecy
+740100404,Coteau,H,74010,Annecy
+740100501,Vernet,H,74010,Annecy
+740100502,Fier,H,74010,Annecy
+740100503,Genève,H,74010,Annecy
+740100601,Novel-Annapurna,H,74010,Annecy
+740100602,Novel-Louis Armand,H,74010,Annecy
+740100603,Les Fins,H,74010,Annecy
+740100604,Novel-Teppes,H,74010,Annecy
+740100701,Annecy-le-Vieux-Albigny,H,74010,Annecy
+740100702,Pommaries,H,74010,Annecy
+740100703,Champ de Maïs,H,74010,Annecy
+740100801,Clarines,H,74010,Annecy
+740100802,Varde,H,74010,Annecy
+740100901,Glaisins,A,74010,Annecy
+740100902,Lachat,H,74010,Annecy
+740100903,Mont-Veyrier,H,74010,Annecy
+740101001,Centre Ville-Chevennes,H,74010,Annecy
+740101002,Le Vernay,H,74010,Annecy
+740101003,Les Îles,A,74010,Annecy
+740101101,Renoir-Cran Ancien,H,74010,Annecy
+740101102,Le Jourdil-Beauregard,H,74010,Annecy
+740101103,Le Vallon-Riante Colline,H,74010,Annecy
+740101201,Taillefer-Le Levray-Les Romains,A,74010,Annecy
+740101202,Sous-Aléry,H,74010,Annecy
+740101203,Vert Bois-Le Pont Neuf,H,74010,Annecy
+740101301,Meythet Nord-Est,H,74010,Annecy
+740101302,Meythet Sud,H,74010,Annecy
+740101303,Meythet Nord-Ouest,H,74010,Annecy
+740101401,Le Cep,H,74010,Annecy
+740101402,Champ Fleuri,H,74010,Annecy
+740101403,Bois Gentil-Longiret,H,74010,Annecy
+740101501,Seynod-Zone d'Activités,A,74010,Annecy
+740101502,Bressis-Neigeos,H,74010,Annecy
+740101503,Vieugy-Balmont,H,74010,Annecy
+740101504,Croix Rouge-Césière,H,74010,Annecy
+740101601,Pringy,H,74010,Annecy
+740120101,Brouaz,H,74012,Annemasse
+740120201,Centre,H,74012,Annemasse
+740120202,Centre-Gare,H,74012,Annemasse
+740120301,Romagny,H,74012,Annemasse
+740120302,Zone Industrielle,H,74012,Annemasse
+740120401,Château Rouge,H,74012,Annemasse
+740120402,Beulet-Île-de-France,H,74012,Annemasse
+740120403,Livron-Perrier,H,74012,Annemasse
+740120404,Perrier Sud,H,74012,Annemasse
+740120501,Vernand,H,74012,Annemasse
+740130000,Anthy-sur-Léman (commune non irisée),Z,74013,Anthy-sur-Léman
+740140000,Arâches-la-Frasse (commune non irisée),Z,74014,Arâches-la-Frasse
+740150000,Arbusigny (commune non irisée),Z,74015,Arbusigny
+740160000,Archamps (commune non irisée),Z,74016,Archamps
+740180000,Arenthon (commune non irisée),Z,74018,Arenthon
+740190000,Argonay (commune non irisée),Z,74019,Argonay
+740200000,Armoy (commune non irisée),Z,74020,Armoy
+740210000,Arthaz-Pont-Notre-Dame (commune non irisée),Z,74021,Arthaz-Pont-Notre-Dame
+740240000,Ayse (commune non irisée),Z,74024,Ayse
+740250000,Ballaison (commune non irisée),Z,74025,Ballaison
+740260000,La Balme-de-Sillingy (commune non irisée),Z,74026,La Balme-de-Sillingy
+740270000,La Balme-de-Thuy (commune non irisée),Z,74027,La Balme-de-Thuy
+740290000,Bassy (commune non irisée),Z,74029,Bassy
+740300000,La Baume (commune non irisée),Z,74030,La Baume
+740310000,Beaumont (commune non irisée),Z,74031,Beaumont
+740320000,Bellevaux (commune non irisée),Z,74032,Bellevaux
+740330000,Bernex (commune non irisée),Z,74033,Bernex
+740340000,Le Biot (commune non irisée),Z,74034,Le Biot
+740350000,Bloye (commune non irisée),Z,74035,Bloye
+740360000,Bluffy (commune non irisée),Z,74036,Bluffy
+740370000,Boëge (commune non irisée),Z,74037,Boëge
+740380000,Bogève (commune non irisée),Z,74038,Bogève
+740400000,Bonne (commune non irisée),Z,74040,Bonne
+740410000,Bonnevaux (commune non irisée),Z,74041,Bonnevaux
+740420101,Bois Jolivet-Les Îles,H,74042,Bonneville
+740420102,Centre,H,74042,Bonneville
+740420103,La Côte d'Hyot-Saint-Étienne,H,74042,Bonneville
+740420104,Tucinge-Le Bouchet-Bellerive,H,74042,Bonneville
+740420105,Bénéry-Dessy-Pontchy-Thuet,H,74042,Bonneville
+740430000,Bons-en-Chablais (commune non irisée),Z,74043,Bons-en-Chablais
+740440000,Bossey (commune non irisée),Z,74044,Bossey
+740450000,Le Bouchet-Mont-Charvin (commune non irisée),Z,74045,Le Bouchet-Mont-Charvin
+740460000,Boussy (commune non irisée),Z,74046,Boussy
+740480000,Brenthonne (commune non irisée),Z,74048,Brenthonne
+740490000,Brizon (commune non irisée),Z,74049,Brizon
+740500000,Burdignin (commune non irisée),Z,74050,Burdignin
+740510000,Cercier (commune non irisée),Z,74051,Cercier
+740520000,Cernex (commune non irisée),Z,74052,Cernex
+740530000,Cervens (commune non irisée),Z,74053,Cervens
+740540000,Chainaz-les-Frasses (commune non irisée),Z,74054,Chainaz-les-Frasses
+740550000,Challonges (commune non irisée),Z,74055,Challonges
+740560101,Les Bossons-Les Moussoux,H,74056,Chamonix-Mont-Blanc
+740560102,Les Pèlerins-Le Betty,H,74056,Chamonix-Mont-Blanc
+740560103,Chamonix Sud Bois du Bouchet,H,74056,Chamonix-Mont-Blanc
+740560104,La Tour Argentière-Les Praz,H,74056,Chamonix-Mont-Blanc
+740570000,Champanges (commune non irisée),Z,74057,Champanges
+740580000,La Chapelle-d'Abondance (commune non irisée),Z,74058,La Chapelle-d'Abondance
+740590000,La Chapelle-Rambaud (commune non irisée),Z,74059,La Chapelle-Rambaud
+740600000,La Chapelle-Saint-Maurice (commune non irisée),Z,74060,La Chapelle-Saint-Maurice
+740610000,Chapeiry (commune non irisée),Z,74061,Chapeiry
+740620000,Charvonnex (commune non irisée),Z,74062,Charvonnex
+740630000,Châtel (commune non irisée),Z,74063,Châtel
+740640000,Châtillon-sur-Cluses (commune non irisée),Z,74064,Châtillon-sur-Cluses
+740650000,Chaumont (commune non irisée),Z,74065,Chaumont
+740660000,Chavannaz (commune non irisée),Z,74066,Chavannaz
+740670000,Chavanod (commune non irisée),Z,74067,Chavanod
+740680000,Chêne-en-Semine (commune non irisée),Z,74068,Chêne-en-Semine
+740690000,Chênex (commune non irisée),Z,74069,Chênex
+740700000,Chens-sur-Léman (commune non irisée),Z,74070,Chens-sur-Léman
+740710000,Chessenaz (commune non irisée),Z,74071,Chessenaz
+740720000,Chevaline (commune non irisée),Z,74072,Chevaline
+740730000,Chevenoz (commune non irisée),Z,74073,Chevenoz
+740740000,Chevrier (commune non irisée),Z,74074,Chevrier
+740750000,Chilly (commune non irisée),Z,74075,Chilly
+740760000,Choisy (commune non irisée),Z,74076,Choisy
+740770000,Clarafond-Arcine (commune non irisée),Z,74077,Clarafond-Arcine
+740780000,Clermont (commune non irisée),Z,74078,Clermont
+740790000,Les Clefs (commune non irisée),Z,74079,Les Clefs
+740800000,La Clusaz (commune non irisée),Z,74080,La Clusaz
+740810101,La Serdagne Ouest,H,74081,Cluses
+740810102,La Serdagne Est,H,74081,Cluses
+740810201,Les Ewues,H,74081,Cluses
+740810301,Les Villages,H,74081,Cluses
+740810401,Centre Ville,H,74081,Cluses
+740810501,Messy,H,74081,Cluses
+740810601,La Maladière,A,74081,Cluses
+740820000,Collonges-sous-Salève (commune non irisée),Z,74082,Collonges-sous-Salève
+740830000,Combloux (commune non irisée),Z,74083,Combloux
+740850000,Les Contamines-Montjoie (commune non irisée),Z,74085,Les Contamines-Montjoie
+740860000,Contamine-Sarzin (commune non irisée),Z,74086,Contamine-Sarzin
+740870000,Contamine-sur-Arve (commune non irisée),Z,74087,Contamine-sur-Arve
+740880000,Copponex (commune non irisée),Z,74088,Copponex
+740890000,Cordon (commune non irisée),Z,74089,Cordon
+740900000,Cornier (commune non irisée),Z,74090,Cornier
+740910000,La Côte-d'Arbroz (commune non irisée),Z,74091,La Côte-d'Arbroz
+740940000,Cranves-Sales (commune non irisée),Z,74094,Cranves-Sales
+740950000,Crempigny-Bonneguête (commune non irisée),Z,74095,Crempigny-Bonneguête
+740960000,Cruseilles (commune non irisée),Z,74096,Cruseilles
+740970000,Cusy (commune non irisée),Z,74097,Cusy
+740980000,Cuvat (commune non irisée),Z,74098,Cuvat
+740990000,Demi-Quartier (commune non irisée),Z,74099,Demi-Quartier
+741000000,Desingy (commune non irisée),Z,74100,Desingy
+741010000,Dingy-en-Vuache (commune non irisée),Z,74101,Dingy-en-Vuache
+741020000,Dingy-Saint-Clair (commune non irisée),Z,74102,Dingy-Saint-Clair
+741030000,Domancy (commune non irisée),Z,74103,Domancy
+741040000,Doussard (commune non irisée),Z,74104,Doussard
+741050000,Douvaine (commune non irisée),Z,74105,Douvaine
+741060000,Draillant (commune non irisée),Z,74106,Draillant
+741070000,Droisy (commune non irisée),Z,74107,Droisy
+741080000,Duingt (commune non irisée),Z,74108,Duingt
+741090000,Éloise (commune non irisée),Z,74109,Éloise
+741110000,Entrevernes (commune non irisée),Z,74111,Entrevernes
+741120000,Epagny Metz-Tessy (commune non irisée),Z,74112,Epagny Metz-Tessy
+741140000,Essert-Romand (commune non irisée),Z,74114,Essert-Romand
+741160000,Etaux (commune non irisée),Z,74116,Etaux
+741170000,Étercy (commune non irisée),Z,74117,Étercy
+741180000,Étrembières (commune non irisée),Z,74118,Étrembières
+741190101,Bord du Lac,H,74119,Évian-les-Bains
+741190102,Ville Haute,H,74119,Évian-les-Bains
+741210000,Excenevex (commune non irisée),Z,74121,Excenevex
+741220000,Faucigny (commune non irisée),Z,74122,Faucigny
+741230101,Périphérie,H,74123,Faverges-Seythenex
+741230102,Centre,H,74123,Faverges-Seythenex
+741230201,Seythenex,H,74123,Faverges-Seythenex
+741240000,Feigères (commune non irisée),Z,74124,Feigères
+741260000,Fessy (commune non irisée),Z,74126,Fessy
+741270000,Féternes (commune non irisée),Z,74127,Féternes
+741280000,Fillinges (commune non irisée),Z,74128,Fillinges
+741290000,La Forclaz (commune non irisée),Z,74129,La Forclaz
+741300000,Franclens (commune non irisée),Z,74130,Franclens
+741310000,Frangy (commune non irisée),Z,74131,Frangy
+741330101,Les Terreaux-Vernaz,H,74133,Gaillard
+741330102,Centre,H,74133,Gaillard
+741330103,Moëllesulaz-Pont Noir,H,74133,Gaillard
+741330104,Plaine et Châtelet,H,74133,Gaillard
+741340000,Les Gets (commune non irisée),Z,74134,Les Gets
+741350000,Giez (commune non irisée),Z,74135,Giez
+741360000,Le Grand-Bornand (commune non irisée),Z,74136,Le Grand-Bornand
+741370000,Groisy (commune non irisée),Z,74137,Groisy
+741380000,Gruffy (commune non irisée),Z,74138,Gruffy
+741390000,Habère-Lullin (commune non irisée),Z,74139,Habère-Lullin
+741400000,Habère-Poche (commune non irisée),Z,74140,Habère-Poche
+741410000,Hauteville-sur-Fier (commune non irisée),Z,74141,Hauteville-sur-Fier
+741420000,Héry-sur-Alby (commune non irisée),Z,74142,Héry-sur-Alby
+741430000,Les Houches (commune non irisée),Z,74143,Les Houches
+741440000,Jonzier-Épagny (commune non irisée),Z,74144,Jonzier-Épagny
+741450000,Juvigny (commune non irisée),Z,74145,Juvigny
+741460000,Larringes (commune non irisée),Z,74146,Larringes
+741470000,Lathuile (commune non irisée),Z,74147,Lathuile
+741480000,Leschaux (commune non irisée),Z,74148,Leschaux
+741500000,Loisin (commune non irisée),Z,74150,Loisin
+741510000,Lornay (commune non irisée),Z,74151,Lornay
+741520000,Lovagny (commune non irisée),Z,74152,Lovagny
+741530000,Lucinges (commune non irisée),Z,74153,Lucinges
+741540000,Lugrin (commune non irisée),Z,74154,Lugrin
+741550000,Lullin (commune non irisée),Z,74155,Lullin
+741560000,Lully (commune non irisée),Z,74156,Lully
+741570000,Lyaud (commune non irisée),Z,74157,Lyaud
+741580000,Machilly (commune non irisée),Z,74158,Machilly
+741590000,Magland (commune non irisée),Z,74159,Magland
+741600000,Manigod (commune non irisée),Z,74160,Manigod
+741610000,Marcellaz-Albanais (commune non irisée),Z,74161,Marcellaz-Albanais
+741620000,Marcellaz (commune non irisée),Z,74162,Marcellaz
+741630000,Margencel (commune non irisée),Z,74163,Margencel
+741640101,Sud,H,74164,Marignier
+741640102,Nord,H,74164,Marignier
+741650000,Marigny-Saint-Marcel (commune non irisée),Z,74165,Marigny-Saint-Marcel
+741660000,Marin (commune non irisée),Z,74166,Marin
+741670000,Val de Chaise (commune non irisée),Z,74167,Val de Chaise
+741680000,Marlioz (commune non irisée),Z,74168,Marlioz
+741690000,Marnaz (commune non irisée),Z,74169,Marnaz
+741700000,Massingy (commune non irisée),Z,74170,Massingy
+741710000,Massongy (commune non irisée),Z,74171,Massongy
+741720000,Maxilly-sur-Léman (commune non irisée),Z,74172,Maxilly-sur-Léman
+741730000,Megève (commune non irisée),Z,74173,Megève
+741740000,Mégevette (commune non irisée),Z,74174,Mégevette
+741750000,Meillerie (commune non irisée),Z,74175,Meillerie
+741760000,Menthon-Saint-Bernard (commune non irisée),Z,74176,Menthon-Saint-Bernard
+741770000,Menthonnex-en-Bornes (commune non irisée),Z,74177,Menthonnex-en-Bornes
+741780000,Menthonnex-sous-Clermont (commune non irisée),Z,74178,Menthonnex-sous-Clermont
+741790000,Mésigny (commune non irisée),Z,74179,Mésigny
+741800000,Messery (commune non irisée),Z,74180,Messery
+741830000,Mieussy (commune non irisée),Z,74183,Mieussy
+741840000,Minzier (commune non irisée),Z,74184,Minzier
+741850000,Monnetier-Mornex (commune non irisée),Z,74185,Monnetier-Mornex
+741860000,Montagny-les-Lanches (commune non irisée),Z,74186,Montagny-les-Lanches
+741880000,Montriond (commune non irisée),Z,74188,Montriond
+741890000,Mont-Saxonnex (commune non irisée),Z,74189,Mont-Saxonnex
+741900000,Morillon (commune non irisée),Z,74190,Morillon
+741910000,Morzine (commune non irisée),Z,74191,Morzine
+741920000,Moye (commune non irisée),Z,74192,Moye
+741930000,La Muraz (commune non irisée),Z,74193,La Muraz
+741940000,Mûres (commune non irisée),Z,74194,Mûres
+741950000,Musièges (commune non irisée),Z,74195,Musièges
+741960000,Nancy-sur-Cluses (commune non irisée),Z,74196,Nancy-sur-Cluses
+741970000,Nangy (commune non irisée),Z,74197,Nangy
+741980000,Nâves-Parmelan (commune non irisée),Z,74198,Nâves-Parmelan
+741990000,Nernier (commune non irisée),Z,74199,Nernier
+742000000,Neuvecelle (commune non irisée),Z,74200,Neuvecelle
+742010000,Neydens (commune non irisée),Z,74201,Neydens
+742020000,Nonglard (commune non irisée),Z,74202,Nonglard
+742030000,Novel (commune non irisée),Z,74203,Novel
+742050000,Onnion (commune non irisée),Z,74205,Onnion
+742060000,Orcier (commune non irisée),Z,74206,Orcier
+742080101,Ouest et Nord,H,74208,Passy
+742080102,Plaine,H,74208,Passy
+742080103,Marlioz,H,74208,Passy
+742080104,Chedde-Les Plagnes,H,74208,Passy
+742090000,Peillonnex (commune non irisée),Z,74209,Peillonnex
+742100000,Perrignier (commune non irisée),Z,74210,Perrignier
+742110000,Pers-Jussy (commune non irisée),Z,74211,Pers-Jussy
+742120000,Glières-Val-de-Borne (commune non irisée),Z,74212,Glières-Val-de-Borne
+742130101,Centre,H,74213,Poisy
+742130102,Périphérie,H,74213,Poisy
+742150000,Praz-sur-Arly (commune non irisée),Z,74215,Praz-sur-Arly
+742160000,Présilly (commune non irisée),Z,74216,Présilly
+742180000,Publier (commune non irisée),Z,74218,Publier
+742190000,Quintal (commune non irisée),Z,74219,Quintal
+742200101,Nord,H,74220,Reignier-Ésery
+742200102,Sud,H,74220,Reignier-Ésery
+742210000,Le Reposoir (commune non irisée),Z,74221,Le Reposoir
+742220000,Reyvroz (commune non irisée),Z,74222,Reyvroz
+742230000,La Rivière-Enverse (commune non irisée),Z,74223,La Rivière-Enverse
+742240101,Sud,H,74224,La Roche-sur-Foron
+742240102,Centre,H,74224,La Roche-sur-Foron
+742240103,Nord,H,74224,La Roche-sur-Foron
+742250101,Rumilly Centre Nord,H,74225,Rumilly
+742250102,Rumilly Centre Sud,H,74225,Rumilly
+742250103,Rumilly Sud,H,74225,Rumilly
+742250104,Rumilly Nord Ouest,H,74225,Rumilly
+742260000,Saint-André-de-Boëge (commune non irisée),Z,74226,Saint-André-de-Boëge
+742280000,Saint-Blaise (commune non irisée),Z,74228,Saint-Blaise
+742290000,Saint-Cergues (commune non irisée),Z,74229,Saint-Cergues
+742310000,Saint-Eusèbe (commune non irisée),Z,74231,Saint-Eusèbe
+742320000,Saint-Eustache (commune non irisée),Z,74232,Saint-Eustache
+742330000,Saint-Félix (commune non irisée),Z,74233,Saint-Félix
+742340000,Saint-Ferréol (commune non irisée),Z,74234,Saint-Ferréol
+742350000,Saint-Germain-sur-Rhône (commune non irisée),Z,74235,Saint-Germain-sur-Rhône
+742360101,Ouest,H,74236,Saint-Gervais-les-Bains
+742360102,Est,H,74236,Saint-Gervais-les-Bains
+742370000,Saint-Gingolph (commune non irisée),Z,74237,Saint-Gingolph
+742380000,Saint-Jean-d'Aulps (commune non irisée),Z,74238,Saint-Jean-d'Aulps
+742390000,Saint-Jean-de-Sixt (commune non irisée),Z,74239,Saint-Jean-de-Sixt
+742400000,Saint-Jean-de-Tholome (commune non irisée),Z,74240,Saint-Jean-de-Tholome
+742410000,Saint-Jeoire (commune non irisée),Z,74241,Saint-Jeoire
+742420101,Sud,H,74242,Saint-Jorioz
+742420102,Nord,H,74242,Saint-Jorioz
+742430101,Sud-Ouest,H,74243,Saint-Julien-en-Genevois
+742430102,Nord-Est,H,74243,Saint-Julien-en-Genevois
+742430103,Centre,H,74243,Saint-Julien-en-Genevois
+742430104,Nord,H,74243,Saint-Julien-en-Genevois
+742440000,Saint-Laurent (commune non irisée),Z,74244,Saint-Laurent
+742490000,Saint-Paul-en-Chablais (commune non irisée),Z,74249,Saint-Paul-en-Chablais
+742500101,Ouest,H,74250,Saint-Pierre-en-Faucigny
+742500102,Centre Est,H,74250,Saint-Pierre-en-Faucigny
+742520000,Saint-Sigismond (commune non irisée),Z,74252,Saint-Sigismond
+742530000,Saint-Sixt (commune non irisée),Z,74253,Saint-Sixt
+742540000,Saint-Sylvestre (commune non irisée),Z,74254,Saint-Sylvestre
+742550000,Sales (commune non irisée),Z,74255,Sales
+742560101,Saint-Martin,H,74256,Sallanches
+742560102,Z.A.,A,74256,Sallanches
+742560103,Sud-Saint-Roch,H,74256,Sallanches
+742560104,Périphérie Nord,H,74256,Sallanches
+742560105,Vouilloux,H,74256,Sallanches
+742560106,Centre,H,74256,Sallanches
+742560107,Périphérie Sud,H,74256,Sallanches
+742570000,Sallenôves (commune non irisée),Z,74257,Sallenôves
+742580000,Samoëns (commune non irisée),Z,74258,Samoëns
+742590000,Le Sappey (commune non irisée),Z,74259,Le Sappey
+742600000,Savigny (commune non irisée),Z,74260,Savigny
+742610000,Saxel (commune non irisée),Z,74261,Saxel
+742620000,Scientrier (commune non irisée),Z,74262,Scientrier
+742630000,Sciez (commune non irisée),Z,74263,Sciez
+742640101,Nord,H,74264,Scionzier
+742640102,Sud,H,74264,Scionzier
+742650000,Serraval (commune non irisée),Z,74265,Serraval
+742660000,Servoz (commune non irisée),Z,74266,Servoz
+742670000,Sevrier (commune non irisée),Z,74267,Sevrier
+742690000,Seyssel (commune non irisée),Z,74269,Seyssel
+742710000,Seytroux (commune non irisée),Z,74271,Seytroux
+742720000,Sillingy (commune non irisée),Z,74272,Sillingy
+742730000,Sixt-Fer-à-Cheval (commune non irisée),Z,74273,Sixt-Fer-à-Cheval
+742750000,Talloires-Montmin (commune non irisée),Z,74275,Talloires-Montmin
+742760000,Taninges (commune non irisée),Z,74276,Taninges
+742780000,Thyez (commune non irisée),Z,74278,Thyez
+742790000,Thollon-les-Mémises (commune non irisée),Z,74279,Thollon-les-Mémises
+742800101,Sud,H,74280,Thônes
+742800102,Nord,H,74280,Thônes
+742810101,Centre Ville Est,H,74281,Thonon-les-Bains
+742810102,Rives-Concise,H,74281,Thonon-les-Bains
+742810103,Ripaille-Vongy,H,74281,Thonon-les-Bains
+742810104,Tully-Châtelard,H,74281,Thonon-les-Bains
+742810201,Centre Ville Ouest,H,74281,Thonon-les-Bains
+742810202,Léman-Grangette,H,74281,Thonon-les-Bains
+742810203,Corzent-Marclaz,H,74281,Thonon-les-Bains
+742810204,Collonges,H,74281,Thonon-les-Bains
+742810205,Crête,H,74281,Thonon-les-Bains
+742810206,4 Cités,H,74281,Thonon-les-Bains
+742820000,Fillière (commune non irisée),Z,74282,Fillière
+742830000,Thusy (commune non irisée),Z,74283,Thusy
+742840000,La Tour (commune non irisée),Z,74284,La Tour
+742850000,Usinens (commune non irisée),Z,74285,Usinens
+742860000,Vacheresse (commune non irisée),Z,74286,Vacheresse
+742870000,Vailly (commune non irisée),Z,74287,Vailly
+742880000,Valleiry (commune non irisée),Z,74288,Valleiry
+742890000,Vallières-sur-Fier (commune non irisée),Z,74289,Vallières-sur-Fier
+742900000,Vallorcine (commune non irisée),Z,74290,Vallorcine
+742910000,Vanzy (commune non irisée),Z,74291,Vanzy
+742920000,Vaulx (commune non irisée),Z,74292,Vaulx
+742930000,Veigy-Foncenex (commune non irisée),Z,74293,Veigy-Foncenex
+742940000,Verchaix (commune non irisée),Z,74294,Verchaix
+742950000,La Vernaz (commune non irisée),Z,74295,La Vernaz
+742960000,Vers (commune non irisée),Z,74296,Vers
+742970000,Versonnex (commune non irisée),Z,74297,Versonnex
+742980101,Nord,H,74298,Vétraz-Monthoux
+742980102,Sud,H,74298,Vétraz-Monthoux
+742990000,Veyrier-du-Lac (commune non irisée),Z,74299,Veyrier-du-Lac
+743010000,Villard (commune non irisée),Z,74301,Villard
+743020000,Les Villards-sur-Thônes (commune non irisée),Z,74302,Les Villards-sur-Thônes
+743030000,Villaz (commune non irisée),Z,74303,Villaz
+743040000,Ville-en-Sallaz (commune non irisée),Z,74304,Ville-en-Sallaz
+743050101,Ouest,H,74305,Ville-la-Grand
+743050102,Est,H,74305,Ville-la-Grand
+743050103,Sud,H,74305,Ville-la-Grand
+743060000,Villy-le-Bouveret (commune non irisée),Z,74306,Villy-le-Bouveret
+743070000,Villy-le-Pelloux (commune non irisée),Z,74307,Villy-le-Pelloux
+743080000,Vinzier (commune non irisée),Z,74308,Vinzier
+743090000,Viry (commune non irisée),Z,74309,Viry
+743100000,Viuz-la-Chiésaz (commune non irisée),Z,74310,Viuz-la-Chiésaz
+743110000,Viuz-en-Sallaz (commune non irisée),Z,74311,Viuz-en-Sallaz
+743120000,Vougy (commune non irisée),Z,74312,Vougy
+743130000,Vovray-en-Bornes (commune non irisée),Z,74313,Vovray-en-Bornes
+743140000,Vulbens (commune non irisée),Z,74314,Vulbens
+743150000,Yvoire (commune non irisée),Z,74315,Yvoire
