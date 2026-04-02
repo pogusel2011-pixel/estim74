@@ -1,5 +1,6 @@
 import { DeptBenchmark } from "@/types/dvf";
 import { loadAllCsvMutations } from "./csv-loader";
+import { loadDbDeptStats } from "./db-stats";
 import { percentile } from "@/lib/utils";
 
 // ─── Cache global keyed par type de bien (24h TTL) ──────────────────────────
@@ -67,7 +68,14 @@ export async function fetchDeptStats(
     return cached.result;
   }
 
-  // ── Chargement CSV (singleton déjà chaud en production) ──────────────────
+  // ── Mode base de données (Neon) ──────────────────────────────────────────
+  if (process.env.DVF_SOURCE === "database") {
+    const result = await loadDbDeptStats(propertyType);
+    if (result) global.__dvfDeptStatsCache!.set(cacheKey, { result, ts: Date.now() });
+    return result;
+  }
+
+  // ── Mode CSV local ────────────────────────────────────────────────────────
   const all = await loadAllCsvMutations();
   if (all.length === 0) {
     console.warn("[DeptStats] CSV vide ou non chargé — benchmark indisponible");
