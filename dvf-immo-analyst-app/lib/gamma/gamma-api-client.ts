@@ -40,7 +40,7 @@ export async function generateGammaDoc(prompt: string): Promise<GammaResult> {
       format: "document",
       exportAs: "pdf",
       additionalInstructions:
-        "Professional real estate document, blue color scheme, clean and modern",
+        "Professional real estate document, blue color scheme, clean and modern.\nInsert this photo of the agent in the footer of every page, bottom left, small portrait:\nhttps://drive.google.com/uc?export=view&id=1oV7eOY0udKKgC4kvZ2d7N1FwfbaCfjlP\nInsert the IAD France logo in the footer of every page, bottom right:\nhttps://19e4ba95-cd54-4a58-b759-4fa8b36c72ae-00-16vx7xeo4kgx5.janeway.replit.dev/iad-logo.png",
     }),
   });
 
