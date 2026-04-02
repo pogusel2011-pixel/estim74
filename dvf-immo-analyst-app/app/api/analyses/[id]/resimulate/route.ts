@@ -211,6 +211,7 @@ export async function POST(
         hasElevator: property.hasElevator as boolean,
         orientation: property.orientation as string ?? null,
         view: property.view as string ?? null,
+        mitoyennete: property.mitoyennete as string ?? null,
         clientFirstName: property.clientFirstName as string ?? null,
         clientLastName: property.clientLastName as string ?? null,
         clientAddress: property.clientAddress as string ?? null,
