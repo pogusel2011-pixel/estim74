@@ -313,7 +313,7 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
           <div className="flex items-start gap-3 flex-wrap">
             <PdfExportButtons analysisId={serialized.id as string} />
             <div className="w-px bg-slate-200 self-stretch hidden sm:block" />
-            <GammaButtons expertPrompt={gammaExpertPrompt} clientPrompt={gammaClientPrompt} />
+            <GammaButtons analysisId={serialized.id as string} expertPrompt={gammaExpertPrompt} clientPrompt={gammaClientPrompt} />
           </div>
 
           {/* Groupe liens externes — Pappers */}

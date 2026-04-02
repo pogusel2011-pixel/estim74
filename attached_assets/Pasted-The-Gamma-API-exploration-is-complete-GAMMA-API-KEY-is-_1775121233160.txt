@@ -1,0 +1,58 @@
+The Gamma API exploration is complete.
+GAMMA_API_KEY is already in Replit Secrets.
+
+Please implement Gamma API integration in ESTIM'74:
+
+1. Create lib/gamma/gamma-api-client.ts:
+   Base URL: https://public-api.gamma.app
+   Auth header: X-API-KEY: [GAMMA_API_KEY]
+   
+   Function generateGammaDoc(prompt, type):
+   - POST /v1.0/generations with:
+     inputText: prompt (our existing prompts)
+     textMode: "preserve"
+     format: "document"
+     exportAs: "pdf"
+     additionalInstructions: 
+       "Professional real estate document, 
+        blue color scheme, clean and modern"
+   - Poll GET /v1.0/generations/{id} every 5s
+   - Return { gammaUrl, exportUrl } when completed
+   - Timeout after 120 seconds
+   - Handle 403 insufficient credits gracefully
+
+2. Create app/api/gamma/generate/route.ts:
+   POST endpoint that:
+   - Receives { analysisId, type: "expert"|"client" }
+   - Gets the analysis from database
+   - Builds the prompt using existing 
+     buildGammaExpertPrompt() or 
+     buildGammaClientPrompt()
+   - Calls generateGammaDoc()
+   - Returns { gammaUrl, exportUrl, status }
+
+3. Create components/gamma/gamma-generate-buttons.tsx:
+   Two buttons replacing the existing copy buttons:
+   
+   Button 1 — "Générer Avis Expert" (purple):
+   - Shows loading spinner during generation
+   - Shows "Génération en cours... ~30s"
+   - On success: opens gammaUrl in new tab
+   - Shows "Ouvrir le document" link
+   
+   Button 2 — "Générer Avis Client" (purple):
+   - Same behavior for client version
+
+4. Keep the existing copy-to-clipboard buttons 
+   as fallback alongside the new generate buttons.
+
+5. Add GAMMA_API_KEY to environment variables docs.
+
+6. Handle errors gracefully:
+   - No API key → show "Clé API Gamma manquante"
+   - Insufficient credits → show "Crédits Gamma insuffisants"
+   - Timeout → show "Génération trop longue — réessayer"
+
+Run tsc --noEmit after implementation.
+Test with a real analysis and confirm 
+gammaUrl is returned successfully.
