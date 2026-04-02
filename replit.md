@@ -5,11 +5,11 @@ ESTIM'74 is a Next.js 14 real estate analysis app for the French alpine property
 
 ## Stack
 - **Framework**: Next.js 14 (App Router) with TypeScript
-- **Database**: Prisma + Replit PostgreSQL (`DATABASE_URL`)
+- **Database**: Prisma + Neon PostgreSQL (`NEON_DATABASE_URL`)
 - **UI**: shadcn/ui + Tailwind CSS
 - **Charts**: recharts
 - **AI**: OpenAI GPT-4o (optional) with full rule-based fallback
-- **Data**: DVF CSV 2014–2024 `dvf-immo-analyst-app/public/dvf/2014-2024_mutations_d74.csv` (353k rows)
+- **Data**: DVF 2020–2025, 353 253 rows — stored in Neon `DvfMutation` table (imported from `data/dvf/2020-2025_mutations_d74.csv`)
 
 ## Project Structure
 ```
@@ -58,10 +58,20 @@ dvf-immo-analyst-app/
 - **Command**: `cd dvf-immo-analyst-app && npm run dev -- -p 5000 -H 0.0.0.0`
 
 ## Environment Variables
-- `DATABASE_URL` — auto-configured by Replit PostgreSQL
+- `NEON_DATABASE_URL` — Neon PostgreSQL connection string (pooled + direct)
 - `OPENAI_API_KEY` — optional; app falls back to rule-based analysis if absent
 - `MOTEURIMMO_API_KEY` — immoapi.app API key; used by `lib/dvf/client.ts` (live mutations) and `lib/dvf/dept-stats.ts` (/v1/stats benchmark)
+- `PAPPERS_API_KEY` — Pappers API key (agent company data)
+- `DVF_SOURCE` — set to `"database"` to load DVF data from Neon instead of local CSV (required for Vercel)
 - `NEXT_PUBLIC_APP_URL` — optional; defaults to `http://localhost:5000`
+
+## DVF Database Import
+- **Table**: `DvfMutation` (353 253 rows) in Neon, created by `npx prisma db push`
+- **Import script**: `dvf-immo-analyst-app/scripts/import-dvf-to-neon.ts` — streams CSV row by row, inserts in batches of 2000; supports `--resume` flag to continue after interruption
+- **Dual-mode loader**: `lib/dvf/csv-loader.ts` checks `DVF_SOURCE` env var:
+  - `DVF_SOURCE=database` → `lib/dvf/db-loader.ts` (Prisma queries with bounding-box pre-filter + Haversine in JS)
+  - default → reads local CSV file (dev mode)
+- **Re-run import**: `cd dvf-immo-analyst-app && npx tsx scripts/import-dvf-to-neon.ts`
 
 ## Audit Recette — Adjustments Engine (Estim74 Spec)
 Implemented in `lib/valuation/adjustments.ts` and aligned in `lib/mapping/energy.ts` + `lib/valuation/valuation.ts`:

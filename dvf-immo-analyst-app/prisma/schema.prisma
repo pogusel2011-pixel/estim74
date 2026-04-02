@@ -1,6 +1,5 @@
 generator client {
-  provider      = "prisma-client-js"
-  binaryTargets = ["native", "rhel-openssl-1.0.x"]
+  provider = "prisma-client-js"
 }
 
 datasource db {
@@ -110,6 +109,35 @@ enum AnalysisStatus {
   DRAFT
   COMPLETE
   ARCHIVED
+}
+
+model DvfMutation {
+  id                        String  @id @default(cuid())
+  id_mutation               String
+  date_mutation             String
+  nature_mutation           String
+  valeur_fonciere           Float
+  adresse_numero            String?
+  adresse_nom_voie          String?
+  code_postal               String?
+  nom_commune               String
+  code_commune              String
+  code_departement          String
+  id_parcelle               String?
+  type_local                String?
+  surface_reelle_bati       Float?
+  lot1_surface_carrez       Float?
+  nombre_pieces_principales Float?
+  surface_terrain           Float?
+  lat                       Float?
+  lon                       Float?
+
+  @@index([code_commune])
+  @@index([code_postal])
+  @@index([nature_mutation])
+  @@index([type_local])
+  @@index([date_mutation])
+  @@index([lat, lon])
 }
 
 model ActiveListing {

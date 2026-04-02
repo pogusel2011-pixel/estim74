@@ -1,0 +1,7 @@
+backup.sql
+backup_neon.sql
+*.sql
+.env.local
+.env
+node_modules/
+.next/
