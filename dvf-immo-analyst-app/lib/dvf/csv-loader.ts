@@ -4,6 +4,7 @@ import { parse } from "csv-parse/sync";
 import { DVFMutation } from "@/types/dvf";
 import { haversineDistance } from "@/lib/utils";
 import { getInseeCodesForCity } from "@/lib/geo/iris_utils";
+import { loadDbMutations, loadDbMutationsByCommune } from "@/lib/dvf/db-loader";
 
 // Use a global singleton so the cache survives Next.js hot-module reloads in dev
 declare global {
@@ -41,6 +42,52 @@ export async function loadAllCsvMutations(): Promise<DVFMutation[]> {
     return global.__dvfCsvCache;
   }
 
+  // ── Mode base de données (Neon) ──
+  if (process.env.DVF_SOURCE === "database") {
+    try {
+      const { prisma } = await import("@/lib/prisma");
+      const rows = await prisma.dvfMutation.findMany({
+        select: {
+          id_mutation: true, date_mutation: true, nature_mutation: true,
+          valeur_fonciere: true, adresse_numero: true, adresse_nom_voie: true,
+          code_postal: true, nom_commune: true, code_commune: true,
+          code_departement: true, id_parcelle: true, type_local: true,
+          surface_reelle_bati: true, lot1_surface_carrez: true,
+          nombre_pieces_principales: true, surface_terrain: true,
+          lat: true, lon: true,
+        },
+      });
+      global.__dvfCsvCache = rows.map((row) => ({
+        id_mutation: row.id_mutation,
+        date_mutation: row.date_mutation,
+        nature_mutation: row.nature_mutation,
+        valeur_fonciere: row.valeur_fonciere,
+        adresse_numero: row.adresse_numero ?? undefined,
+        adresse_nom_voie: row.adresse_nom_voie ?? undefined,
+        code_postal: row.code_postal ?? undefined,
+        nom_commune: row.nom_commune,
+        code_commune: row.code_commune,
+        code_departement: row.code_departement,
+        id_parcelle: row.id_parcelle ?? undefined,
+        type_local: row.type_local ?? undefined,
+        surface_reelle_bati: row.surface_reelle_bati ?? undefined,
+        lot1_surface_carrez: row.lot1_surface_carrez ?? undefined,
+        nombre_pieces_principales: row.nombre_pieces_principales ?? undefined,
+        surface_terrain: row.surface_terrain ?? undefined,
+        lat: row.lat ?? undefined,
+        lon: row.lon ?? undefined,
+        _source: "csv" as const,
+      }));
+      global.__dvfCsvLoadedAt = now;
+      console.log(`[DVF DB] ${global.__dvfCsvCache.length} mutations chargées depuis Neon`);
+      return global.__dvfCsvCache;
+    } catch (err) {
+      console.error("[DVF DB] Erreur chargement depuis Neon:", err);
+      return [];
+    }
+  }
+
+  // ── Mode CSV local ──
   const csvPath = path.join(
     process.cwd(),
     process.env.DVF_CSV_PATH ?? "data/dvf/2020-2025_mutations_d74.csv"
@@ -108,6 +155,10 @@ export async function loadCsvMutations(
   city?: string,
   postalCode?: string,
 ): Promise<DVFMutation[]> {
+  if (process.env.DVF_SOURCE === "database") {
+    return loadDbMutations(lat, lng, radiusKm, monthsBack, propertyTypes, city, postalCode);
+  }
+
   const all = await loadAllCsvMutations();
 
   const dateMin = new Date();
@@ -175,6 +226,10 @@ export async function loadCsvMutationsByCommune(
   lng?: number,
 ): Promise<DVFMutation[]> {
   if (depcoms.length === 0) return [];
+
+  if (process.env.DVF_SOURCE === "database") {
+    return loadDbMutationsByCommune(depcoms, monthsBack, propertyTypes, lat, lng);
+  }
 
   const all = await loadAllCsvMutations();
 
