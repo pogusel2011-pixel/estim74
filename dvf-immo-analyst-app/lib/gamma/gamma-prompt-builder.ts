@@ -86,6 +86,9 @@ export function buildGammaExpertPrompt(input: GammaPromptInput, baseUrl?: string
   const confidencePts = confidenceRaw != null ? Math.round(confidenceRaw * 100) : null;
   const confidenceLabel = serialized.confidenceLabel as string | null;
 
+  const listingPriceLow = valuationMid ? Math.round(valuationMid * 1.02) : null;
+  const listingPriceHigh = valuationMid ? Math.round(valuationMid * 1.03) : null;
+
   const features: string[] = [];
   if (serialized.hasParking) features.push("Parking");
   if (serialized.hasGarage) features.push("Garage");
@@ -155,6 +158,7 @@ export function buildGammaExpertPrompt(input: GammaPromptInput, baseUrl?: string
   lines.push(`- Estimation centrale : **${fmt(valuationMid)}** (${fmtPsm(valuationPsm)})`);
   lines.push(`- Fourchette haute : **${fmt(valuationHigh)}**`);
   if (confidencePts != null) lines.push(`- Indice de confiance : **${confidencePts}/100** (${confidenceLabel ?? ""})`);
+  if (listingPriceLow && listingPriceHigh) lines.push(`- Prix d'annonce conseillé : ${fmt(listingPriceLow)} à ${fmt(listingPriceHigh)}`);
   lines.push(``);
 
   if (adjustments.length > 0) {
@@ -306,8 +310,6 @@ export function buildGammaClientPrompt(input: GammaPromptInput, baseUrl?: string
   const valuationLow = serialized.valuationLow as number | null;
   const valuationMid = serialized.valuationMid as number | null;
   const valuationHigh = serialized.valuationHigh as number | null;
-  const listingPriceLow = valuationMid ? Math.round(valuationMid * 1.02) : null;
-  const listingPriceHigh = valuationMid ? Math.round(valuationMid * 1.03) : null;
 
   const marketReading = serialized.marketReading as MarketReading | null | undefined;
   const pappersStats = marketReading?.pappersStats;
@@ -375,10 +377,6 @@ export function buildGammaClientPrompt(input: GammaPromptInput, baseUrl?: string
   lines.push(`## RÉSULTAT DE L'ESTIMATION`);
   lines.push(`Fourchette de valeur : **${fmt(valuationLow)}** à **${fmt(valuationHigh)}**`);
   lines.push(`Valeur la plus probable : **${fmt(valuationMid)}**`);
-  if (listingPriceLow && listingPriceHigh) {
-    lines.push(``);
-    lines.push(`Prix de mise en vente conseillé : **${fmt(listingPriceLow)} à ${fmt(listingPriceHigh)}**`);
-  }
   lines.push(``);
 
   if (positiveAdj.length > 0) {
