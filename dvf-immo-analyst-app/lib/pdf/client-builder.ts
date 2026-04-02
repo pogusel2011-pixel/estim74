@@ -47,8 +47,7 @@ import { PDFDocument } from "pdf-lib";
     return san(adj.label);
   }
 
-  export async function buildClientPdf(a: Record<string, unknown>, refId: string, options?: { includeListingPrice?: boolean }): Promise<Uint8Array> {
-  const includeListingPrice = options?.includeListingPrice !== false;
+  export async function buildClientPdf(a: Record<string, unknown>, refId: string): Promise<Uint8Array> {
     const dvfComparables: DVFComparable[] = Array.isArray(a.dvfComparables) ? (a.dvfComparables as DVFComparable[]) : [];
     const adjustments: Adjustment[] = Array.isArray(a.adjustments) ? (a.adjustments as Adjustment[]) : [];
     const propertyLabel = san(PROPERTY_TYPE_LABELS[a.propertyType as string] ?? (a.propertyType as string) ?? "");
@@ -200,20 +199,6 @@ import { PDFDocument } from "pdf-lib";
         w.gap(24);
       }
 
-      // ── Prix d'annonce conseillé (optionnel) ──────────────────────────
-      if (includeListingPrice) {
-        w.gap(8);
-        const lpLow = Math.round((a.valuationMid as number) * 1.02);
-        const lpHigh = Math.round((a.valuationMid as number) * 1.03);
-        const lpBoxH = 50;
-        const lpY = w.y - lpBoxH;
-        w.rect(ML, lpY, CW, lpBoxH, C.lightBlueBg);
-        w.rectStroke(ML, lpY, CW, lpBoxH, C.borderBlue, 0.8);
-        w.page.drawText(san("PRIX D'ANNONCE CONSEILLE"), { x: ML + 14, y: lpY + lpBoxH - 14, font: fonts.bold, size: FS.micro, color: C.blue });
-        w.page.drawText(san(`entre ${fPrice(lpLow)} et ${fPrice(lpHigh)}`), { x: ML + 14, y: lpY + lpBoxH - 30, font: fonts.bold, size: 14, color: C.darkBlue });
-        w.page.drawText(san("Intègre une marge de négociation de 2 à 3 % sur le prix de vente estimé"), { x: ML + 14, y: lpY + 10, font: fonts.italic, size: FS.small, color: C.gray });
-        w.y = lpY - 6;
-      }
     } else {
       w.text("Estimation non disponible - données insuffisantes dans ce secteur.", ML, w.y, fonts.italic, FS.body, C.gray);
       w.gap(20);

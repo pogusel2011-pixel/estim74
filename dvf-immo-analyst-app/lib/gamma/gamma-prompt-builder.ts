@@ -86,9 +86,6 @@ export function buildGammaExpertPrompt(input: GammaPromptInput, baseUrl?: string
   const confidencePts = confidenceRaw != null ? Math.round(confidenceRaw * 100) : null;
   const confidenceLabel = serialized.confidenceLabel as string | null;
 
-  const listingPriceLow = valuationMid ? Math.round(valuationMid * 1.02) : null;
-  const listingPriceHigh = valuationMid ? Math.round(valuationMid * 1.03) : null;
-
   const features: string[] = [];
   if (serialized.hasParking) features.push("Parking");
   if (serialized.hasGarage) features.push("Garage");
@@ -158,7 +155,6 @@ export function buildGammaExpertPrompt(input: GammaPromptInput, baseUrl?: string
   lines.push(`- Estimation centrale : **${fmt(valuationMid)}** (${fmtPsm(valuationPsm)})`);
   lines.push(`- Fourchette haute : **${fmt(valuationHigh)}**`);
   if (confidencePts != null) lines.push(`- Indice de confiance : **${confidencePts}/100** (${confidenceLabel ?? ""})`);
-  if (listingPriceLow && listingPriceHigh) lines.push(`- Prix d'annonce conseillé : ${fmt(listingPriceLow)} à ${fmt(listingPriceHigh)}`);
   lines.push(``);
 
   if (adjustments.length > 0) {

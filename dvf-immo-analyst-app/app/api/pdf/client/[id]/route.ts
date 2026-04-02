@@ -9,11 +9,9 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     const analysis = await prisma.analysis.findUnique({ where: { id: params.id } });
     if (!analysis) return new NextResponse("Not found", { status: 404 });
 
-    const includeListingPrice = req.nextUrl.searchParams.get("listingPrice") !== "0";
-
     const a = JSON.parse(JSON.stringify(analysis)) as Record<string, unknown>;
     const refId = params.id.slice(0, 8).toUpperCase();
-    const pdfBytes = await buildClientPdf(a, refId, { includeListingPrice });
+    const pdfBytes = await buildClientPdf(a, refId);
 
     return new NextResponse(Buffer.from(pdfBytes), {
       status: 200,
