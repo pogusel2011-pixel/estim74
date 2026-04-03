@@ -77,6 +77,7 @@ export default function EditAnalysisPage() {
       }
 
       router.push(`/analyses/${params.id}`);
+      router.refresh();
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : "Erreur inconnue");
       setLoading(false);
