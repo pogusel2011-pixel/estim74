@@ -26,6 +26,7 @@ import { GammaButtons } from "@/components/gamma/gamma-buttons";
 import { buildGammaExpertPrompt, buildGammaClientPrompt } from "@/lib/gamma/gamma-prompt-builder";
 import { MethodeCalculPanel } from "@/components/analysis/methode-calcul-panel";
 import { ListingPriceCard } from "@/components/analysis/listing-price-card";
+import { SaveDiscardBanner } from "@/components/analysis/save-discard-banner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getDVFMutations } from "@/lib/dvf/client";
 import { computePrixM2, markOutliers } from "@/lib/dvf/outliers";
@@ -91,7 +92,7 @@ function safeJsonObject<T = Record<string, unknown>>(value: unknown): T | null {
   return null;
 }
 
-export default async function AnalysisPage({ params }: { params: { id: string } }) {
+export default async function AnalysisPage({ params, searchParams }: { params: { id: string }; searchParams?: { nouveau?: string } }) {
   const analysis = await prisma.analysis.findUnique({ where: { id: params.id } });
   if (!analysis) notFound();
 
@@ -282,6 +283,11 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
             </p>
           </div>
         </div>
+      )}
+
+      {/* ── Bannière sauvegarde ───────────────────────────────────────────── */}
+      {searchParams?.nouveau === "1" && (
+        <SaveDiscardBanner analysisId={serialized.id as string} />
       )}
 
       {/* ── 1. HEADER — Identité du bien ─────────────────────────────────── */}
