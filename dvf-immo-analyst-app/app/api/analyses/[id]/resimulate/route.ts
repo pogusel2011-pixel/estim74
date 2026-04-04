@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getDVFMutations } from "@/lib/dvf/client";
-import { computePrixM2, removeOutliers } from "@/lib/dvf/outliers";
+import { computePrixM2, markOutliers } from "@/lib/dvf/outliers";
 import { computeDVFStats } from "@/lib/dvf/stats";
 import { toComparables } from "@/lib/dvf/comparables";
 import { propertyTypeToDvfTypes } from "@/lib/mapping/property-type";
@@ -98,16 +98,25 @@ export async function POST(
 
     // 5. DVF mutations (+ filtre INSEE secondaire via city/postalCode)
     const dvfTypes = propertyTypeToDvfTypes(property.propertyType as PropertyType);
-    const { mutations, source, radiusKm: finalRadiusKm } = await getDVFMutations(
+    const { mutations, source, radiusKm: finalRadiusKm, dvfSearchPath } = await getDVFMutations(
       lat, lng, radiusKm, monthsBack, dvfTypes,
       property.city as string | undefined,
       property.postalCode as string | undefined,
     );
-    let enriched = computePrixM2(mutations);
-    enriched = removeOutliers(enriched);
-    const dvfStats = computeDVFStats(enriched);
-    if (dvfStats) dvfStats.source = source;
-    const dvfComparables = toComparables(enriched, property.surface as number, property.rooms as number | undefined);
+    // Marquer les outliers sans les supprimer (pour les afficher badgés dans le tableau)
+    let enrichedMutations = computePrixM2(mutations);
+    enrichedMutations = markOutliers(enrichedMutations);
+    const cleanMutations = enrichedMutations.filter((m) => !m.outlier);
+    const excludedCount = enrichedMutations.length - cleanMutations.length;
+
+    const dvfStats = computeDVFStats(cleanMutations, property.surface as number);
+    if (dvfStats) {
+      dvfStats.source = source;
+      dvfStats.excludedCount = excludedCount;
+      dvfStats.searchPath = dvfSearchPath;
+    }
+    // Comparables : toutes les mutations (outliers inclus, badgés dans le tableau expert)
+    const dvfComparables = toComparables(enrichedMutations, property.surface as number, property.rooms as number | undefined);
 
     // 6. Annonces actives (via MoteurImmo avec code postal + coords du sujet)
     const listings = await findActiveListings(propertyWithGeo as never, {
