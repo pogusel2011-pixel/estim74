@@ -92,7 +92,7 @@ function safeJsonObject<T = Record<string, unknown>>(value: unknown): T | null {
   return null;
 }
 
-export default async function AnalysisPage({ params, searchParams }: { params: { id: string }; searchParams?: { nouveau?: string } }) {
+export default async function AnalysisPage({ params }: { params: { id: string } }) {
   const analysis = await prisma.analysis.findUnique({ where: { id: params.id } });
   if (!analysis) notFound();
 
@@ -286,7 +286,7 @@ export default async function AnalysisPage({ params, searchParams }: { params: {
       )}
 
       {/* ── Bannière sauvegarde ───────────────────────────────────────────── */}
-      {searchParams?.nouveau === "1" && (
+      {serialized.status === "DRAFT" && (
         <SaveDiscardBanner analysisId={serialized.id as string} />
       )}
 
