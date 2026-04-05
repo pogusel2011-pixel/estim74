@@ -308,7 +308,7 @@ export async function POST(req: Request) {
           adjustments: valuation.adjustments as never,
           marketReading: marketReading as never,
           gptPayload,
-          status: "COMPLETE",
+          status: "DRAFT",
         },
       });
       analysisId = saved.id;
