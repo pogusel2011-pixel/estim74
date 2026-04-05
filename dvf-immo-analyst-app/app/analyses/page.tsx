@@ -8,6 +8,7 @@ export const dynamic = "force-dynamic";
 
 export default async function AnalysesPage() {
   const analyses = await prisma.analysis.findMany({
+    where: { status: "COMPLETE" },
     orderBy: { createdAt: "desc" },
     select: {
       id: true, createdAt: true, address: true, city: true,
