@@ -16,13 +16,15 @@ export function SaveDiscardBanner({ analysisId }: SaveDiscardBannerProps) {
   async function handleSave() {
     setSaving(true);
     try {
-      await fetch(`/api/analyses/${analysisId}`, {
+      const res = await fetch(`/api/analyses/${analysisId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: "COMPLETE" }),
       });
-      router.replace(`/analyses/${analysisId}`);
-      router.refresh();
+      if (!res.ok) throw new Error("PATCH failed");
+      // Hard navigation — bypasses Next.js router cache so the server
+      // re-renders the page with the updated status (COMPLETE, no banner).
+      window.location.href = `/analyses/${analysisId}`;
     } catch {
       setSaving(false);
     }
@@ -32,7 +34,7 @@ export function SaveDiscardBanner({ analysisId }: SaveDiscardBannerProps) {
     setDeleting(true);
     try {
       await fetch(`/api/analyses/${analysisId}`, { method: "DELETE" });
-      router.push("/analyses");
+      window.location.href = "/analyses";
     } catch {
       setDeleting(false);
     }
