@@ -5,6 +5,7 @@ import { AnalysisSummary } from "@/types/analysis";
 export async function GET() {
   try {
     const analyses = await prisma.analysis.findMany({
+      where: { status: "COMPLETE" },
       orderBy: { createdAt: "desc" },
       select: {
         id: true, createdAt: true, address: true, city: true,
