@@ -10,10 +10,22 @@ interface SaveDiscardBannerProps {
 
 export function SaveDiscardBanner({ analysisId }: SaveDiscardBannerProps) {
   const router = useRouter();
+  const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  function handleSave() {
-    router.replace(`/analyses/${analysisId}`);
+  async function handleSave() {
+    setSaving(true);
+    try {
+      await fetch(`/api/analyses/${analysisId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "COMPLETE" }),
+      });
+      router.replace(`/analyses/${analysisId}`);
+      router.refresh();
+    } catch {
+      setSaving(false);
+    }
   }
 
   async function handleDiscard() {
@@ -40,7 +52,7 @@ export function SaveDiscardBanner({ analysisId }: SaveDiscardBannerProps) {
           size="sm"
           className="gap-1.5 border-red-300 text-red-700 hover:bg-red-50 hover:text-red-800"
           onClick={handleDiscard}
-          disabled={deleting}
+          disabled={deleting || saving}
         >
           {deleting ? (
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -53,9 +65,14 @@ export function SaveDiscardBanner({ analysisId }: SaveDiscardBannerProps) {
           size="sm"
           className="gap-1.5 bg-blue-600 hover:bg-blue-700 text-white"
           onClick={handleSave}
+          disabled={saving || deleting}
         >
-          <Save className="h-3.5 w-3.5" />
-          Sauvegarder
+          {saving ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <Save className="h-3.5 w-3.5" />
+          )}
+          {saving ? "Sauvegarde…" : "Sauvegarder"}
         </Button>
       </div>
     </div>
