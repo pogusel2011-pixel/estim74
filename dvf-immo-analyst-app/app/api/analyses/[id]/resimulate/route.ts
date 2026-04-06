@@ -12,7 +12,7 @@ import { PropertyType, Condition } from "@/types/property";
 import { findActiveListings } from "@/lib/moteurimmo/search";
 import { computeValuation } from "@/lib/valuation/valuation";
 import { fetchNotairesMarket } from "@/lib/notaires/market-check";
-import { geocodeAddress, isGeoError } from "@/lib/geo/address";
+import { geocodeAddress, isGeoError, lookupParcel } from "@/lib/geo/address";
 import { fetchAmenities } from "@/lib/geo/amenities";
 
 export async function POST(
@@ -98,6 +98,9 @@ export async function POST(
       return NextResponse.json({ error: "Impossible de géocoder l'adresse" }, { status: 422 });
     }
     const propertyWithGeo = { ...property, lat, lng };
+
+    // 4b. Parcelle cadastrale IGN (non bloquant)
+    const parcel = await lookupParcel(lat, lng).catch(() => null);
 
     // 5. DVF mutations (+ filtre INSEE secondaire via city/postalCode)
     const dvfTypes = propertyTypeToDvfTypes(property.propertyType as PropertyType);
@@ -204,6 +207,9 @@ export async function POST(
         lat,
         lng,
         communeCode: communeCode ?? null,
+        cadastralRef: parcel?.ref ?? null,
+        cadastralSection: parcel?.section ?? null,
+        cadastralNumber: parcel?.numero ?? null,
         propertyType: property.propertyType as PropertyType,
         surface: property.surface as number,
         rooms: property.rooms as number ?? null,
