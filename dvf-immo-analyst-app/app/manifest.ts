@@ -2,10 +2,12 @@ import { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "ESTIM'74",
+    name: "ESTIM\u202774",
     short_name: "ESTIM74",
-    description: "Outil d'estimation immobilière Haute-Savoie",
+    description: "Outil d\u2019estimation immobili\u00e8re Haute-Savoie",
+    id: "/",
     start_url: "/",
+    scope: "/",
     display: "standalone",
     background_color: "#ffffff",
     theme_color: "#2563EB",
