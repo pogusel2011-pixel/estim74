@@ -50,17 +50,23 @@ export function AddressAutocomplete({ form }: Props) {
   const fetchSuggestions = useCallback(async (text: string) => {
     if (text.trim().length < 3) { setResults([]); setOpen(false); return; }
     setLoading(true);
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 5000);
     try {
-      const url = new URL("/api/ign/completion", window.location.origin);
-      url.searchParams.set("text", text);
-      const res = await fetch(url.toString(), { signal: AbortSignal.timeout(5000) });
+      const res = await fetch(
+        `/api/ign/completion?text=${encodeURIComponent(text)}`,
+        { signal: controller.signal }
+      );
       if (!res.ok) return;
       const data: { status: string; results?: IGNResult[] } = await res.json();
       setResults(data.results ?? []);
       setOpen((data.results ?? []).length > 0);
-    } catch {
-      // silencieux
+    } catch (err) {
+      if (err instanceof Error && err.name !== "AbortError") {
+        console.error("[AddressAutocomplete] fetch error:", err);
+      }
     } finally {
+      clearTimeout(timer);
       setLoading(false);
     }
   }, []);
