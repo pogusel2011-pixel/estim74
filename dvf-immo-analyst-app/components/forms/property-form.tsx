@@ -13,6 +13,7 @@ import { Loader2, Zap } from "lucide-react";
 import { PROPERTY_TYPE_OPTIONS, CONDITION_OPTIONS, DPE_OPTIONS, ORIENTATION_OPTIONS, VIEW_OPTIONS } from "@/lib/mapping/options";
 import { PropertyFeatures } from "./property-features";
 import { CommuneSuggest } from "./commune-suggest";
+import { AddressAutocomplete } from "./address-autocomplete";
 
 interface PropertyFormProps {
   onSubmit: (values: PropertyFormValues) => void;
@@ -105,12 +106,7 @@ export function PropertyForm({ onSubmit, loading, defaultValues }: PropertyFormP
       <Card>
         <CardHeader className="pb-3"><CardTitle className="text-base">Localisation</CardTitle></CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="md:col-span-2 space-y-1">
-            <Label htmlFor="address" className="flex items-center gap-1">
-              Adresse <span className="text-xs font-normal text-muted-foreground">(optionnel)</span>
-            </Label>
-            <Input id="address" placeholder="12 rue des Alpes" {...register("address")} />
-          </div>
+          <AddressAutocomplete form={form} />
           <div className="space-y-1">
             <Label htmlFor="postalCode" className="flex items-center gap-1">
               Code postal <span className="text-xs font-normal text-muted-foreground">(optionnel)</span>
