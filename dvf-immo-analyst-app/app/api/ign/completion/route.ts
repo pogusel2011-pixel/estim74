@@ -12,9 +12,8 @@ export async function GET(req: Request) {
 
   const upstream = new URL("https://data.geopf.fr/geocodage/completion");
   upstream.searchParams.set("text", text);
-  upstream.searchParams.set("terr", "74");
   upstream.searchParams.set("type", "StreetAddress,PositionOfInterest");
-  upstream.searchParams.set("maximumResponses", "7");
+  upstream.searchParams.set("maximumResponses", "15");
 
   try {
     const res = await fetch(upstream.toString(), {
@@ -27,11 +26,19 @@ export async function GET(req: Request) {
     }
 
     const data = await res.json();
-    return NextResponse.json(data, {
-      headers: {
-        "Cache-Control": "public, max-age=60, stale-while-revalidate=300",
-      },
-    });
+
+    const results = (data.results ?? [])
+      .filter((r: { zipcode?: string }) => !r.zipcode || r.zipcode.startsWith("74"))
+      .slice(0, 7);
+
+    return NextResponse.json(
+      { status: "OK", results },
+      {
+        headers: {
+          "Cache-Control": "public, max-age=60, stale-while-revalidate=300",
+        },
+      }
+    );
   } catch {
     return NextResponse.json({ status: "OK", results: [] });
   }
