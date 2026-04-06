@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, BarChart2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,6 @@ import { PropertyFormValues } from "@/lib/validation/property";
 
 export default function EditAnalysisPage() {
   const params = useParams<{ id: string }>();
-  const router = useRouter();
   const [defaultValues, setDefaultValues] = useState<Partial<PropertyFormValues> | null>(null);
   const [loading, setLoading] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
@@ -76,8 +75,7 @@ export default function EditAnalysisPage() {
         throw new Error(data.error ?? "Erreur lors de l'estimation");
       }
 
-      router.push(`/analyses/${params.id}`);
-      router.refresh();
+      window.location.href = `/analyses/${params.id}`;
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : "Erreur inconnue");
       setLoading(false);

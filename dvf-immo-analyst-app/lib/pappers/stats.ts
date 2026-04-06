@@ -141,6 +141,7 @@ export async function fetchPappersStats(
     const res = await fetch(communeUrl, {
       headers: { "User-Agent": "Mozilla/5.0" },
       next: { revalidate: 86400 },
+      signal: AbortSignal.timeout(5000),
     });
 
     if (res.ok) {
@@ -181,6 +182,7 @@ export async function fetchPappersStats(
     const res = await fetch(deptUrl, {
       headers: { "User-Agent": "Mozilla/5.0" },
       next: { revalidate: 86400 },
+      signal: AbortSignal.timeout(5000),
     });
     if (!res.ok) return null;
     const raw = await res.text();

@@ -1,4 +1,7 @@
 import { NextResponse } from "next/server";
+
+export const maxDuration = 120;
+
 import { PropertyInput } from "@/types/property";
 import { estimateRequestSchema } from "@/lib/validation/estimate";
 import { getDVFMutations } from "@/lib/dvf/client";

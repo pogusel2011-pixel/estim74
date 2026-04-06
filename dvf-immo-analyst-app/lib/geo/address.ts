@@ -47,7 +47,10 @@ export async function geocodeAddress(
   const url = `https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(query)}&limit=1`;
 
   try {
-    const res = await fetch(url, { next: { revalidate: 3600 } });
+    const res = await fetch(url, {
+      next: { revalidate: 3600 },
+      signal: AbortSignal.timeout(8000),
+    });
     if (!res.ok) return null;
     const data = await res.json();
     if (!data.features?.length) return null;
@@ -113,7 +116,7 @@ export async function geocodeAddress(
 export async function reverseGeocode(lat: number, lng: number): Promise<GeoResult | null> {
   const url = `https://api-adresse.data.gouv.fr/reverse/?lat=${lat}&lon=${lng}`;
   try {
-    const res = await fetch(url);
+    const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
     if (!res.ok) return null;
     const data = await res.json();
     if (!data.features?.length) return null;
