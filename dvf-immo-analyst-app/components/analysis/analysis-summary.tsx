@@ -68,6 +68,36 @@ export function AnalysisSummaryPanel({ analysis, analysisId, irisDisplayLabel }:
         </p>
       )}
 
+      {(() => {
+        const cadastralRef     = analysis.cadastralRef     as string | null | undefined;
+        const cadastralSection = analysis.cadastralSection as string | null | undefined;
+        const cadastralNumber  = analysis.cadastralNumber  as string | null | undefined;
+        if (!cadastralRef && !(cadastralSection && cadastralNumber)) return null;
+        return (
+          <p className="text-sm text-slate-500 flex items-center gap-1.5">
+            <span>🗺</span>
+            <span>
+              Parcelle :{" "}
+              <span className="font-medium text-slate-700 font-mono text-xs tracking-wide">
+                {cadastralSection && cadastralNumber
+                  ? `Section ${cadastralSection} — n°${cadastralNumber}`
+                  : cadastralRef}
+              </span>
+              {cadastralRef && (
+                <a
+                  href={`https://www.cadastre.gouv.fr/scpc/rechercherPlan.do`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="ml-1.5 text-blue-500 hover:text-blue-700 underline-offset-2 hover:underline text-xs"
+                >
+                  Voir cadastre
+                </a>
+              )}
+            </span>
+          </p>
+        );
+      })()}
+
       <div className="flex flex-wrap gap-1.5 items-center">
         {chips.map((chip, i) => (
           <span
