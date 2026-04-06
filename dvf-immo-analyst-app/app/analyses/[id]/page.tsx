@@ -266,7 +266,7 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
           <div>
             <p className="font-medium">Adresse approximative — vérifier les coordonnées</p>
             <p className="text-xs text-amber-700 mt-0.5">
-              Score BAN : {geoScore != null ? geoScore.toFixed(2) : "—"} (recommandé ≥ 0.70).
+              Score géocodage : {geoScore != null ? geoScore.toFixed(2) : "—"} (recommandé ≥ 0.70).
               La localisation peut influencer les comparables DVF retenus.
             </p>
           </div>
@@ -278,7 +278,7 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
           <div>
             <p className="font-medium">Adresse non trouvée — vérifiez l'adresse saisie</p>
             <p className="text-xs text-red-700 mt-0.5">
-              Score BAN : {geoScore != null ? geoScore.toFixed(2) : "—"} (minimum ≥ 0.50).
+              Score géocodage : {geoScore != null ? geoScore.toFixed(2) : "—"} (minimum ≥ 0.50).
               Corrigez l'adresse et relancez l'estimation.
             </p>
           </div>
