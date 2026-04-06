@@ -51,12 +51,9 @@ export function AddressAutocomplete({ form }: Props) {
     if (text.trim().length < 3) { setResults([]); setOpen(false); return; }
     setLoading(true);
     try {
-      const url = new URL("https://data.geopf.fr/geocodage/completion");
+      const url = new URL("/api/ign/completion", window.location.origin);
       url.searchParams.set("text", text);
-      url.searchParams.set("terr", "74");
-      url.searchParams.set("type", "StreetAddress,PositionOfInterest");
-      url.searchParams.set("maximumResponses", "7");
-      const res = await fetch(url.toString(), { signal: AbortSignal.timeout(4000) });
+      const res = await fetch(url.toString(), { signal: AbortSignal.timeout(5000) });
       if (!res.ok) return;
       const data: { status: string; results?: IGNResult[] } = await res.json();
       setResults(data.results ?? []);
