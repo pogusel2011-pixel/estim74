@@ -15,8 +15,13 @@ export function RefreshButton() {
   }, []);
 
   function handleClick() {
+    if (spinning) return;
     setSpinning(true);
-    window.location.reload();
+    // Small delay so the spin animation is guaranteed to render
+    // before the browser starts the page reload.
+    setTimeout(() => {
+      window.location.reload();
+    }, 300);
   }
 
   return (
@@ -30,7 +35,8 @@ export function RefreshButton() {
         variant="ghost"
         size="sm"
         onClick={handleClick}
-        className="gap-1.5 text-xs text-muted-foreground hover:text-foreground h-7 px-2"
+        disabled={spinning}
+        className="gap-1.5 text-xs text-muted-foreground hover:text-foreground h-7 px-2 disabled:opacity-60"
         title="Actualiser la page"
       >
         <RefreshCw className={`h-3.5 w-3.5 ${spinning ? "animate-spin" : ""}`} />
