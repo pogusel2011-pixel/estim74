@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { UseFormReturn } from "react-hook-form";
 import { PropertyFormValues } from "@/lib/validation/property";
 import { Label } from "@/components/ui/label";
@@ -37,19 +38,31 @@ export function AddressAutocomplete({ form }: Props) {
   const [results, setResults]       = useState<IGNResult[]>([]);
   const [open, setOpen]             = useState(false);
   const [loading, setLoading]       = useState(false);
+  const [mounted, setMounted]       = useState(false);
 
-  // Position for the fixed dropdown
-  const [dropRect, setDropRect]     = useState<{ top: number; left: number; width: number } | null>(null);
+  // Viewport-relative rect for the fixed dropdown
+  const [dropRect, setDropRect] = useState<{ top: number; left: number; width: number } | null>(null);
 
   const inputRef    = useRef<HTMLInputElement>(null);
   const dropRef     = useRef<HTMLUListElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Needed for portal (only on client)
+  useEffect(() => { setMounted(true); }, []);
 
   // Keep local input in sync when defaultValues change (edit form)
   useEffect(() => {
     if (addressVal && !inputValue) setInputValue(addressVal);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [addressVal]);
+
+  function getRect() {
+    const rect = inputRef.current?.getBoundingClientRect();
+    if (!rect) return null;
+    // getBoundingClientRect() returns VIEWPORT-relative coordinates.
+    // With position:fixed we must NOT add scrollY/scrollX.
+    return { top: rect.bottom + 4, left: rect.left, width: rect.width };
+  }
 
   async function fetchSuggestions(text: string) {
     if (text.trim().length < 3) { setResults([]); setOpen(false); return; }
@@ -61,11 +74,7 @@ export function AddressAutocomplete({ form }: Props) {
       const list = data.results ?? [];
       setResults(list);
       if (list.length > 0) {
-        // Position dropdown using input's bounding rect
-        const rect = inputRef.current?.getBoundingClientRect();
-        if (rect) {
-          setDropRect({ top: rect.bottom + window.scrollY + 4, left: rect.left + window.scrollX, width: rect.width });
-        }
+        setDropRect(getRect());
         setOpen(true);
       } else {
         setOpen(false);
@@ -100,7 +109,7 @@ export function AddressAutocomplete({ form }: Props) {
     setResults([]);
   }
 
-  // Close on outside click
+  // Close on outside click or scroll (reposition if scroll while open)
   useEffect(() => {
     function handleClick(e: MouseEvent) {
       if (
@@ -110,9 +119,65 @@ export function AddressAutocomplete({ form }: Props) {
         setOpen(false);
       }
     }
+    function handleScroll() {
+      if (open) setDropRect(getRect());
+    }
     document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, []);
+    window.addEventListener("scroll", handleScroll, true);
+    return () => {
+      document.removeEventListener("mousedown", handleClick);
+      window.removeEventListener("scroll", handleScroll, true);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
+  const dropdown = open && results.length > 0 && dropRect ? (
+    <ul
+      ref={dropRef}
+      style={{
+        position: "fixed",
+        top: dropRect.top,
+        left: dropRect.left,
+        width: dropRect.width,
+        zIndex: 9999,
+        background: "white",
+        border: "1px solid #e2e8f0",
+        borderRadius: "0.375rem",
+        boxShadow: "0 4px 16px rgba(0,0,0,0.12)",
+        maxHeight: "15rem",
+        overflowY: "auto",
+        fontSize: "0.875rem",
+        listStyle: "none",
+        margin: 0,
+        padding: 0,
+      }}
+    >
+      {results.map((r, i) => (
+        <li
+          key={i}
+          style={{ padding: "0.5rem 0.75rem", cursor: "pointer", lineHeight: 1.4 }}
+          onMouseEnter={e => (e.currentTarget.style.background = "#f1f5f9")}
+          onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+          onMouseDown={(e) => {
+            e.preventDefault();
+            handleSelect(r);
+          }}
+        >
+          {r.fulltext}
+        </li>
+      ))}
+      <li
+        style={{
+          padding: "0.375rem 0.75rem",
+          fontSize: "0.75rem",
+          color: "#94a3b8",
+          borderTop: "1px solid #e2e8f0",
+        }}
+      >
+        Source : IGN Géoplateforme — Haute-Savoie (74)
+      </li>
+    </ul>
+  ) : null;
 
   return (
     <div className="md:col-span-2 space-y-1">
@@ -130,8 +195,7 @@ export function AddressAutocomplete({ form }: Props) {
         onChange={handleChange}
         onFocus={() => {
           if (results.length > 0) {
-            const rect = inputRef.current?.getBoundingClientRect();
-            if (rect) setDropRect({ top: rect.bottom + window.scrollY + 4, left: rect.left + window.scrollX, width: rect.width });
+            setDropRect(getRect());
             setOpen(true);
           }
         }}
@@ -139,54 +203,7 @@ export function AddressAutocomplete({ form }: Props) {
       {errors.address && (
         <p className="text-xs text-destructive">{errors.address.message}</p>
       )}
-
-      {open && results.length > 0 && dropRect && (
-        <ul
-          ref={dropRef}
-          style={{
-            position: "fixed",
-            top: dropRect.top,
-            left: dropRect.left,
-            width: dropRect.width,
-            zIndex: 9999,
-            background: "white",
-            border: "1px solid #e2e8f0",
-            borderRadius: "0.375rem",
-            boxShadow: "0 4px 16px rgba(0,0,0,0.12)",
-            maxHeight: "15rem",
-            overflowY: "auto",
-            fontSize: "0.875rem",
-            listStyle: "none",
-            margin: 0,
-            padding: 0,
-          }}
-        >
-          {results.map((r, i) => (
-            <li
-              key={i}
-              style={{ padding: "0.5rem 0.75rem", cursor: "pointer", lineHeight: 1.4 }}
-              onMouseEnter={e => (e.currentTarget.style.background = "#f1f5f9")}
-              onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
-              onMouseDown={(e) => {
-                e.preventDefault();
-                handleSelect(r);
-              }}
-            >
-              {r.fulltext}
-            </li>
-          ))}
-          <li
-            style={{
-              padding: "0.375rem 0.75rem",
-              fontSize: "0.75rem",
-              color: "#94a3b8",
-              borderTop: "1px solid #e2e8f0",
-            }}
-          >
-            Source : IGN Géoplateforme — Haute-Savoie (74)
-          </li>
-        </ul>
-      )}
+      {mounted && createPortal(dropdown, document.body)}
     </div>
   );
 }
