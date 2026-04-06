@@ -17,7 +17,7 @@ import { fetchNotairesMarket } from "@/lib/notaires/market-check";
 import { fetchPappersStats } from "@/lib/pappers/stats";
 import { checkRefusalConditions } from "@/lib/valuation/refusal-matrix";
 import { prisma } from "@/lib/prisma";
-import { geocodeAddress, isGeoError } from "@/lib/geo/address";
+import { geocodeAddress, isGeoError, lookupParcel } from "@/lib/geo/address";
 import { getInseeByPostalCodeAndCommune, getInseeByPostalCode } from "@/lib/geo/cp-insee";
 import { fetchAmenities } from "@/lib/geo/amenities";
 import { lookupIrisForProperty } from "@/lib/geo/iris-loader";
@@ -89,6 +89,9 @@ export async function POST(req: Request) {
         console.warn("[IRIS] Lookup non bloquant échoué:", e);
       }
     }
+
+    // 1c. Parcelle cadastrale IGN (non bloquant, enrichissement uniquement)
+    const parcel = await lookupParcel(lat, lng).catch(() => null);
 
     // 2. DVF — mutations (recherche purement radiale, IRIS n'affecte pas les transactions)
     const dvfTypes = propertyTypeToDvfTypes(property.propertyType);
@@ -267,6 +270,9 @@ export async function POST(req: Request) {
           lng,
           communeCode: communeCode ?? null,
           irisCode: irisCode ?? null,
+          cadastralRef: parcel?.ref ?? null,
+          cadastralSection: parcel?.section ?? null,
+          cadastralNumber: parcel?.numero ?? null,
           clientFirstName: property.clientFirstName,
           clientLastName: property.clientLastName,
           clientAddress: property.clientAddress,
