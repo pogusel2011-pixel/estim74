@@ -67,6 +67,11 @@ model Analysis {
   geoScore      Float?
   geoQuality    String?
 
+  // Données cadastrales IGN (parcelle)
+  cadastralRef     String?
+  cadastralSection String?
+  cadastralNumber  String?
+
   // Contexte marché
   dvfSampleSize      Int?
   dvfMedianPsm       Float?
