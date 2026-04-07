@@ -2,18 +2,37 @@ import { NextResponse } from "next/server";
 
 export const runtime = "edge";
 
+interface BanFeature {
+  type: string;
+  geometry: { type: string; coordinates: [number, number] };
+  properties: {
+    label: string;
+    score: number;
+    housenumber?: string;
+    name?: string;
+    postcode?: string;
+    citycode?: string;
+    city?: string;
+    type?: string;
+    street?: string;
+  };
+}
+
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
-  const text = searchParams.get("text") ?? "";
+  const text = (searchParams.get("text") ?? "").trim();
+  const city = (searchParams.get("city") ?? "").trim();
 
-  if (text.trim().length < 3) {
+  if (text.length < 3) {
     return NextResponse.json({ status: "OK", results: [] });
   }
 
-  const upstream = new URL("https://data.geopf.fr/geocodage/completion");
-  upstream.searchParams.set("text", text);
-  upstream.searchParams.set("type", "StreetAddress,PositionOfInterest");
-  upstream.searchParams.set("maximumResponses", "15");
+  const query = city ? `${text} ${city}` : text;
+
+  const upstream = new URL("https://api-adresse.data.gouv.fr/search/");
+  upstream.searchParams.set("q", query);
+  upstream.searchParams.set("limit", "15");
+  upstream.searchParams.set("autocomplete", "1");
 
   try {
     const res = await fetch(upstream.toString(), {
@@ -25,17 +44,30 @@ export async function GET(req: Request) {
       return NextResponse.json({ status: "OK", results: [] });
     }
 
-    const data = await res.json();
+    const data: { features?: BanFeature[] } = await res.json();
 
-    const results = (data.results ?? [])
-      .filter((r: { zipcode?: string }) => !r.zipcode || r.zipcode.startsWith("74"))
-      .slice(0, 7);
+    const results = (data.features ?? [])
+      .filter((f) => {
+        const pc = f.properties.postcode ?? f.properties.citycode ?? "";
+        return pc.startsWith("74");
+      })
+      .slice(0, 7)
+      .map((f) => ({
+        fulltext: f.properties.label,
+        x: f.geometry.coordinates[0],
+        y: f.geometry.coordinates[1],
+        city: f.properties.city ?? "",
+        zipcode: f.properties.postcode ?? "",
+        street: f.properties.street ?? f.properties.name ?? "",
+        housenum: f.properties.housenumber ?? "",
+        kind: f.properties.type ?? "",
+      }));
 
     return NextResponse.json(
       { status: "OK", results },
       {
         headers: {
-          "Cache-Control": "public, max-age=60, stale-while-revalidate=300",
+          "Cache-Control": "public, max-age=30, stale-while-revalidate=120",
         },
       }
     );
