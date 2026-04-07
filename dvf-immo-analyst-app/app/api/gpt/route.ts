@@ -5,6 +5,8 @@ import { buildPrompt, GPT_ACTION_LABELS } from "@/lib/gpt/prompt-builders";
 import { buildGPTOutput } from "@/lib/gpt/outputs";
 import { GPTActionType } from "@/types/gpt";
 
+export const maxDuration = 60;
+
 export async function POST(req: Request) {
   try {
     const { analysisId, action } = await req.json() as { analysisId: string; action: GPTActionType };

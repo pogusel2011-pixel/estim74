@@ -7,8 +7,7 @@ import { DVFStats } from "@/types/dvf";
 import { GPTOutput } from "@/types/gpt";
 
 export const dynamic = "force-dynamic";
-// Allow up to 180s for Gamma generation + polling (Next.js Edge/Serverless timeout)
-export const maxDuration = 180;
+export const maxDuration = 60;
 
 export async function POST(req: Request) {
   try {

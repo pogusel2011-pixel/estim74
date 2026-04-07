@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+export const maxDuration = 60;
+
 type AdjItem = { label: string; factor: number; impact: number; category: string };
 
 const CORS_HEADERS = {
