@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { headers } from "next/headers";
 import Link from "next/link";
 import { getIrisDisplayLabel } from "@/lib/geo/iris-loader";
-import { AlertTriangle, ArrowLeft, MapPin, Map, Pencil, Landmark, ShieldAlert, Building2, UserRound, Download, RefreshCw, FileText, Sparkles, Bot } from "lucide-react";
+import { AlertTriangle, ArrowLeft, MapPin, Map, Pencil, Landmark, ShieldAlert, Building2, UserRound, Download, FileText, Sparkles, Bot } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
 import { ResimulateButton } from "@/components/analysis/resimulate-button";
@@ -342,18 +342,31 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
 
       {/* ── HEADER ── */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200/80 px-6 py-6 mb-5">
-        <AnalysisSummaryPanel analysis={serialized} analysisId={serialized.id as string} irisDisplayLabel={irisDisplayLabel} />
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1 min-w-0">
+            <AnalysisSummaryPanel analysis={serialized} analysisId={serialized.id as string} irisDisplayLabel={irisDisplayLabel} />
+          </div>
+          <div className="flex flex-col gap-2 shrink-0 pt-1">
+            <ResimulateButton analysisId={serialized.id as string} />
+            <Button asChild variant="outline" size="sm" className="gap-1.5 text-slate-600 border-slate-300 justify-start">
+              <Link href={`/analyses/${serialized.id}/edit`}>
+                <Pencil className="h-3.5 w-3.5" />
+                Modifier le bien
+              </Link>
+            </Button>
+          </div>
+        </div>
       </div>
 
       {/* ── 6 ONGLETS ── */}
-      <Tabs defaultValue="resultats" className="w-full">
+      <Tabs defaultValue="bien" className="w-full">
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200/80 px-2 py-2 mb-5">
           <TabsList className="grid grid-cols-6 w-full h-9 bg-slate-100/80 rounded-xl">
+            <TabsTrigger value="bien" className="rounded-lg text-xs sm:text-sm font-medium">Bien</TabsTrigger>
             <TabsTrigger value="resultats" className="rounded-lg text-xs sm:text-sm font-medium">Résultats</TabsTrigger>
             <TabsTrigger value="comparables" className="rounded-lg text-xs sm:text-sm font-medium">Comparables</TabsTrigger>
             <TabsTrigger value="marche" className="rounded-lg text-xs sm:text-sm font-medium">Marché</TabsTrigger>
             <TabsTrigger value="contexte" className="rounded-lg text-xs sm:text-sm font-medium">Contexte</TabsTrigger>
-            <TabsTrigger value="bien" className="rounded-lg text-xs sm:text-sm font-medium">Bien</TabsTrigger>
             <TabsTrigger value="livrables" className="rounded-lg text-xs sm:text-sm font-medium flex items-center gap-1.5">
               <Download className="h-3.5 w-3.5" />
               Livrables
@@ -630,7 +643,7 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
                     ) : excluded > 0 ? (
                       <div className="flex items-start gap-2">
                         <span className="text-slate-400 shrink-0">ℹ️</span>
-                        <span className="text-xs text-slate-600">{excluded} valeur{excluded !== 1 ? "s" : ""} aberrante{excluded !== 1 ? "s" : ""} exclue{excluded !== 1 ? "s" : ""} (IQR × 2)</span>
+                        <span className="text-xs text-slate-600">{excluded} valeur{excluded !== 1 ? "s" : ""} aberrante{excluded !== 1 ? "s" : ""} exclue{excluded !== 1 ? "s" : ""} (IQR × 1.5)</span>
                       </div>
                     ) : null}
                     {wasExpanded && (
@@ -898,27 +911,6 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
         <TabsContent value="livrables" className="space-y-5 mt-0">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-            {/* Actions principales */}
-            <Card className="shadow-sm rounded-xl">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm flex items-center gap-2">
-                  <RefreshCw className="h-4 w-4 text-slate-500" />
-                  Actions
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="px-4 pb-4 space-y-3">
-                <div className="flex flex-col gap-2">
-                  <ResimulateButton analysisId={serialized.id as string} />
-                  <Button asChild variant="outline" size="sm" className="gap-1.5 text-slate-600 border-slate-300 justify-start">
-                    <Link href={`/analyses/${serialized.id}/edit`}>
-                      <Pencil className="h-3.5 w-3.5" />
-                      Modifier le bien
-                    </Link>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
             {/* Analyse IA rapide */}
             <Card className="shadow-sm rounded-xl">
               <CardHeader className="pb-2">
@@ -970,7 +962,7 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
 
             {/* Ressources externes */}
             {pappersMapUrl && (
-              <Card className="shadow-sm rounded-xl md:col-span-2">
+              <Card className="shadow-sm rounded-xl">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm flex items-center gap-2">
                     <Map className="h-4 w-4 text-slate-500" />
