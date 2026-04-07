@@ -5,6 +5,9 @@ import { PDFDocument } from "pdf-lib";
   import { DVFStats, DVFComparable } from "@/types/dvf";
   import { ActiveListing } from "@/types/listing";
   import { Adjustment } from "@/types/valuation";
+  import { computeSwot } from "@/lib/analysis/swot";
+  import type { OsmPlace } from "@/lib/geo/osm";
+  import type { ServitudeItem } from "@/lib/geo/sup";
   import { Writer, loadFonts, drawTable, san, fPrice, fPsm, fPct, fDateShort, wrapText, C, FS, ML, MR, CW, PAGE_W, PAGE_H, numFr, normalizeAddr } from "./helpers";
 
   export async function buildExpertPdf(a: Record<string, unknown>, refId: string): Promise<Uint8Array> {
@@ -378,12 +381,144 @@ import { PDFDocument } from "pdf-lib";
       stripedRows: false,
     });
 
-    // ═══════════ PAGE 4+: DVF COMPARABLES ════════════════════════════════
+    // ═══════════ PAGE 4: CONTEXTE & RISQUES & PROXIMITÉS ════════════════
+    {
+      const risksSummary = Array.isArray(a.risksSummary) ? (a.risksSummary as string[]) : [];
+      const servitudes = Array.isArray(a.servitudes) ? (a.servitudes as ServitudeItem[]) : [];
+      const proximities = Array.isArray(a.proximities) ? (a.proximities as OsmPlace[]) : [];
+
+      // Compute SWOT
+      const swot = computeSwot({
+        propertyType: a.propertyType as string,
+        condition: a.condition as string | null,
+        dpeLetter: a.dpeLetter as string | null,
+        floor: a.floor as number | null,
+        totalFloors: a.totalFloors as number | null,
+        yearBuilt: a.yearBuilt as number | null,
+        hasParking: Boolean(a.hasParking),
+        hasGarage: Boolean(a.hasGarage),
+        hasBalcony: Boolean(a.hasBalcony),
+        hasTerrace: Boolean(a.hasTerrace),
+        hasCellar: Boolean(a.hasCellar),
+        hasPool: Boolean(a.hasPool),
+        hasElevator: Boolean(a.hasElevator),
+        landSurface: a.landSurface as number | null,
+        surface: a.surface as number,
+        rooms: a.rooms as number | null,
+        orientation: a.orientation as string | null,
+        view: a.view as string | null,
+        mitoyennete: a.mitoyennete as string | null,
+        zonePLU: a.zonePLU as string | null,
+        zonePLUType: a.zonePLUType as string | null,
+        riskFlood: a.riskFlood as string | null,
+        riskEarthquake: a.riskEarthquake as string | null,
+        riskClay: a.riskClay as string | null,
+        riskLandslide: a.riskLandslide as string | null,
+        risksSummary: risksSummary.length > 0 ? risksSummary : null,
+        servitudes: servitudes.length > 0 ? servitudes : null,
+        proximities: proximities.length > 0 ? proximities : null,
+        confidence: a.confidence as number | null,
+        dvfSampleSize: a.dvfSampleSize as number | null,
+      });
+
+      w.addPage();
+      w.footer(refId, today);
+      w.sectionTitle("4. Contexte — Risques, Urbanisme & Proximités");
+      w.gap(4);
+
+      // Risques naturels
+      w.rect(ML, w.y - 14, CW, 16, C.headerBg);
+      w.rect(ML, w.y - 14, 3, 16, C.amber);
+      w.page.drawText(san("RISQUES NATURELS (Géorisques GASPAR)"), { x: ML + 10, y: w.y - 10, font: fonts.bold, size: FS.micro, color: C.amber });
+      w.gap(22);
+      if (risksSummary.length > 0) {
+        risksSummary.forEach((risk) => {
+          w.text(san("⚠ " + risk), ML + 6, w.y, fonts.regular, FS.body, C.red);
+          w.gap(14);
+        });
+      } else {
+        w.text(san("Aucun risque naturel majeur recensé (GASPAR)"), ML + 6, w.y, fonts.regular, FS.body, C.green);
+        w.gap(14);
+      }
+
+      // Servitudes
+      w.gap(4);
+      w.rect(ML, w.y - 14, CW, 16, C.headerBg);
+      w.rect(ML, w.y - 14, 3, 16, C.blue);
+      w.page.drawText(san("SERVITUDES D'UTILITÉ PUBLIQUE (GPU Géoportail)"), { x: ML + 10, y: w.y - 10, font: fonts.bold, size: FS.micro, color: C.blue });
+      w.gap(22);
+      if (servitudes.length > 0) {
+        servitudes.slice(0, 6).forEach((s) => {
+          const typeLabel = s.typeSup ? san(`[${s.typeSup}] `) : "";
+          const lib = san(s.libelle ?? "Servitude");
+          w.text(typeLabel + lib, ML + 6, w.y, fonts.regular, FS.body, C.dark);
+          w.gap(14);
+        });
+      } else {
+        w.text(san("Aucune servitude d'utilité publique recensée"), ML + 6, w.y, fonts.regular, FS.body, C.green);
+        w.gap(14);
+      }
+
+      // Proximités
+      if (proximities.length > 0) {
+        w.gap(4);
+        w.rect(ML, w.y - 14, CW, 16, C.headerBg);
+        w.rect(ML, w.y - 14, 3, 16, C.green);
+        w.page.drawText(san("PROXIMITÉS OSM — TOP 5 PAR CATÉGORIE (rayon 1 km)"), { x: ML + 10, y: w.y - 10, font: fonts.bold, size: FS.micro, color: C.green });
+        w.gap(22);
+
+        const CATEGORIES = ["school", "shop", "transport", "health", "park"] as const;
+        const CAT_LABELS: Record<string, string> = { school: "Écoles", shop: "Commerces", transport: "Transports", health: "Santé", park: "Espaces verts" };
+        for (const cat of CATEGORIES) {
+          const items = proximities.filter((p) => p.category === cat).sort((a, b) => a.distanceM - b.distanceM).slice(0, 5);
+          if (items.length === 0) continue;
+          w.text(san(CAT_LABELS[cat]), ML + 4, w.y, fonts.bold, FS.body, C.dark);
+          w.gap(13);
+          items.forEach((p) => {
+            const dist = p.distanceM < 1000 ? `${p.distanceM} m` : `${(p.distanceM / 1000).toFixed(1)} km`;
+            w.text(san(`  ${p.name} — ${dist}`), ML + 10, w.y, fonts.regular, FS.small, C.gray);
+            w.gap(12);
+          });
+        }
+      }
+
+      // SWOT
+      w.ensureSpace(80);
+      w.gap(4);
+      w.rect(ML, w.y - 14, CW, 16, C.headerBg);
+      w.rect(ML, w.y - 14, 3, 16, C.darkBlue);
+      w.page.drawText(san("ANALYSE FORCES & FAIBLESSES"), { x: ML + 10, y: w.y - 10, font: fonts.bold, size: FS.micro, color: C.darkBlue });
+      w.gap(22);
+
+      const halfW = (CW - 8) / 2;
+      const swotStartY = w.y;
+
+      // Strengths column
+      w.page.drawText(san("✓ Points forts"), { x: ML, y: swotStartY, font: fonts.bold, size: FS.body, color: C.green });
+      let sY = swotStartY - 14;
+      swot.strengths.forEach((item) => {
+        w.page.drawText(san(`+ ${item.label}`), { x: ML + 4, y: sY, font: fonts.regular, size: FS.small, color: C.green });
+        sY -= 12;
+      });
+
+      // Weaknesses column
+      w.page.drawText(san("✗ Points de vigilance"), { x: ML + halfW + 8, y: swotStartY, font: fonts.bold, size: FS.body, color: C.red });
+      let wY = swotStartY - 14;
+      swot.weaknesses.forEach((item) => {
+        w.page.drawText(san(`- ${item.label}`), { x: ML + halfW + 12, y: wY, font: fonts.regular, size: FS.small, color: C.red });
+        wY -= 12;
+      });
+
+      const lowestY = Math.min(sY, wY);
+      w.y = lowestY - 8;
+    }
+
+    // ═══════════ PAGE 5+: DVF COMPARABLES ════════════════════════════════
     const retained = dvfComparables.filter((c) => !c.outlier);
     const excluded = dvfComparables.filter((c) => c.outlier);
     w.addPage();
     w.footer(refId, today);
-    w.sectionTitle(`4. Transactions DVF retenues (${retained.length})`);
+    w.sectionTitle(`5. Transactions DVF retenues (${retained.length})`);
     w.gap(4);
 
     if (retained.length > 0) {
@@ -428,7 +563,7 @@ import { PDFDocument } from "pdf-lib";
       w.addPage();
       w.footer(refId, today);
       const outlierC2 = listings.filter((l) => l.outlier).length;
-      w.sectionTitle(`5. Annonces actives - ${cleanListings.length} retenue(s) / ${outlierC2} exclue(s)`);
+      w.sectionTitle(`6. Annonces actives - ${cleanListings.length} retenue(s) / ${outlierC2} exclue(s)`);
       w.gap(4);
       drawTable(w, {
         cols: [
@@ -459,7 +594,7 @@ import { PDFDocument } from "pdf-lib";
     // ═══════════ CONCLUSION ══════════════════════════════════════════════
     w.addPage();
     w.footer(refId, today);
-    w.sectionTitle("6. Conclusion");
+    w.sectionTitle("7. Conclusion");
     w.gap(6);
     [
       `Bien : ${propertyLabel} de ${surface} m² - ${san([normalizeAddr(a.address as string), a.postalCode, a.city].filter(Boolean).join(", "))}`,

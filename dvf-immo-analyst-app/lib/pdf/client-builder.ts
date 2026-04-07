@@ -5,6 +5,9 @@ import { PDFDocument } from "pdf-lib";
   import { PROPERTY_TYPE_LABELS, CONDITION_LABELS } from "@/lib/constants";
   import { DVFComparable, DVFStats } from "@/types/dvf";
   import { Adjustment } from "@/types/valuation";
+  import { computeSwot } from "@/lib/analysis/swot";
+  import type { OsmPlace } from "@/lib/geo/osm";
+  import type { ServitudeItem } from "@/lib/geo/sup";
   import { Writer, loadFonts, drawTable, san, fPrice, fPsm, fDateShort, wrapText, C, FS, ML, MR, CW, PAGE_W, PAGE_H, numFr, normalizeAddr } from "./helpers";
   import { getIrisDisplayLabel } from "@/lib/geo/iris-loader";
 
@@ -323,10 +326,106 @@ import { PDFDocument } from "pdf-lib";
       w.gap(20);
     }
 
-    // ═══════════ PAGE 4: CONTEXTE MARCHE ═════════════════════════════════
+    // ═══════════ PAGE 4: RISQUES & SWOT ══════════════════════════════════
+    {
+      const risksSummary = Array.isArray(a.risksSummary) ? (a.risksSummary as string[]) : [];
+      const servitudes = Array.isArray(a.servitudes) ? (a.servitudes as ServitudeItem[]) : [];
+      const proximities = Array.isArray(a.proximities) ? (a.proximities as OsmPlace[]) : [];
+
+      const swot = computeSwot({
+        propertyType: a.propertyType as string,
+        condition: a.condition as string | null,
+        dpeLetter: a.dpeLetter as string | null,
+        floor: a.floor as number | null,
+        totalFloors: a.totalFloors as number | null,
+        yearBuilt: a.yearBuilt as number | null,
+        hasParking: Boolean(a.hasParking),
+        hasGarage: Boolean(a.hasGarage),
+        hasBalcony: Boolean(a.hasBalcony),
+        hasTerrace: Boolean(a.hasTerrace),
+        hasCellar: Boolean(a.hasCellar),
+        hasPool: Boolean(a.hasPool),
+        hasElevator: Boolean(a.hasElevator),
+        landSurface: a.landSurface as number | null,
+        surface: a.surface as number,
+        rooms: a.rooms as number | null,
+        orientation: a.orientation as string | null,
+        view: a.view as string | null,
+        mitoyennete: a.mitoyennete as string | null,
+        zonePLU: a.zonePLU as string | null,
+        zonePLUType: a.zonePLUType as string | null,
+        riskFlood: a.riskFlood as string | null,
+        riskEarthquake: a.riskEarthquake as string | null,
+        riskClay: a.riskClay as string | null,
+        riskLandslide: a.riskLandslide as string | null,
+        risksSummary: risksSummary.length > 0 ? risksSummary : null,
+        servitudes: servitudes.length > 0 ? servitudes : null,
+        proximities: proximities.length > 0 ? proximities : null,
+        confidence: a.confidence as number | null,
+        dvfSampleSize: a.dvfSampleSize as number | null,
+      });
+
+      if (swot.strengths.length > 0 || swot.weaknesses.length > 0 || risksSummary.length > 0) {
+        w.addPage();
+        w.footer(refId, today);
+        w.sectionTitle("4. Points forts, vigilances & risques du bien");
+        w.gap(8);
+
+        // SWOT
+        const halfW = (CW - 12) / 2;
+        w.page.drawText(san("ATOUTS DU BIEN"), { x: ML, y: w.y, font: fonts.bold, size: FS.small, color: C.green });
+        w.hline(ML, w.y - 3, halfW, C.greenBorder, 1.5);
+        w.page.drawText(san("POINTS DE VIGILANCE"), { x: ML + halfW + 12, y: w.y, font: fonts.bold, size: FS.small, color: C.amber });
+        w.hline(ML + halfW + 12, w.y - 3, halfW, C.border, 1.5);
+        w.gap(18);
+
+        const startY = w.y;
+        let sY = startY;
+        let wY = startY;
+
+        swot.strengths.forEach((item) => {
+          w.page.drawText(san("+ " + item.label), { x: ML, y: sY, font: fonts.regular, size: FS.body, color: C.dark });
+          sY -= FS.body * 1.7;
+        });
+        if (swot.strengths.length === 0) {
+          w.page.drawText(san("Aucun atout identifié."), { x: ML, y: sY, font: fonts.italic, size: FS.body, color: C.lightGray });
+          sY -= FS.body * 1.7;
+        }
+
+        swot.weaknesses.forEach((item) => {
+          w.page.drawText(san("! " + item.label), { x: ML + halfW + 12, y: wY, font: fonts.regular, size: FS.body, color: C.dark });
+          wY -= FS.body * 1.7;
+        });
+        if (swot.weaknesses.length === 0) {
+          w.page.drawText(san("Aucun point de vigilance."), { x: ML + halfW + 12, y: wY, font: fonts.italic, size: FS.body, color: C.lightGray });
+          wY -= FS.body * 1.7;
+        }
+
+        w.y = Math.min(sY, wY) - 12;
+
+        // Risques naturels
+        if (risksSummary.length > 0 || (a.risksSummary as unknown) === null) {
+          w.rect(ML, w.y - 14, CW, 16, C.headerBg);
+          w.rect(ML, w.y - 14, 3, 16, C.amber);
+          w.page.drawText(san("RISQUES NATURELS ET TECHNOLOGIQUES"), { x: ML + 10, y: w.y - 10, font: fonts.bold, size: FS.micro, color: C.amber });
+          w.gap(22);
+          if (risksSummary.length > 0) {
+            risksSummary.forEach((risk) => {
+              w.text(san("⚠ " + risk), ML + 6, w.y, fonts.regular, FS.body, C.amber);
+              w.gap(13);
+            });
+          } else {
+            w.text(san("Aucun risque naturel majeur recensé dans ce secteur."), ML + 6, w.y, fonts.regular, FS.body, C.green);
+            w.gap(13);
+          }
+        }
+      }
+    }
+
+    // ═══════════ PAGE 5: CONTEXTE MARCHE ═════════════════════════════════
     w.addPage();
     w.footer(refId, today);
-    w.sectionTitle("4. Contexte du marché immobilier local");
+    w.sectionTitle("5. Contexte du marché immobilier local");
     w.gap(8);
 
     if (trend && trendStats.length >= 2) {

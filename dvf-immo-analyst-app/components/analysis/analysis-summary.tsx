@@ -72,12 +72,14 @@ export function AnalysisSummaryPanel({ analysis, analysisId, irisDisplayLabel }:
         const cadastralRef     = analysis.cadastralRef     as string | null | undefined;
         const cadastralSection = analysis.cadastralSection as string | null | undefined;
         const cadastralNumber  = analysis.cadastralNumber  as string | null | undefined;
+        const propertyType     = analysis.propertyType     as string | null | undefined;
         if (!cadastralRef && !(cadastralSection && cadastralNumber)) return null;
+        const isApartment = propertyType === "APARTMENT";
         return (
           <p className="text-sm text-slate-500 flex items-center gap-1.5">
             <span>🗺</span>
             <span>
-              Parcelle :{" "}
+              {isApartment ? "Parcelle immeuble" : "Parcelle"} :{" "}
               <span className="font-medium text-slate-700 font-mono text-xs tracking-wide">
                 {cadastralSection && cadastralNumber
                   ? `Section ${cadastralSection} — n°${cadastralNumber}`

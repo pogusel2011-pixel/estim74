@@ -4,6 +4,9 @@ import { GPTOutput } from "@/types/gpt";
 import { MarketReading } from "@/types/analysis";
 import { ActiveListing } from "@/types/listing";
 import { getIrisDisplayLabel } from "@/lib/geo/iris-loader";
+import { computeSwot } from "@/lib/analysis/swot";
+import type { OsmPlace } from "@/lib/geo/osm";
+import type { ServitudeItem } from "@/lib/geo/sup";
 
 function fmt(n: number | null | undefined): string {
   if (n == null) return "—";
@@ -262,6 +265,97 @@ export function buildGammaExpertPrompt(input: GammaPromptInput, baseUrl?: string
       lines.push(`${i + 1}. **${l.surface} m²** · ${fmt(l.price)} (${fmtPsm(l.pricePsm)})${dist}${l.rooms ? ` · ${l.rooms} pièces` : ""}${l.dpe ? ` · DPE ${l.dpe}` : ""}`);
     });
     lines.push(``);
+  }
+
+  // ─── Risques naturels ─────────────────────────────────────────────────
+  const risksSummaryGamma = Array.isArray(serialized.risksSummary) ? (serialized.risksSummary as string[]) : [];
+  const servitudesGamma = Array.isArray(serialized.servitudes) ? (serialized.servitudes as ServitudeItem[]) : [];
+  const proximitiesGamma = Array.isArray(serialized.proximities) ? (serialized.proximities as OsmPlace[]) : [];
+
+  if (risksSummaryGamma.length > 0 || (serialized.risksSummary as unknown) === null) {
+    lines.push(`## RISQUES NATURELS (Géorisques GASPAR)`);
+    if (risksSummaryGamma.length > 0) {
+      risksSummaryGamma.forEach(r => lines.push(`- ⚠️ ${r}`));
+    } else {
+      lines.push(`- ✅ Aucun risque naturel majeur recensé dans ce secteur`);
+    }
+    lines.push(``);
+  }
+
+  if (servitudesGamma.length > 0 || (serialized.servitudes as unknown) === null) {
+    lines.push(`## SERVITUDES D'UTILITÉ PUBLIQUE (GPU IGN)`);
+    if (servitudesGamma.length > 0) {
+      servitudesGamma.slice(0, 6).forEach(s => {
+        lines.push(`- [${s.typeSup ?? "SUP"}] ${s.libelle ?? "Servitude"}`);
+      });
+    } else {
+      lines.push(`- ✅ Aucune servitude SUP recensée`);
+    }
+    lines.push(``);
+  }
+
+  if (proximitiesGamma.length > 0) {
+    lines.push(`## ÉQUIPEMENTS DE PROXIMITÉ (OSM — rayon 1 km)`);
+    const CAT_LABELS_G: Record<string, string> = { school: "Écoles", shop: "Commerces", transport: "Transports", health: "Santé", park: "Espaces verts" };
+    for (const cat of ["school", "shop", "transport", "health", "park"] as const) {
+      const items = proximitiesGamma.filter(p => p.category === cat).sort((a, b) => a.distanceM - b.distanceM).slice(0, 5);
+      if (items.length > 0) {
+        lines.push(`**${CAT_LABELS_G[cat]} :**`);
+        items.forEach(p => {
+          const dist = p.distanceM < 1000 ? `${p.distanceM} m` : `${(p.distanceM / 1000).toFixed(1)} km`;
+          lines.push(`- ${p.name} — ${dist}`);
+        });
+      }
+    }
+    lines.push(``);
+  }
+
+  // ─── SWOT ─────────────────────────────────────────────────────────────
+  {
+    const swotG = computeSwot({
+      propertyType: serialized.propertyType as string,
+      condition: serialized.condition as string | null,
+      dpeLetter: serialized.dpeLetter as string | null,
+      floor: serialized.floor as number | null,
+      totalFloors: serialized.totalFloors as number | null,
+      yearBuilt: serialized.yearBuilt as number | null,
+      hasParking: Boolean(serialized.hasParking),
+      hasGarage: Boolean(serialized.hasGarage),
+      hasBalcony: Boolean(serialized.hasBalcony),
+      hasTerrace: Boolean(serialized.hasTerrace),
+      hasCellar: Boolean(serialized.hasCellar),
+      hasPool: Boolean(serialized.hasPool),
+      hasElevator: Boolean(serialized.hasElevator),
+      landSurface: serialized.landSurface as number | null,
+      surface: serialized.surface as number,
+      rooms: serialized.rooms as number | null,
+      orientation: serialized.orientation as string | null,
+      view: serialized.view as string | null,
+      mitoyennete: serialized.mitoyennete as string | null,
+      zonePLU: serialized.zonePLU as string | null,
+      zonePLUType: serialized.zonePLUType as string | null,
+      riskFlood: serialized.riskFlood as string | null,
+      riskEarthquake: serialized.riskEarthquake as string | null,
+      riskClay: serialized.riskClay as string | null,
+      riskLandslide: serialized.riskLandslide as string | null,
+      risksSummary: risksSummaryGamma.length > 0 ? risksSummaryGamma : null,
+      servitudes: servitudesGamma.length > 0 ? servitudesGamma : null,
+      proximities: proximitiesGamma.length > 0 ? proximitiesGamma : null,
+      confidence: serialized.confidence as number | null,
+      dvfSampleSize: serialized.dvfSampleSize as number | null,
+    });
+    if (swotG.strengths.length > 0 || swotG.weaknesses.length > 0) {
+      lines.push(`## ANALYSE FORCES & FAIBLESSES`);
+      if (swotG.strengths.length > 0) {
+        lines.push(`**Points forts :**`);
+        swotG.strengths.forEach(s => lines.push(`- ✅ ${s.label}`));
+      }
+      if (swotG.weaknesses.length > 0) {
+        lines.push(`**Points de vigilance :**`);
+        swotG.weaknesses.forEach(s => lines.push(`- ❌ ${s.label}`));
+      }
+      lines.push(``);
+    }
   }
 
   if (gptOutputs.length > 0) {

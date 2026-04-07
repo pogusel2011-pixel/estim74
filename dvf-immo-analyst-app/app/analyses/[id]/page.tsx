@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { headers } from "next/headers";
 import Link from "next/link";
 import { getIrisDisplayLabel } from "@/lib/geo/iris-loader";
-import { AlertTriangle, ArrowLeft, MapPin, Map, Pencil } from "lucide-react";
+import { AlertTriangle, ArrowLeft, MapPin, Map, Pencil, Landmark, ShieldAlert, Building2, UserRound } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
 import { ResimulateButton } from "@/components/analysis/resimulate-button";
@@ -17,10 +17,12 @@ import { DVFRecentSalesPanel } from "@/components/listings/dvf-recent-sales-pane
 import { MarketReading } from "@/components/analysis/market-reading";
 import { NotairesPanel } from "@/components/analysis/notaires-panel";
 import { DVFComparablesMapDynamic } from "@/components/dvf/dvf-comparables-map-dynamic";
+import { OsmProximitiesMapDynamic } from "@/components/geo/osm-map-dynamic";
+import { OsmProximitiesTable } from "@/components/geo/osm-table";
+import { SwotTable } from "@/components/analysis/swot-table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DeptBenchmarkPanel } from "@/components/dvf/dept-benchmark-panel";
 import { GPTActionsPanel } from "@/components/gpt/gpt-actions-panel";
-
 import { GptAnalyzeButton } from "@/components/gpt/gpt-analyze-button";
 import { GammaButtons } from "@/components/gamma/gamma-buttons";
 import { buildGammaExpertPrompt, buildGammaClientPrompt } from "@/lib/gamma/gamma-prompt-builder";
@@ -39,33 +41,32 @@ import { computeConfidence } from "@/lib/valuation/confidence";
 import { buildChatGPTPrompt } from "@/lib/gpt/chatgpt-prompt-builder";
 import { computeMarketPressure } from "@/lib/moteurimmo/qualitative";
 import { fetchDeptStats } from "@/lib/dvf/dept-stats";
+import { computeSwot } from "@/lib/analysis/swot";
 import { DVFStats, DVFComparable } from "@/types/dvf";
 import { ActiveListing } from "@/types/listing";
 import { Adjustment, ConfidenceFactors } from "@/types/valuation";
 import { GPTOutput } from "@/types/gpt";
 import { MarketReading as MarketReadingType } from "@/types/analysis";
 import { PropertyType } from "@/types/property";
+import type { OsmPlace } from "@/lib/geo/osm";
+import type { ServitudeItem } from "@/lib/geo/sup";
+import { PROPERTY_TYPE_LABELS, CONDITION_LABELS } from "@/lib/constants";
 
 export const dynamic = "force-dynamic";
 
-/** Formate une adresse pour l'URL Pappers immobilier (slug kebab-case sans accents).
- * Ex: "47 chemin de crêt vial" + "74540" → "47-chemin-de-cret-vial-74540"
- */
 function formatAddressForPappers(address: string | null, postalCode: string | null): string {
   const full = [address, postalCode].filter(Boolean).join(" ");
   return full
     .toLowerCase()
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")   // supprime les diacritiques (é→e, ê→e, à→a…)
-    .replace(/[^a-z0-9]+/g, "-")       // toute séquence non-alphanumérique → un seul tiret
-    .replace(/^-|-$/g, "");            // retire les tirets en début/fin
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
 }
 
-/** Safely parses a Prisma Json? field into an array — returns [] on null/non-array/error. */
 function safeJsonArray<T = unknown>(value: unknown): T[] {
   if (value == null) return [];
   if (Array.isArray(value)) return value as T[];
-  // Stored as JSON string (legacy)
   if (typeof value === "string") {
     try {
       const parsed = JSON.parse(value);
@@ -77,7 +78,6 @@ function safeJsonArray<T = unknown>(value: unknown): T[] {
   return [];
 }
 
-/** Safely parses a Prisma Json? field into an object — returns null on null/non-object/error. */
 function safeJsonObject<T = Record<string, unknown>>(value: unknown): T | null {
   if (value == null) return null;
   if (typeof value === "object" && !Array.isArray(value)) return value as T;
@@ -92,22 +92,28 @@ function safeJsonObject<T = Record<string, unknown>>(value: unknown): T | null {
   return null;
 }
 
+function InfoRow({ label, value, mono }: { label: string; value: string | null | undefined; mono?: boolean }) {
+  if (!value) return null;
+  return (
+    <div className="flex items-start justify-between gap-4 py-2 border-b border-slate-100 last:border-0">
+      <span className="text-xs text-slate-500 shrink-0">{label}</span>
+      <span className={`text-xs text-slate-800 font-medium text-right ${mono ? "font-mono" : ""}`}>{value}</span>
+    </div>
+  );
+}
+
 export default async function AnalysisPage({ params }: { params: { id: string } }) {
   const analysis = await prisma.analysis.findUnique({ where: { id: params.id } });
   if (!analysis) notFound();
 
-  // Safe serialization — Prisma objects are always JSON-safe, but guard anyway
   let serialized: Record<string, unknown>;
   try {
     serialized = JSON.parse(JSON.stringify(analysis));
   } catch {
-    console.error("[AnalysisPage] Serialization error for", params.id);
     serialized = analysis as unknown as Record<string, unknown>;
   }
 
-  // Defensive reads of all Json? fields — handle null, non-array, JSON-string legacy formats
   const rawListings = safeJsonArray(serialized.listings);
-  // Applique le marquage outlier côté page aussi (pour les analyses antérieures à la v2)
   const safeListings = markListingOutliers(rawListings as ActiveListing[]) as ActiveListing[];
   const safeDvfComparables = safeJsonArray<DVFComparable>(serialized.dvfComparables);
   const safeGptOutputs = safeJsonArray<GPTOutput>(serialized.gptOutputs);
@@ -115,15 +121,23 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
   const safeDvfStatsRaw = safeJsonObject<DVFStats>(serialized.dvfStats);
   const safeMarketReading = safeJsonObject<MarketReadingType>(serialized.marketReading);
 
-  // If the analysis has no dvfStats saved (e.g. seeded records), fetch live
+  // IRIS
+  const storedIrisCode = serialized.irisCode as string | null | undefined;
+  const irisDisplayLabel = storedIrisCode ? getIrisDisplayLabel(storedIrisCode) : null;
+
+  // OSM proximities
+  const safeProximities = safeJsonArray<OsmPlace>(serialized.proximities);
+
+  // Servitudes
+  const safeServitudes = safeJsonArray<ServitudeItem>(serialized.servitudes);
+
+  // Risks summary
+  const safeRisksSummary = safeJsonArray<string>(serialized.risksSummary);
+
   let dvfStats: DVFStats | null = safeDvfStatsRaw;
   let dvfComparables: DVFComparable[] = safeDvfComparables;
   let liveFinalRadiusKm: number | null = null;
   let liveRequestedRadiusKm: number | null = null;
-
-  // IRIS — zone géographique du bien (lookup depuis CSV, synchrone)
-  const storedIrisCode = serialized.irisCode as string | null | undefined;
-  const irisDisplayLabel = storedIrisCode ? getIrisDisplayLabel(storedIrisCode) : null;
 
   if (!dvfStats && serialized.lat && serialized.lng) {
     try {
@@ -160,19 +174,14 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
   const requestedRadiusKm = liveRequestedRadiusKm ?? (serialized.requestedRadiusKm as number | null);
   const apiAvailable = isApiKeyConfigured();
 
-  // Enrichir dvfStats avec la pression de marché si listings disponibles
-  // (pour analyses stockées dont dvfStats ne contient pas encore marketPressure)
-  // N'utilise que les annonces retenues (sans outliers) pour le calcul
   const cleanSafeListings = safeListings.filter((l) => !l.outlier);
   if (dvfStats && !dvfStats.marketPressure && cleanSafeListings.length > 0) {
     const mp = computeMarketPressure(dvfStats, cleanSafeListings);
     if (mp) dvfStats.marketPressure = mp;
   }
 
-  // Benchmark départemental 74 — récupéré en parallèle, fallback silencieux si API indisponible
   const deptBenchmark = await fetchDeptStats(serialized.propertyType as string | null).catch(() => null);
 
-  // Calcul des facteurs de confiance (4 composantes) à partir des données disponibles
   const { factors: confidenceFactors } = computeConfidence(
     dvfStats,
     (serialized.surface as number | null) ?? 0,
@@ -180,7 +189,6 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
     perimeterKm ?? undefined,
   );
 
-  // Construction du prompt ChatGPT (côté serveur — toutes les données disponibles)
   const chatgptPrompt = buildChatGPTPrompt({
     propertyType: serialized.propertyType as string,
     address: serialized.address as string | null,
@@ -218,7 +226,6 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
     listings: safeListings as ActiveListing[],
   });
 
-  // Build Gamma prompts (server-side — all data available)
   const gammaInput = {
     serialized,
     adjustments: safeAdjustments as Adjustment[],
@@ -232,7 +239,6 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
   const gammaExpertPrompt = buildGammaExpertPrompt({ ...gammaInput, baseUrl });
   const gammaClientPrompt = buildGammaClientPrompt({ ...gammaInput, baseUrl });
 
-  // Map propertyType to DVF type string for the trend chart
   const dvfTypeForChart = serialized.propertyType === "APARTMENT" ? "Appartement"
     : serialized.propertyType === "HOUSE" ? "Maison"
     : serialized.propertyType === "LAND" ? "Terrain"
@@ -241,15 +247,61 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
   const geoQuality = serialized.geoQuality as string | null | undefined;
   const geoScore = serialized.geoScore as number | null | undefined;
 
-  // URLs externes Pappers
   const pappersMapUrl = (serialized.lat && serialized.lng)
     ? `https://immobilier.pappers.fr/?lat=${serialized.lat}&lon=${serialized.lng}&z=15`
     : null;
 
+  // SWOT computation
+  const swot = computeSwot({
+    propertyType: serialized.propertyType as string,
+    condition: serialized.condition as string | null,
+    dpeLetter: serialized.dpeLetter as string | null,
+    floor: serialized.floor as number | null,
+    totalFloors: serialized.totalFloors as number | null,
+    yearBuilt: serialized.yearBuilt as number | null,
+    hasParking: Boolean(serialized.hasParking),
+    hasGarage: Boolean(serialized.hasGarage),
+    hasBalcony: Boolean(serialized.hasBalcony),
+    hasTerrace: Boolean(serialized.hasTerrace),
+    hasCellar: Boolean(serialized.hasCellar),
+    hasPool: Boolean(serialized.hasPool),
+    hasElevator: Boolean(serialized.hasElevator),
+    landSurface: serialized.landSurface as number | null,
+    surface: serialized.surface as number,
+    rooms: serialized.rooms as number | null,
+    orientation: serialized.orientation as string | null,
+    view: serialized.view as string | null,
+    mitoyennete: serialized.mitoyennete as string | null,
+    zonePLU: serialized.zonePLU as string | null,
+    zonePLUType: serialized.zonePLUType as string | null,
+    riskFlood: serialized.riskFlood as string | null,
+    riskEarthquake: serialized.riskEarthquake as string | null,
+    riskClay: serialized.riskClay as string | null,
+    riskLandslide: serialized.riskLandslide as string | null,
+    risksSummary: safeRisksSummary.length > 0 ? safeRisksSummary : (serialized.risksSummary === null ? null : undefined as unknown as null),
+    servitudes: safeServitudes.length > 0 ? safeServitudes : null,
+    proximities: safeProximities.length > 0 ? safeProximities : (serialized.proximities === null ? null : undefined as unknown as null),
+    confidence: serialized.confidence as number | null,
+    dvfSampleSize: serialized.dvfSampleSize as number | null,
+  });
+
+  // Property details helpers
+  const propType = PROPERTY_TYPE_LABELS[serialized.propertyType as string] ?? (serialized.propertyType as string);
+  const condLabel = CONDITION_LABELS[serialized.condition as string] ?? (serialized.condition as string);
+  const featuresList = [
+    Boolean(serialized.hasParking) && "Parking",
+    Boolean(serialized.hasGarage) && "Garage",
+    Boolean(serialized.hasBalcony) && "Balcon",
+    Boolean(serialized.hasTerrace) && "Terrasse",
+    Boolean(serialized.hasCellar) && "Cave",
+    Boolean(serialized.hasPool) && "Piscine",
+    Boolean(serialized.hasElevator) && "Ascenseur",
+  ].filter(Boolean) as string[];
+
   return (
     <div className="min-h-screen -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 pb-12" style={{ backgroundColor: "#F8FAFC" }}>
 
-      {/* ── Breadcrumb ────────────────────────────────────────────────────── */}
+      {/* ── Breadcrumb ── */}
       <div className="pt-4 pb-3">
         <Button asChild variant="ghost" size="sm" className="gap-1.5 text-slate-500 hover:text-slate-800 -ml-2">
           <Link href="/analyses">
@@ -259,7 +311,7 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
         </Button>
       </div>
 
-      {/* ── Bannières géocodage ───────────────────────────────────────────── */}
+      {/* ── Bannières géocodage ── */}
       {geoQuality === "warning" && (
         <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 mb-4">
           <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5 text-amber-500" />
@@ -267,7 +319,6 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
             <p className="font-medium">Adresse approximative — vérifier les coordonnées</p>
             <p className="text-xs text-amber-700 mt-0.5">
               Score géocodage : {geoScore != null ? geoScore.toFixed(2) : "—"} (recommandé ≥ 0.70).
-              La localisation peut influencer les comparables DVF retenus.
             </p>
           </div>
         </div>
@@ -279,27 +330,24 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
             <p className="font-medium">Adresse non trouvée — vérifiez l'adresse saisie</p>
             <p className="text-xs text-red-700 mt-0.5">
               Score géocodage : {geoScore != null ? geoScore.toFixed(2) : "—"} (minimum ≥ 0.50).
-              Corrigez l'adresse et relancez l'estimation.
             </p>
           </div>
         </div>
       )}
 
-      {/* ── Bannière sauvegarde ───────────────────────────────────────────── */}
+      {/* ── Bannière sauvegarde ── */}
       {serialized.status === "DRAFT" && (
         <SaveDiscardBanner analysisId={serialized.id as string} />
       )}
 
-      {/* ── 1. HEADER — Identité du bien ─────────────────────────────────── */}
+      {/* ── HEADER ── */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200/80 px-6 py-6 mb-5">
         <AnalysisSummaryPanel analysis={serialized} analysisId={serialized.id as string} irisDisplayLabel={irisDisplayLabel} />
       </div>
 
-      {/* ── 2. TOOLBAR — Actions ─────────────────────────────────────────── */}
+      {/* ── TOOLBAR ── */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200/80 px-5 py-4 mb-5">
         <div className="flex flex-wrap items-start gap-x-0 gap-y-3">
-
-          {/* Groupe gauche — Re-simuler + Modifier */}
           <div className="flex items-center gap-2 pr-4 mr-4 border-r border-slate-200">
             <ResimulateButton analysisId={serialized.id as string} />
             <Button asChild variant="outline" size="sm" className="gap-1.5 text-slate-600 border-slate-300">
@@ -309,20 +357,14 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
               </Link>
             </Button>
           </div>
-
-          {/* Groupe centre — GPT */}
           <div className="flex items-center pr-4 mr-4 border-r border-slate-200">
             <GptAnalyzeButton analysisId={serialized.id as string} />
           </div>
-
-          {/* Groupe droite — PDF + Gamma */}
           <div className="flex items-start gap-3 flex-wrap">
             <PdfExportButtons analysisId={serialized.id as string} />
             <div className="w-px bg-slate-200 self-stretch hidden sm:block" />
             <GammaButtons analysisId={serialized.id as string} expertPrompt={gammaExpertPrompt} clientPrompt={gammaClientPrompt} />
           </div>
-
-          {/* Groupe liens externes — Pappers */}
           {pappersMapUrl && (
             <>
               <div className="w-px bg-slate-200 self-stretch hidden sm:block mx-1" />
@@ -337,48 +379,51 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
               </a>
             </>
           )}
-
         </div>
       </div>
 
-      {/* ── 3. ESTIMATION ────────────────────────────────────────────────── */}
-      <ValuationCards
-        low={serialized.valuationLow as number | null}
-        mid={serialized.valuationMid as number | null}
-        high={serialized.valuationHigh as number | null}
-        psm={serialized.valuationPsm as number | null}
-        confidence={serialized.confidence as number | null}
-        confidenceLabel={serialized.confidenceLabel as string | null}
-        adjustments={safeAdjustments}
-        dvfSampleSize={serialized.dvfSampleSize as number | null}
-        perimeterKm={perimeterKm}
-        confidenceFactors={confidenceFactors}
-      />
-
-      {/* Prix d'annonce — bannière sous l'estimation */}
-      {serialized.valuationMid ? (
-        <div className="mt-3 mb-5">
-          <ListingPriceCard
-            listingPriceLow={Math.round((serialized.valuationMid as number) * 1.02)}
-            listingPriceHigh={Math.round((serialized.valuationMid as number) * 1.03)}
-          />
-        </div>
-      ) : <div className="mb-5" />}
-
-      {/* ── 4. ONGLETS ───────────────────────────────────────────────────── */}
-      <Tabs defaultValue="market" className="w-full">
+      {/* ── 5 ONGLETS ── */}
+      <Tabs defaultValue="resultats" className="w-full">
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200/80 px-2 py-2 mb-5">
           <TabsList className="grid grid-cols-5 w-full h-9 bg-slate-100/80 rounded-xl">
-            <TabsTrigger value="market" className="rounded-lg text-xs sm:text-sm font-medium">Marché</TabsTrigger>
-            <TabsTrigger value="signed" className="rounded-lg text-xs sm:text-sm font-medium">Ventes signées</TabsTrigger>
-            <TabsTrigger value="active" className="rounded-lg text-xs sm:text-sm font-medium">Marché actif</TabsTrigger>
-            <TabsTrigger value="methode" className="rounded-lg text-xs sm:text-sm font-medium">Calcul détaillé</TabsTrigger>
-            <TabsTrigger value="gpt" className="rounded-lg text-xs sm:text-sm font-medium">Analyse IA</TabsTrigger>
+            <TabsTrigger value="resultats" className="rounded-lg text-xs sm:text-sm font-medium">Résultats</TabsTrigger>
+            <TabsTrigger value="comparables" className="rounded-lg text-xs sm:text-sm font-medium">Comparables</TabsTrigger>
+            <TabsTrigger value="contexte" className="rounded-lg text-xs sm:text-sm font-medium">Contexte</TabsTrigger>
+            <TabsTrigger value="proximites" className="rounded-lg text-xs sm:text-sm font-medium">Proximités</TabsTrigger>
+            <TabsTrigger value="bien" className="rounded-lg text-xs sm:text-sm font-medium">Bien</TabsTrigger>
           </TabsList>
         </div>
 
-        {/* 1 — Marché */}
-        <TabsContent value="market" className="space-y-4 mt-0">
+        {/* ─── Tab 1 : Résultats ─────────────────────────────────────────── */}
+        <TabsContent value="resultats" className="space-y-5 mt-0">
+          <ValuationCards
+            low={serialized.valuationLow as number | null}
+            mid={serialized.valuationMid as number | null}
+            high={serialized.valuationHigh as number | null}
+            psm={serialized.valuationPsm as number | null}
+            confidence={serialized.confidence as number | null}
+            confidenceLabel={serialized.confidenceLabel as string | null}
+            adjustments={safeAdjustments}
+            dvfSampleSize={serialized.dvfSampleSize as number | null}
+            perimeterKm={perimeterKm}
+            confidenceFactors={confidenceFactors}
+          />
+          {!!serialized.valuationMid && (
+            <ListingPriceCard
+              listingPriceLow={Math.round((serialized.valuationMid as number) * 1.02)}
+              listingPriceHigh={Math.round((serialized.valuationMid as number) * 1.03)}
+            />
+          )}
+          <MethodeCalculPanel
+            dvfStats={dvfStats}
+            listings={safeListings}
+            adjustments={safeAdjustments as Adjustment[]}
+            surface={serialized.surface as number}
+            valuationPsm={serialized.valuationPsm as number}
+            valuationLow={serialized.valuationLow as number}
+            valuationHigh={serialized.valuationHigh as number}
+            valuationMid={serialized.valuationMid as number}
+          />
           <MarketReading
             marketReading={safeMarketReading}
             dvfMedianPsm={dvfStats?.medianPsm ?? null}
@@ -400,10 +445,17 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
             city={serialized.city as string | null}
             propertyType={serialized.propertyType as string | null}
           />
+          <GPTActionsPanel
+            analysisId={serialized.id as string}
+            initialOutputs={safeGptOutputs}
+            chatgptPrompt={chatgptPrompt}
+            address={serialized.address as string | null}
+            city={serialized.city as string | null}
+          />
         </TabsContent>
 
-        {/* 2 — Ventes signées */}
-        <TabsContent value="signed" className="space-y-4 mt-0">
+        {/* ─── Tab 2 : Comparables ───────────────────────────────────────── */}
+        <TabsContent value="comparables" className="space-y-4 mt-0">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             <DVFStatsPanel
               stats={dvfStats}
@@ -443,37 +495,267 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
             comparables={dvfComparables}
             hasLiveData={dvfComparables.some((c) => c.source === "live")}
           />
-        </TabsContent>
-
-        {/* 3 — Marché actif */}
-        <TabsContent value="active" className="space-y-4 mt-0">
           <ActiveListingsPanel listings={safeListings} apiAvailable={apiAvailable} />
           <DVFRecentSalesPanel comparables={dvfComparables} />
         </TabsContent>
 
-        {/* 4 — Calcul détaillé */}
-        <TabsContent value="methode" className="space-y-4 mt-0">
-          <MethodeCalculPanel
-            dvfStats={dvfStats}
-            listings={safeListings}
-            adjustments={safeAdjustments as Adjustment[]}
-            surface={serialized.surface as number}
-            valuationPsm={serialized.valuationPsm as number}
-            valuationLow={serialized.valuationLow as number}
-            valuationHigh={serialized.valuationHigh as number}
-            valuationMid={serialized.valuationMid as number}
-          />
+        {/* ─── Tab 3 : Contexte ──────────────────────────────────────────── */}
+        <TabsContent value="contexte" className="space-y-4 mt-0">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+            {/* IRIS + Parcelle */}
+            <Card className="shadow-sm rounded-xl">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <MapPin className="h-4 w-4 text-blue-500" />
+                  Localisation & Cadastre
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-4 pb-4">
+                <InfoRow label="Secteur IRIS" value={irisDisplayLabel} />
+                <InfoRow
+                  label={serialized.propertyType === "APARTMENT" ? "Parcelle immeuble" : "Parcelle"}
+                  value={
+                    serialized.cadastralSection && serialized.cadastralNumber
+                      ? `Section ${serialized.cadastralSection} — n°${serialized.cadastralNumber}`
+                      : (serialized.cadastralRef as string | null)
+                  }
+                  mono
+                />
+                <InfoRow label="Commune INSEE" value={serialized.communeCode as string | null} mono />
+                {!!serialized.cadastralRef && (
+                  <a
+                    href="https://www.cadastre.gouv.fr/scpc/rechercherPlan.do"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-2 inline-flex items-center text-xs text-blue-500 hover:text-blue-700 hover:underline gap-1"
+                  >
+                    Voir le cadastre →
+                  </a>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* PLU */}
+            <Card className="shadow-sm rounded-xl">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Landmark className="h-4 w-4 text-emerald-600" />
+                  Urbanisme (PLU/PLUi)
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-4 pb-4">
+                {serialized.zonePLU ? (
+                  <>
+                    <InfoRow label="Zone" value={serialized.zonePLU as string} mono />
+                    <InfoRow label="Type de zone" value={
+                      serialized.zonePLUType === "U" ? "U — Zone urbaine"
+                      : serialized.zonePLUType === "AU" ? "AU — Zone à urbaniser"
+                      : serialized.zonePLUType === "N" ? "N — Zone naturelle"
+                      : serialized.zonePLUType === "A" ? "A — Zone agricole"
+                      : (serialized.zonePLUType as string | null)
+                    } />
+                    <InfoRow label="Document" value={serialized.documentUrbanisme as string | null} />
+                  </>
+                ) : (
+                  <p className="text-xs text-slate-400 italic">Données PLU non disponibles pour ce bien.</p>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Risques naturels */}
+            <Card className="shadow-sm rounded-xl">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <ShieldAlert className="h-4 w-4 text-amber-500" />
+                  Risques naturels (Géorisques)
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-4 pb-4">
+                {safeRisksSummary.length > 0 ? (
+                  <div className="space-y-1.5">
+                    {safeRisksSummary.map((risk, i) => (
+                      <div key={i} className="flex items-center gap-2">
+                        <span className="text-amber-500 text-sm">⚠️</span>
+                        <span className="text-xs text-slate-700">{risk}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : serialized.risksSummary === null ? (
+                  <div className="flex items-center gap-2">
+                    <span className="text-green-500 text-sm">✅</span>
+                    <span className="text-xs text-slate-600">Aucun risque naturel majeur recensé</span>
+                  </div>
+                ) : (
+                  <p className="text-xs text-slate-400 italic">
+                    Données risques non disponibles — re-simuler pour les obtenir.
+                  </p>
+                )}
+                <a
+                  href={`https://www.georisques.gouv.fr/mes-risques/connaitre-les-risques-pres-de-chez-moi/rapport2?form-adresse=true&type=adresse&adresse=${encodeURIComponent([serialized.address, serialized.postalCode, serialized.city].filter(Boolean).join(" "))}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-3 inline-flex items-center text-xs text-amber-600 hover:text-amber-800 hover:underline gap-1"
+                >
+                  Rapport Géorisques complet →
+                </a>
+              </CardContent>
+            </Card>
+
+            {/* Servitudes */}
+            <Card className="shadow-sm rounded-xl">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Building2 className="h-4 w-4 text-violet-500" />
+                  Servitudes d'utilité publique
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-4 pb-4">
+                {safeServitudes.length > 0 ? (
+                  <div className="space-y-2">
+                    {safeServitudes.map((s, i) => (
+                      <div key={i} className="flex items-start gap-2">
+                        <span className="text-violet-400 shrink-0 mt-0.5 text-xs font-bold">{s.typeSup ?? "SUP"}</span>
+                        <span className="text-xs text-slate-700">{s.libelle ?? "Servitude"}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : serialized.servitudes === null ? (
+                  <div className="flex items-center gap-2">
+                    <span className="text-green-500 text-sm">✅</span>
+                    <span className="text-xs text-slate-600">Aucune servitude SUP recensée</span>
+                  </div>
+                ) : (
+                  <p className="text-xs text-slate-400 italic">
+                    Données servitudes non disponibles — re-simuler pour les obtenir.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
 
-        {/* 5 — Analyse IA */}
-        <TabsContent value="gpt" className="mt-0">
-          <GPTActionsPanel
-            analysisId={serialized.id as string}
-            initialOutputs={safeGptOutputs}
-            chatgptPrompt={chatgptPrompt}
-            address={serialized.address as string | null}
-            city={serialized.city as string | null}
-          />
+        {/* ─── Tab 4 : Proximités ────────────────────────────────────────── */}
+        <TabsContent value="proximites" className="space-y-5 mt-0">
+          {/* OSM Map */}
+          {!!(serialized.lat && serialized.lng) && (
+            <Card className="shadow-sm rounded-xl">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <MapPin className="h-4 w-4 text-blue-500" />
+                  Équipements à proximité (1 km)
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-4 pb-4">
+                {safeProximities.length > 0 ? (
+                  <OsmProximitiesMapDynamic
+                    places={safeProximities}
+                    subjectLat={serialized.lat as number}
+                    subjectLng={serialized.lng as number}
+                  />
+                ) : serialized.proximities === null ? (
+                  <p className="text-xs text-slate-400 italic">Aucun équipement recensé dans un rayon de 1 km.</p>
+                ) : (
+                  <p className="text-xs text-slate-400 italic">Données proximités non disponibles — re-simuler pour les obtenir.</p>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* OSM Table */}
+          {safeProximities.length > 0 && (
+            <Card className="shadow-sm rounded-xl">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm">Liste des équipements</CardTitle>
+              </CardHeader>
+              <CardContent className="px-4 pb-4">
+                <OsmProximitiesTable places={safeProximities} />
+              </CardContent>
+            </Card>
+          )}
+
+          {/* SWOT Table */}
+          <Card className="shadow-sm rounded-xl">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm">Analyse forces & faiblesses</CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 pb-4">
+              <SwotTable swot={swot} />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* ─── Tab 5 : Bien ──────────────────────────────────────────────── */}
+        <TabsContent value="bien" className="mt-0">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Caractéristiques */}
+            <Card className="shadow-sm rounded-xl">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Building2 className="h-4 w-4 text-slate-500" />
+                  Caractéristiques du bien
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-4 pb-4">
+                <InfoRow label="Type" value={propType} />
+                <InfoRow label="Surface habitable" value={serialized.surface ? `${serialized.surface} m²` : null} />
+                <InfoRow label="Pièces" value={serialized.rooms ? `${serialized.rooms} pièce${(serialized.rooms as number) > 1 ? "s" : ""}` : null} />
+                <InfoRow label="Chambres" value={serialized.bedrooms ? `${serialized.bedrooms} chambre${(serialized.bedrooms as number) > 1 ? "s" : ""}` : null} />
+                <InfoRow label="Étage" value={serialized.floor != null && serialized.totalFloors != null ? `${serialized.floor}/${serialized.totalFloors}` : null} />
+                <InfoRow label="Année de construction" value={serialized.yearBuilt ? String(serialized.yearBuilt) : null} />
+                <InfoRow label="État général" value={condLabel} />
+                <InfoRow label="DPE" value={serialized.dpeLetter ? `Classe ${serialized.dpeLetter}` : null} />
+                <InfoRow label="Terrain" value={serialized.landSurface ? `${(serialized.landSurface as number).toLocaleString("fr-FR")} m²` : null} />
+                <InfoRow label="Orientation" value={serialized.orientation as string | null} />
+                <InfoRow label="Vue" value={serialized.view as string | null} />
+                <InfoRow label="Mitoyenneté" value={
+                  serialized.mitoyennete === "individuelle" ? "Individuelle"
+                  : serialized.mitoyennete === "mitoyenne_un_cote" ? "Mitoyenne d'un côté"
+                  : serialized.mitoyennete === "mitoyenne_deux_cotes" ? "Mitoyenne des deux côtés"
+                  : (serialized.mitoyennete as string | null)
+                } />
+                {featuresList.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mt-3">
+                    {featuresList.map((f) => (
+                      <span key={f} className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-slate-100 text-slate-700 border border-slate-200">
+                        {f}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Destinataire */}
+            <Card className="shadow-sm rounded-xl">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <UserRound className="h-4 w-4 text-slate-500" />
+                  Destinataire de l'avis de valeur
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-4 pb-4">
+                {[serialized.clientFirstName, serialized.clientLastName].filter(Boolean).length > 0 ? (
+                  <>
+                    <InfoRow label="Nom" value={[serialized.clientFirstName, serialized.clientLastName].filter(Boolean).join(" ")} />
+                    <InfoRow label="Adresse" value={serialized.clientAddress as string | null} />
+                    <InfoRow label="Email" value={serialized.clientEmail as string | null} />
+                    <InfoRow label="Téléphone" value={serialized.clientPhone as string | null} />
+                  </>
+                ) : (
+                  <p className="text-xs text-slate-400 italic">Aucun destinataire renseigné.</p>
+                )}
+                <div className="mt-3">
+                  <Button asChild variant="outline" size="sm" className="gap-1.5 text-slate-600 border-slate-300 text-xs">
+                    <Link href={`/analyses/${serialized.id}/edit`}>
+                      <Pencil className="h-3 w-3" />
+                      Modifier les informations
+                    </Link>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
       </Tabs>
     </div>

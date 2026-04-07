@@ -22,6 +22,9 @@ import { getInseeByPostalCodeAndCommune, getInseeByPostalCode } from "@/lib/geo/
 import { fetchAmenities } from "@/lib/geo/amenities";
 import { lookupIrisForProperty } from "@/lib/geo/iris-loader";
 import { lookupPLU } from "@/lib/geo/plu";
+import { lookupRisks } from "@/lib/geo/risks";
+import { lookupServitudes } from "@/lib/geo/sup";
+import { lookupOsmProximities } from "@/lib/geo/osm";
 
 export async function POST(req: Request) {
   try {
@@ -91,11 +94,14 @@ export async function POST(req: Request) {
       }
     }
 
-    // 1c. Parcelle cadastrale IGN (non bloquant, enrichissement uniquement)
-    const parcel = await lookupParcel(lat, lng).catch(() => null);
-
-    // 1d. PLU/PLUi — zonage urbanisme (non bloquant, enrichissement uniquement)
-    const plu = await lookupPLU(lat, lng).catch(() => null);
+    // 1c. Enrichissements géographiques en parallèle (tous non-bloquants)
+    const [parcel, plu, risks, servitudes, proximities] = await Promise.all([
+      lookupParcel(lat, lng).catch(() => null),
+      lookupPLU(lat, lng).catch(() => null),
+      lookupRisks(lat, lng).catch(() => null),
+      lookupServitudes(lat, lng).catch(() => null),
+      lookupOsmProximities(lat, lng).catch(() => null),
+    ]);
 
     // 2. DVF — mutations (recherche purement radiale, IRIS n'affecte pas les transactions)
     const dvfTypes = propertyTypeToDvfTypes(property.propertyType);
@@ -266,6 +272,18 @@ export async function POST(req: Request) {
         libelle: plu.zonePLULabel,
         document: plu.documentUrbanisme,
       } : null,
+      risques: risks?.risksSummary?.length ? risks.risksSummary : null,
+      servitudes: servitudes?.length
+        ? servitudes.slice(0, 5).map((s) => `${s.typeSup ?? ""}${s.libelle ? " — " + s.libelle : ""}`.trim())
+        : null,
+      proximites: proximities?.length
+        ? Object.fromEntries(
+            ["school", "shop", "transport", "health", "park"].map((cat) => {
+              const items = proximities.filter((p) => p.category === cat).slice(0, 3);
+              return [cat, items.map((p) => ({ nom: p.name, distanceM: p.distanceM }))];
+            })
+          )
+        : null,
     });
 
     // 9. Sauvegarde en BDD
@@ -286,6 +304,13 @@ export async function POST(req: Request) {
           zonePLU: plu?.zonePLU ?? null,
           zonePLUType: plu?.zonePLUType ?? null,
           documentUrbanisme: plu?.documentUrbanisme ?? null,
+          riskFlood: risks?.riskFlood ?? null,
+          riskEarthquake: risks?.riskEarthquake ?? null,
+          riskClay: risks?.riskClay ?? null,
+          riskLandslide: risks?.riskLandslide ?? null,
+          risksSummary: risks?.risksSummary as never ?? null,
+          servitudes: servitudes as never ?? null,
+          proximities: proximities as never ?? null,
           clientFirstName: property.clientFirstName,
           clientLastName: property.clientLastName,
           clientAddress: property.clientAddress,

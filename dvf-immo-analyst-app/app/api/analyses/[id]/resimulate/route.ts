@@ -15,6 +15,9 @@ import { fetchNotairesMarket } from "@/lib/notaires/market-check";
 import { geocodeAddress, isGeoError, lookupParcel } from "@/lib/geo/address";
 import { fetchAmenities } from "@/lib/geo/amenities";
 import { lookupPLU } from "@/lib/geo/plu";
+import { lookupRisks } from "@/lib/geo/risks";
+import { lookupServitudes } from "@/lib/geo/sup";
+import { lookupOsmProximities } from "@/lib/geo/osm";
 
 export async function POST(
   req: Request,
@@ -100,11 +103,14 @@ export async function POST(
     }
     const propertyWithGeo = { ...property, lat, lng };
 
-    // 4b. Parcelle cadastrale IGN (non bloquant)
-    const parcel = await lookupParcel(lat, lng).catch(() => null);
-
-    // 4c. PLU/PLUi — zonage urbanisme (non bloquant)
-    const plu = await lookupPLU(lat, lng).catch(() => null);
+    // 4b. Enrichissements géographiques en parallèle (tous non-bloquants)
+    const [parcel, plu, risks, servitudes, proximities] = await Promise.all([
+      lookupParcel(lat, lng).catch(() => null),
+      lookupPLU(lat, lng).catch(() => null),
+      lookupRisks(lat, lng).catch(() => null),
+      lookupServitudes(lat, lng).catch(() => null),
+      lookupOsmProximities(lat, lng).catch(() => null),
+    ]);
 
     // 5. DVF mutations (+ filtre INSEE secondaire via city/postalCode)
     const dvfTypes = propertyTypeToDvfTypes(property.propertyType as PropertyType);
@@ -205,6 +211,18 @@ export async function POST(
         libelle: plu.zonePLULabel,
         document: plu.documentUrbanisme,
       } : null,
+      risques: risks?.risksSummary?.length ? risks.risksSummary : null,
+      servitudes: servitudes?.length
+        ? servitudes.slice(0, 5).map((s) => `${s.typeSup ?? ""}${s.libelle ? " — " + s.libelle : ""}`.trim())
+        : null,
+      proximites: proximities?.length
+        ? Object.fromEntries(
+            ["school", "shop", "transport", "health", "park"].map((cat) => {
+              const items = proximities.filter((p) => p.category === cat).slice(0, 3);
+              return [cat, items.map((p) => ({ nom: p.name, distanceM: p.distanceM }))];
+            })
+          )
+        : null,
     });
 
     // 10. Mise à jour en base (on garde gptOutputs existants)
@@ -223,6 +241,13 @@ export async function POST(
         zonePLU: plu?.zonePLU ?? null,
         zonePLUType: plu?.zonePLUType ?? null,
         documentUrbanisme: plu?.documentUrbanisme ?? null,
+        riskFlood: risks?.riskFlood ?? null,
+        riskEarthquake: risks?.riskEarthquake ?? null,
+        riskClay: risks?.riskClay ?? null,
+        riskLandslide: risks?.riskLandslide ?? null,
+        risksSummary: risks?.risksSummary as never ?? null,
+        servitudes: servitudes as never ?? null,
+        proximities: proximities as never ?? null,
         propertyType: property.propertyType as PropertyType,
         surface: property.surface as number,
         rooms: property.rooms as number ?? null,
