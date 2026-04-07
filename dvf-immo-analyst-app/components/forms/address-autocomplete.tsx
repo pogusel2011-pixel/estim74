@@ -33,6 +33,7 @@ function toTitleCase(s: string): string {
 export function AddressAutocomplete({ form }: Props) {
   const { setValue, watch, formState: { errors } } = form;
   const addressVal = watch("address") ?? "";
+  const cityVal    = watch("city") ?? "";
 
   const [inputValue, setInputValue] = useState(addressVal);
   const [results, setResults]       = useState<IGNResult[]>([]);
@@ -68,7 +69,11 @@ export function AddressAutocomplete({ form }: Props) {
     if (text.trim().length < 3) { setResults([]); setOpen(false); return; }
     setLoading(true);
     try {
-      const res = await fetch(`/api/ign/completion?text=${encodeURIComponent(text)}`);
+      const city = cityVal.trim();
+      const url = city
+        ? `/api/ign/completion?text=${encodeURIComponent(text)}&city=${encodeURIComponent(city)}`
+        : `/api/ign/completion?text=${encodeURIComponent(text)}`;
+      const res = await fetch(url);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data: { status: string; results?: IGNResult[] } = await res.json();
       const list = data.results ?? [];
@@ -98,8 +103,12 @@ export function AddressAutocomplete({ form }: Props) {
   function handleSelect(result: IGNResult) {
     let street = result.fulltext;
     if (result.zipcode && result.city) {
-      const suffix = `, ${result.zipcode} ${result.city}`;
-      if (street.endsWith(suffix)) street = street.slice(0, -suffix.length);
+      // BAN format: "30 Avenue Beauregard 74960 Annecy" (space before zipcode)
+      const suffixBan = ` ${result.zipcode} ${result.city}`;
+      // IGN format: "30 Avenue Beauregard, 74960 Annecy" (comma before zipcode)
+      const suffixIgn = `, ${result.zipcode} ${result.city}`;
+      if (street.endsWith(suffixIgn)) street = street.slice(0, -suffixIgn.length);
+      else if (street.endsWith(suffixBan)) street = street.slice(0, -suffixBan.length);
     }
     setInputValue(street);
     setValue("address",    street,                 { shouldValidate: false });
@@ -174,7 +183,7 @@ export function AddressAutocomplete({ form }: Props) {
           borderTop: "1px solid #e2e8f0",
         }}
       >
-        Source : IGN Géoplateforme — Haute-Savoie (74)
+        Source : BAN — Base Adresse Nationale (74)
       </li>
     </ul>
   ) : null;
