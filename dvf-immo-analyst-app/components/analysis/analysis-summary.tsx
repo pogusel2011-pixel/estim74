@@ -61,6 +61,19 @@ export function AnalysisSummaryPanel({ analysis, analysisId, irisDisplayLabel }:
         <span>{fullAddress}</span>
       </h1>
 
+      {(() => {
+        const firstName = analysis.clientFirstName as string | null | undefined;
+        const lastName  = analysis.clientLastName  as string | null | undefined;
+        const fullName  = [firstName, lastName].filter(Boolean).join(" ");
+        if (!fullName) return null;
+        return (
+          <p className="text-sm text-slate-500 flex items-center gap-1.5">
+            <span>👤</span>
+            <span>Pour : <span className="font-medium text-slate-700">{fullName}</span></span>
+          </p>
+        );
+      })()}
+
       {irisDisplayLabel && (
         <p className="text-sm text-slate-500 flex items-center gap-1.5">
           <span>📍</span>

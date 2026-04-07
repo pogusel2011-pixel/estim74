@@ -10,7 +10,6 @@ import { PdfExportButtons } from "@/components/analysis/pdf-export-buttons";
 import { AnalysisSummaryPanel } from "@/components/analysis/analysis-summary";
 import { ValuationCards } from "@/components/analysis/valuation-cards";
 import { DVFComparablesTable } from "@/components/dvf/dvf-comparables-table";
-import { DVFStatsPanel } from "@/components/dvf/dvf-stats-panel";
 import { MarketTrendChart } from "@/components/dvf/market-trend-chart";
 import { ActiveListingsPanel } from "@/components/listings/active-listings-panel";
 import { DVFRecentSalesPanel } from "@/components/listings/dvf-recent-sales-panel";
@@ -51,6 +50,7 @@ import { PropertyType } from "@/types/property";
 import type { OsmPlace } from "@/lib/geo/osm";
 import type { ServitudeItem } from "@/lib/geo/sup";
 import { PROPERTY_TYPE_LABELS, CONDITION_LABELS } from "@/lib/constants";
+import { formatPsm } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -351,8 +351,8 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
           <TabsList className="grid grid-cols-6 w-full h-9 bg-slate-100/80 rounded-xl">
             <TabsTrigger value="resultats" className="rounded-lg text-xs sm:text-sm font-medium">Résultats</TabsTrigger>
             <TabsTrigger value="comparables" className="rounded-lg text-xs sm:text-sm font-medium">Comparables</TabsTrigger>
+            <TabsTrigger value="marche" className="rounded-lg text-xs sm:text-sm font-medium">Marché</TabsTrigger>
             <TabsTrigger value="contexte" className="rounded-lg text-xs sm:text-sm font-medium">Contexte</TabsTrigger>
-            <TabsTrigger value="proximites" className="rounded-lg text-xs sm:text-sm font-medium">Proximités</TabsTrigger>
             <TabsTrigger value="bien" className="rounded-lg text-xs sm:text-sm font-medium">Bien</TabsTrigger>
             <TabsTrigger value="livrables" className="rounded-lg text-xs sm:text-sm font-medium flex items-center gap-1.5">
               <Download className="h-3.5 w-3.5" />
@@ -363,6 +363,7 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
 
         {/* ─── Tab 1 : Résultats ─────────────────────────────────────────── */}
         <TabsContent value="resultats" className="space-y-5 mt-0">
+          {/* Row 1 : Estimation fourchette */}
           <ValuationCards
             low={serialized.valuationLow as number | null}
             mid={serialized.valuationMid as number | null}
@@ -375,12 +376,7 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
             perimeterKm={perimeterKm}
             confidenceFactors={confidenceFactors}
           />
-          {!!serialized.valuationMid && (
-            <ListingPriceCard
-              listingPriceLow={Math.round((serialized.valuationMid as number) * 1.02)}
-              listingPriceHigh={Math.round((serialized.valuationMid as number) * 1.03)}
-            />
-          )}
+          {/* Row 2 : Ajustements qualitatifs */}
           <MethodeCalculPanel
             dvfStats={dvfStats}
             listings={safeListings}
@@ -391,73 +387,47 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
             valuationHigh={serialized.valuationHigh as number}
             valuationMid={serialized.valuationMid as number}
           />
-          <MarketReading
-            marketReading={safeMarketReading}
-            dvfMedianPsm={dvfStats?.medianPsm ?? null}
-            propertyType={serialized.propertyType as string | undefined}
-          />
-          <DeptBenchmarkPanel
-            benchmark={deptBenchmark}
-            subjectPsm={serialized.valuationPsm as number | null}
-          />
-          {!!(serialized.lat && serialized.lng) && (
-            <MarketTrendChart
-              lat={serialized.lat as number}
-              lng={serialized.lng as number}
-              radiusKm={Math.max(perimeterKm ?? 2, 2)}
-              propertyType={dvfTypeForChart}
+          {/* Row 3 : Prix d'annonce conseillé + Indicateurs Notaires */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {!!serialized.valuationMid && (
+              <ListingPriceCard
+                listingPriceLow={Math.round((serialized.valuationMid as number) * 1.02)}
+                listingPriceHigh={Math.round((serialized.valuationMid as number) * 1.03)}
+              />
+            )}
+            <NotairesPanel
+              city={serialized.city as string | null}
+              propertyType={serialized.propertyType as string | null}
             />
-          )}
-          <NotairesPanel
-            city={serialized.city as string | null}
-            propertyType={serialized.propertyType as string | null}
-          />
-          <GPTActionsPanel
-            analysisId={serialized.id as string}
-            initialOutputs={safeGptOutputs}
-            chatgptPrompt={chatgptPrompt}
-            address={serialized.address as string | null}
-            city={serialized.city as string | null}
-          />
+          </div>
         </TabsContent>
 
         {/* ─── Tab 2 : Comparables ───────────────────────────────────────── */}
         <TabsContent value="comparables" className="space-y-4 mt-0">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            <DVFStatsPanel
-              stats={dvfStats}
-              sampleSize={serialized.dvfSampleSize as number | null}
-              perimeterKm={perimeterKm}
-              requestedRadiusKm={requestedRadiusKm}
-              trend12m={safeMarketReading?.dvfControl?.trend12m ?? null}
-            />
-            <div className="lg:col-span-2">
-              {serialized.lat && serialized.lng ? (
-                <Card className="flex-1 h-full shadow-sm rounded-xl">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm flex items-center gap-2">
-                      <MapPin className="h-4 w-4 text-[#2563EB]" />
-                      Transactions comparables{perimeterKm ? ` • Périmètre ${perimeterKm} km` : ""}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-3" style={{ height: 310 }}>
-                    <DVFComparablesMapDynamic
-                      comparables={dvfComparables}
-                      subjectLat={serialized.lat as number}
-                      subjectLng={serialized.lng as number}
-                      perimeterKm={perimeterKm}
-                    />
-                  </CardContent>
-                </Card>
-              ) : (
-                <Card className="flex-1 shadow-sm rounded-xl">
-                  <CardContent className="pt-6 text-center text-sm text-muted-foreground">
-                    Coordonnées non disponibles
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          </div>
+          {serialized.lat && serialized.lng ? (
+            <Card className="shadow-sm rounded-xl">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <MapPin className="h-4 w-4 text-[#2563EB]" />
+                  Transactions comparables{perimeterKm ? ` • Périmètre ${perimeterKm} km` : ""}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-3" style={{ height: 340 }}>
+                <DVFComparablesMapDynamic
+                  comparables={dvfComparables}
+                  subjectLat={serialized.lat as number}
+                  subjectLng={serialized.lng as number}
+                  perimeterKm={perimeterKm}
+                />
+              </CardContent>
+            </Card>
+          ) : (
+            <Card className="shadow-sm rounded-xl">
+              <CardContent className="pt-6 text-center text-sm text-muted-foreground">
+                Coordonnées non disponibles
+              </CardContent>
+            </Card>
+          )}
           <DVFComparablesTable
             comparables={dvfComparables}
             hasLiveData={dvfComparables.some((c) => c.source === "live")}
@@ -466,7 +436,216 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
           <DVFRecentSalesPanel comparables={dvfComparables} />
         </TabsContent>
 
-        {/* ─── Tab 3 : Contexte ──────────────────────────────────────────── */}
+        {/* ─── Tab 3 : Marché (NEW) ──────────────────────────────────────── */}
+        <TabsContent value="marche" className="space-y-5 mt-0">
+
+          {/* Row 1 : Tendance marché + Prix Pappers */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <MarketReading
+              marketReading={safeMarketReading}
+              dvfMedianPsm={dvfStats?.medianPsm ?? null}
+              propertyType={serialized.propertyType as string | undefined}
+            />
+            <Card className="shadow-sm rounded-xl">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Map className="h-4 w-4 text-blue-500" />
+                  Prix de marché Pappers Immobilier
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-4 pb-4">
+                {dvfStats?.marketPressure ? (
+                  <div className="space-y-0">
+                    <div className="flex items-start justify-between gap-4 py-2 border-b border-slate-100">
+                      <span className="text-xs text-slate-500 shrink-0">Médiane annonces actives</span>
+                      <span className="text-xs font-semibold text-slate-800">{formatPsm(dvfStats.marketPressure.medianListingPsm)}</span>
+                    </div>
+                    <div className="flex items-start justify-between gap-4 py-2 border-b border-slate-100">
+                      <span className="text-xs text-slate-500 shrink-0">Prix de vente estimé (−4 % négo.)</span>
+                      <span className="text-xs font-semibold text-slate-800">{formatPsm(Math.round(dvfStats.marketPressure.medianListingPsm * 0.96))}</span>
+                    </div>
+                    <div className="flex items-start justify-between gap-4 py-2 border-b border-slate-100">
+                      <span className="text-xs text-slate-500 shrink-0">Écart annonces / DVF</span>
+                      <span className={`text-xs font-semibold ${dvfStats.marketPressure.gapPct > 0 ? "text-amber-600" : "text-green-600"}`}>
+                        {dvfStats.marketPressure.gapPct > 0 ? "+" : ""}{dvfStats.marketPressure.gapPct.toFixed(1)} %
+                      </span>
+                    </div>
+                    <div className="flex items-start justify-between gap-4 py-2">
+                      <span className="text-xs text-slate-500 shrink-0">Ajustement appliqué</span>
+                      <span className={`text-xs font-semibold ${dvfStats.marketPressure.adjustment > 0 ? "text-green-600" : dvfStats.marketPressure.adjustment < 0 ? "text-red-600" : "text-slate-600"}`}>
+                        {dvfStats.marketPressure.adjustment > 0 ? "+" : ""}{(dvfStats.marketPressure.adjustment * 100).toFixed(1)} %
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-400 mt-3 italic">
+                      Source : annonces actives Pappers Immobilier — {cleanSafeListings.length} annonce{cleanSafeListings.length !== 1 ? "s" : ""} analysée{cleanSafeListings.length !== 1 ? "s" : ""}
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-xs text-slate-400 italic">
+                    Données Pappers Immobilier non disponibles — re-simuler pour les obtenir.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Row 2 : Benchmark départemental */}
+          <DeptBenchmarkPanel
+            benchmark={deptBenchmark}
+            subjectPsm={serialized.valuationPsm as number | null}
+          />
+
+          {/* Row 3 : Graphique évolution prix médian */}
+          {!!(serialized.lat && serialized.lng) && (
+            <MarketTrendChart
+              lat={serialized.lat as number}
+              lng={serialized.lng as number}
+              radiusKm={Math.max(perimeterKm ?? 2, 2)}
+              propertyType={dvfTypeForChart}
+            />
+          )}
+
+          {/* Row 4 : Statistiques DVF en 4 blocs 2×2 */}
+          {dvfStats && (() => {
+            const dvfPsm = dvfStats.weightedAvgPsm ?? dvfStats.medianPsm;
+            const mktAdj = dvfStats.marketPressure?.adjustment ?? 0;
+            const fsd = dvfStats.fsd ?? dvfStats.stdPsm;
+            const cv = dvfStats.medianPsm > 0 ? fsd / dvfStats.medianPsm : 0;
+            const retained = serialized.dvfSampleSize as number | null ?? dvfStats.count;
+            const excluded = dvfStats.excludedCount ?? 0;
+            const trend12m = safeMarketReading?.dvfControl?.trend12m ?? null;
+            const wasExpanded = requestedRadiusKm != null && perimeterKm != null && perimeterKm > requestedRadiusKm;
+            const fmtDate = (d: string) => new Date(d).toLocaleDateString("fr-FR", { month: "short", year: "numeric" });
+            const StatRow = ({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) => (
+              <div className="flex items-start justify-between gap-4 py-1.5 border-b border-slate-100 last:border-0">
+                <span className="text-xs text-slate-500 shrink-0">{label}</span>
+                <span className={`text-xs font-semibold text-right ${highlight ? "text-[#2563EB]" : "text-slate-800"}`}>{value}</span>
+              </div>
+            );
+            return (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Sources de données */}
+                <Card className="shadow-sm rounded-xl">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm">📊 Sources de données</CardTitle>
+                  </CardHeader>
+                  <CardContent className="px-4 pb-4">
+                    <StatRow label="DVF pondéré (réf.)" value={formatPsm(dvfPsm)} />
+                    {dvfStats.marketPressure && (
+                      <StatRow label="Annonces actives (−4 % négo.)" value={formatPsm(Math.round(dvfStats.marketPressure.medianListingPsm * 0.96))} />
+                    )}
+                    {mktAdj !== 0 && (
+                      <StatRow label="Pression marché" value={`${mktAdj > 0 ? "+" : ""}${(mktAdj * 100).toFixed(1)} %`} />
+                    )}
+                    <div className="mt-2 p-2 rounded-lg bg-blue-50 border border-blue-100">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-medium text-blue-700">Prix de base retenu</span>
+                        <span className="text-sm font-bold text-[#2563EB]">{formatPsm(Math.round(dvfPsm * (1 + mktAdj)))}</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Qualité de l'échantillon */}
+                <Card className="shadow-sm rounded-xl">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm">🔍 Qualité de l&apos;échantillon</CardTitle>
+                  </CardHeader>
+                  <CardContent className="px-4 pb-4">
+                    <StatRow label="Médiane DVF" value={formatPsm(dvfStats.medianPsm)} />
+                    <StatRow label="Écart-type (σ)" value={formatPsm(fsd)} />
+                    <StatRow label="Transactions retenues" value={`${retained}`} />
+                    <StatRow label="Transactions exclues" value={`${excluded}`} />
+                    <StatRow label="Période couverte" value={`${fmtDate(dvfStats.oldestDate)} → ${fmtDate(dvfStats.newestDate)}`} />
+                    {dvfStats.searchPath && (
+                      <StatRow label="Périmètre" value={dvfStats.searchPath} />
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Contexte marché */}
+                <Card className="shadow-sm rounded-xl">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm">📈 Contexte marché</CardTitle>
+                  </CardHeader>
+                  <CardContent className="px-4 pb-4">
+                    {trend12m != null && (
+                      <StatRow
+                        label="Tendance 12 mois"
+                        value={`${trend12m > 0 ? "+" : ""}${trend12m.toFixed(1)} %`}
+                      />
+                    )}
+                    {perimeterKm && (
+                      <StatRow label="Périmètre retenu" value={`${perimeterKm} km${wasExpanded ? " (élargi)" : ""}`} />
+                    )}
+                    {dvfStats.marketPressure && (
+                      <StatRow
+                        label="Pression de marché appliquée"
+                        value={`${dvfStats.marketPressure.adjustment > 0 ? "+" : ""}${(dvfStats.marketPressure.adjustment * 100).toFixed(1)} %`}
+                      />
+                    )}
+                    <StatRow label="Source données" value={dvfStats.source === "csv" ? "Fichier DGFiP local" : dvfStats.source === "api" ? "API temps réel" : "Mixte CSV + API"} />
+                    {dvfStats.isIndexed && (
+                      <div className="mt-2 flex items-center gap-1.5">
+                        <span className="text-green-500 text-xs">✅</span>
+                        <span className="text-xs text-slate-600">Prix indexés en valeur 2025</span>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Fiabilité */}
+                <Card className="shadow-sm rounded-xl">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm">⚠️ Fiabilité</CardTitle>
+                  </CardHeader>
+                  <CardContent className="px-4 pb-4 space-y-2">
+                    {retained < 5 ? (
+                      <div className="flex items-start gap-2">
+                        <span className="text-amber-500 shrink-0">⚠️</span>
+                        <span className="text-xs text-slate-700">Données partielles : seulement {retained} transaction{retained !== 1 ? "s" : ""} retenue{retained !== 1 ? "s" : ""}</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-start gap-2">
+                        <span className="text-green-500 shrink-0">✅</span>
+                        <span className="text-xs text-slate-700">Échantillon suffisant ({retained} transactions)</span>
+                      </div>
+                    )}
+                    {cv > 0.2 ? (
+                      <div className="flex items-start gap-2">
+                        <span className="text-amber-500 shrink-0">⚠️</span>
+                        <span className="text-xs text-slate-700">Dispersion élevée (σ/médiane = {(cv * 100).toFixed(0)} %) — fourchette large</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-start gap-2">
+                        <span className="text-green-500 shrink-0">✅</span>
+                        <span className="text-xs text-slate-700">Dispersion homogène (σ/médiane = {(cv * 100).toFixed(0)} %)</span>
+                      </div>
+                    )}
+                    {excluded > retained ? (
+                      <div className="flex items-start gap-2">
+                        <span className="text-red-500 shrink-0">❌</span>
+                        <span className="text-xs text-slate-700">{excluded} transactions aberrantes exclues — résultat à interpréter avec prudence</span>
+                      </div>
+                    ) : excluded > 0 ? (
+                      <div className="flex items-start gap-2">
+                        <span className="text-slate-400 shrink-0">ℹ️</span>
+                        <span className="text-xs text-slate-600">{excluded} valeur{excluded !== 1 ? "s" : ""} aberrante{excluded !== 1 ? "s" : ""} exclue{excluded !== 1 ? "s" : ""} (IQR × 2)</span>
+                      </div>
+                    ) : null}
+                    {wasExpanded && (
+                      <div className="flex items-start gap-2">
+                        <span className="text-slate-400 shrink-0">ℹ️</span>
+                        <span className="text-xs text-slate-600">Périmètre élargi de {requestedRadiusKm} à {perimeterKm} km faute de données suffisantes</span>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            );
+          })()}</TabsContent>
+
+        {/* ─── Tab 4 : Contexte ──────────────────────────────────────────── */}
         <TabsContent value="contexte" className="space-y-4 mt-0">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
@@ -602,58 +781,9 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
           </div>
         </TabsContent>
 
-        {/* ─── Tab 4 : Proximités ────────────────────────────────────────── */}
-        <TabsContent value="proximites" className="space-y-5 mt-0">
-          {/* OSM Map */}
-          {!!(serialized.lat && serialized.lng) && (
-            <Card className="shadow-sm rounded-xl">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm flex items-center gap-2">
-                  <MapPin className="h-4 w-4 text-blue-500" />
-                  Équipements à proximité (1 km)
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="px-4 pb-4">
-                {safeProximities.length > 0 ? (
-                  <OsmProximitiesMapDynamic
-                    places={safeProximities}
-                    subjectLat={serialized.lat as number}
-                    subjectLng={serialized.lng as number}
-                  />
-                ) : serialized.proximities === null ? (
-                  <p className="text-xs text-slate-400 italic">Aucun équipement recensé dans un rayon de 1 km.</p>
-                ) : (
-                  <p className="text-xs text-slate-400 italic">Données proximités non disponibles — re-simuler pour les obtenir.</p>
-                )}
-              </CardContent>
-            </Card>
-          )}
-
-          {/* OSM Table */}
-          {safeProximities.length > 0 && (
-            <Card className="shadow-sm rounded-xl">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm">Liste des équipements</CardTitle>
-              </CardHeader>
-              <CardContent className="px-4 pb-4">
-                <OsmProximitiesTable places={safeProximities} />
-              </CardContent>
-            </Card>
-          )}
-
-          {/* SWOT Table */}
-          <Card className="shadow-sm rounded-xl">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm">Analyse forces & faiblesses</CardTitle>
-            </CardHeader>
-            <CardContent className="px-4 pb-4">
-              <SwotTable swot={swot} />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* ─── Tab 5 : Bien ──────────────────────────────────────────────── */}
-        <TabsContent value="bien" className="mt-0">
+        {/* ─── Tab 5 : Bien (+ Proximités + SWOT) ───────────────────────── */}
+        <TabsContent value="bien" className="space-y-5 mt-0">
+          {/* Row 1 : Caractéristiques + Destinataire */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Caractéristiques */}
             <Card className="shadow-sm rounded-xl">
@@ -698,7 +828,7 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm flex items-center gap-2">
                   <UserRound className="h-4 w-4 text-slate-500" />
-                  Destinataire de l'avis de valeur
+                  Destinataire de l&apos;avis de valeur
                 </CardTitle>
               </CardHeader>
               <CardContent className="px-4 pb-4">
@@ -715,10 +845,57 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
               </CardContent>
             </Card>
           </div>
+
+          {/* Row 2 : Carte des équipements OSM */}
+          {!!(serialized.lat && serialized.lng) && (
+            <Card className="shadow-sm rounded-xl">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <MapPin className="h-4 w-4 text-blue-500" />
+                  Équipements à proximité (1 km)
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-4 pb-4">
+                {safeProximities.length > 0 ? (
+                  <OsmProximitiesMapDynamic
+                    places={safeProximities}
+                    subjectLat={serialized.lat as number}
+                    subjectLng={serialized.lng as number}
+                  />
+                ) : serialized.proximities === null ? (
+                  <p className="text-xs text-slate-400 italic">Aucun équipement recensé dans un rayon de 1 km.</p>
+                ) : (
+                  <p className="text-xs text-slate-400 italic">Données proximités non disponibles — re-simuler pour les obtenir.</p>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Row 3 : Table des distances */}
+          {safeProximities.length > 0 && (
+            <Card className="shadow-sm rounded-xl">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm">Liste des équipements</CardTitle>
+              </CardHeader>
+              <CardContent className="px-4 pb-4">
+                <OsmProximitiesTable places={safeProximities} />
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Row 4 : SWOT */}
+          <Card className="shadow-sm rounded-xl">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm">Analyse forces &amp; faiblesses</CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 pb-4">
+              <SwotTable swot={swot} />
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* ─── Tab 6 : Livrables ─────────────────────────────────────────── */}
-        <TabsContent value="livrables" className="mt-0">
+        <TabsContent value="livrables" className="space-y-5 mt-0">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
             {/* Actions principales */}
@@ -742,18 +919,18 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
               </CardContent>
             </Card>
 
-            {/* Analyse IA */}
+            {/* Analyse IA rapide */}
             <Card className="shadow-sm rounded-xl">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm flex items-center gap-2">
                   <Bot className="h-4 w-4 text-slate-500" />
-                  Analyse IA
+                  Analyse IA rapide (GPT-4o)
                 </CardTitle>
               </CardHeader>
               <CardContent className="px-4 pb-4">
                 <GptAnalyzeButton analysisId={serialized.id as string} />
                 <p className="text-xs text-slate-400 mt-2">
-                  Lance une analyse GPT-4o du bien et du marché. Le résultat apparaîtra dans l'onglet Résultats.
+                  Synthèse automatique du bien et du marché. Le résultat apparaît dans l&apos;onglet Résultats.
                 </p>
               </CardContent>
             </Card>
@@ -814,6 +991,15 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
               </Card>
             )}
           </div>
+
+          {/* DVF Immo Analyst — GPT personnalisé + Analyses IA intégrées */}
+          <GPTActionsPanel
+            analysisId={serialized.id as string}
+            initialOutputs={safeGptOutputs}
+            chatgptPrompt={chatgptPrompt}
+            address={serialized.address as string | null}
+            city={serialized.city as string | null}
+          />
         </TabsContent>
       </Tabs>
     </div>
