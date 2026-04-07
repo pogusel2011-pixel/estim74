@@ -14,6 +14,7 @@ import { computeValuation } from "@/lib/valuation/valuation";
 import { fetchNotairesMarket } from "@/lib/notaires/market-check";
 import { geocodeAddress, isGeoError, lookupParcel } from "@/lib/geo/address";
 import { fetchAmenities } from "@/lib/geo/amenities";
+import { lookupPLU } from "@/lib/geo/plu";
 
 export async function POST(
   req: Request,
@@ -101,6 +102,9 @@ export async function POST(
 
     // 4b. Parcelle cadastrale IGN (non bloquant)
     const parcel = await lookupParcel(lat, lng).catch(() => null);
+
+    // 4c. PLU/PLUi — zonage urbanisme (non bloquant)
+    const plu = await lookupPLU(lat, lng).catch(() => null);
 
     // 5. DVF mutations (+ filtre INSEE secondaire via city/postalCode)
     const dvfTypes = propertyTypeToDvfTypes(property.propertyType as PropertyType);
@@ -195,6 +199,12 @@ export async function POST(
       ajustementTotal: `${(valuation.breakdown.totalAdjustmentFactor * 100).toFixed(1)}%`,
       psmBase: valuation.breakdown.basePsm,
       psmAjuste: valuation.breakdown.adjustedPsm,
+      urbanisme: plu ? {
+        zone: plu.zonePLU,
+        typeZone: plu.zonePLUType,
+        libelle: plu.zonePLULabel,
+        document: plu.documentUrbanisme,
+      } : null,
     });
 
     // 10. Mise à jour en base (on garde gptOutputs existants)
@@ -210,6 +220,9 @@ export async function POST(
         cadastralRef: parcel?.ref ?? null,
         cadastralSection: parcel?.section ?? null,
         cadastralNumber: parcel?.numero ?? null,
+        zonePLU: plu?.zonePLU ?? null,
+        zonePLUType: plu?.zonePLUType ?? null,
+        documentUrbanisme: plu?.documentUrbanisme ?? null,
         propertyType: property.propertyType as PropertyType,
         surface: property.surface as number,
         rooms: property.rooms as number ?? null,

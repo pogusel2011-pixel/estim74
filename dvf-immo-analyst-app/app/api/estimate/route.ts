@@ -21,6 +21,7 @@ import { geocodeAddress, isGeoError, lookupParcel } from "@/lib/geo/address";
 import { getInseeByPostalCodeAndCommune, getInseeByPostalCode } from "@/lib/geo/cp-insee";
 import { fetchAmenities } from "@/lib/geo/amenities";
 import { lookupIrisForProperty } from "@/lib/geo/iris-loader";
+import { lookupPLU } from "@/lib/geo/plu";
 
 export async function POST(req: Request) {
   try {
@@ -92,6 +93,9 @@ export async function POST(req: Request) {
 
     // 1c. Parcelle cadastrale IGN (non bloquant, enrichissement uniquement)
     const parcel = await lookupParcel(lat, lng).catch(() => null);
+
+    // 1d. PLU/PLUi — zonage urbanisme (non bloquant, enrichissement uniquement)
+    const plu = await lookupPLU(lat, lng).catch(() => null);
 
     // 2. DVF — mutations (recherche purement radiale, IRIS n'affecte pas les transactions)
     const dvfTypes = propertyTypeToDvfTypes(property.propertyType);
@@ -256,6 +260,12 @@ export async function POST(req: Request) {
       ajustementTotal: `${(valuation.breakdown.totalAdjustmentFactor * 100).toFixed(1)}%`,
       psmBase: valuation.breakdown.basePsm,
       psmAjuste: valuation.breakdown.adjustedPsm,
+      urbanisme: plu ? {
+        zone: plu.zonePLU,
+        typeZone: plu.zonePLUType,
+        libelle: plu.zonePLULabel,
+        document: plu.documentUrbanisme,
+      } : null,
     });
 
     // 9. Sauvegarde en BDD
@@ -273,6 +283,9 @@ export async function POST(req: Request) {
           cadastralRef: parcel?.ref ?? null,
           cadastralSection: parcel?.section ?? null,
           cadastralNumber: parcel?.numero ?? null,
+          zonePLU: plu?.zonePLU ?? null,
+          zonePLUType: plu?.zonePLUType ?? null,
+          documentUrbanisme: plu?.documentUrbanisme ?? null,
           clientFirstName: property.clientFirstName,
           clientLastName: property.clientLastName,
           clientAddress: property.clientAddress,

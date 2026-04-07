@@ -1,7 +1,7 @@
 import { formatDate } from "@/lib/utils";
 import { PROPERTY_TYPE_LABELS, CONDITION_LABELS, DPE_COLORS } from "@/lib/constants";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Calendar, Hash } from "lucide-react";
+import { MapPin, Calendar, Hash, Landmark } from "lucide-react";
 
 function normalizeAddr(s: string | null | undefined): string {
   if (!s) return "";
@@ -93,6 +93,25 @@ export function AnalysisSummaryPanel({ analysis, analysisId, irisDisplayLabel }:
                   Voir cadastre
                 </a>
               )}
+            </span>
+          </p>
+        );
+      })()}
+
+      {(() => {
+        const zonePLU = analysis.zonePLU as string | null | undefined;
+        const documentUrbanisme = analysis.documentUrbanisme as string | null | undefined;
+        if (!zonePLU) return null;
+        const label = [
+          `Zone ${zonePLU}`,
+          documentUrbanisme ? `${documentUrbanisme} ${analysis.city ?? ""}`.trim() : null,
+        ].filter(Boolean).join(" — ");
+        return (
+          <p className="text-sm text-slate-500 flex items-center gap-1.5">
+            <Landmark className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+            <span>
+              Urbanisme :{" "}
+              <span className="font-medium text-slate-700">{label}</span>
             </span>
           </p>
         );

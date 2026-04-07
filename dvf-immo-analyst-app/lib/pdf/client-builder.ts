@@ -290,6 +290,14 @@ import { PDFDocument } from "pdf-lib";
         w.text(irisLineC, ML + 8, w.y - 4, fonts.bold, FS.body, C.blue);
         w.y -= 24;
       }
+      const pluLabelC = a.zonePLU
+        ? san(`Urbanisme : Zone ${a.zonePLU as string}${a.documentUrbanisme ? " — " + (a.documentUrbanisme as string) + (a.city ? " " + (a.city as string) : "") : ""}`)
+        : null;
+      if (pluLabelC) {
+        w.rect(ML, w.y - 14, CW, 16, C.headerBg);
+        w.text(pluLabelC, ML + 8, w.y - 4, fonts.regular, FS.body, C.dark);
+        w.y -= 24;
+      }
       drawTable(w, {
         cols: [
           { header: "Date", width: 64, align: "left" as const },

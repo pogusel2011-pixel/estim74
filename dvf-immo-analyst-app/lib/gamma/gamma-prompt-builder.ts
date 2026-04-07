@@ -59,6 +59,11 @@ export function buildGammaExpertPrompt(input: GammaPromptInput, baseUrl?: string
   const postalCode = serialized.postalCode as string | null;
   const address = serialized.address as string | null;
   const irisDisplayLabelGamma = serialized.irisCode ? getIrisDisplayLabel(serialized.irisCode as string) : null;
+  const zonePLUGamma = serialized.zonePLU as string | null;
+  const documentUrbanismeGamma = serialized.documentUrbanisme as string | null;
+  const pluDisplayLabelGamma = zonePLUGamma
+    ? `Zone ${zonePLUGamma}${documentUrbanismeGamma ? " — " + documentUrbanismeGamma + " " + city : ""}`
+    : null;
   const rooms = serialized.rooms as number | null;
   const bedrooms = serialized.bedrooms as number | null;
   const yearBuilt = serialized.yearBuilt as number | null;
@@ -138,6 +143,7 @@ export function buildGammaExpertPrompt(input: GammaPromptInput, baseUrl?: string
   lines.push(`## BIEN ESTIMÉ`);
   lines.push(`**${type}** — ${surface} m² — ${address ? address + ", " : ""}${city}${postalCode ? " (" + postalCode + ")" : ""}`);
   if (irisDisplayLabelGamma) lines.push(`Secteur IRIS : ${irisDisplayLabelGamma}`);
+  if (pluDisplayLabelGamma) lines.push(`Zonage urbanisme : ${pluDisplayLabelGamma}`);
   if (rooms) lines.push(`${rooms} pièce${rooms > 1 ? "s" : ""}${bedrooms ? " dont " + bedrooms + " chambre" + (bedrooms > 1 ? "s" : "") : ""}`);
   if (floor != null && totalFloors != null) lines.push(`Étage ${floor}/${totalFloors}`);
   if (yearBuilt) lines.push(`Construit en ${yearBuilt}`);
@@ -193,6 +199,7 @@ export function buildGammaExpertPrompt(input: GammaPromptInput, baseUrl?: string
     // ── Périmètre de recherche DVF ──
     lines.push(`### Périmètre de recherche DVF`);
     if (irisDisplayLabelGamma) lines.push(`- Secteur IRIS : ${irisDisplayLabelGamma}`);
+    if (pluDisplayLabelGamma) lines.push(`- Zonage urbanisme (PLU) : ${pluDisplayLabelGamma}`);
     if (dvfStats.searchPath) {
       lines.push(`- Périmètre retenu : ${dvfStats.searchPath}`);
     } else if (perimeterKm) {
@@ -292,6 +299,11 @@ export function buildGammaClientPrompt(input: GammaPromptInput, baseUrl?: string
   const city = serialized.city as string;
   const address = serialized.address as string | null;
   const irisDisplayLabelGammaC = serialized.irisCode ? getIrisDisplayLabel(serialized.irisCode as string) : null;
+  const zonePLUGammaC = serialized.zonePLU as string | null;
+  const documentUrbanismeGammaC = serialized.documentUrbanisme as string | null;
+  const pluDisplayLabelGammaC = zonePLUGammaC
+    ? `Zone ${zonePLUGammaC}${documentUrbanismeGammaC ? " — " + documentUrbanismeGammaC + " " + city : ""}`
+    : null;
   const rooms = serialized.rooms as number | null;
   const bedrooms = serialized.bedrooms as number | null;
   const yearBuilt = serialized.yearBuilt as number | null;
@@ -363,6 +375,7 @@ export function buildGammaClientPrompt(input: GammaPromptInput, baseUrl?: string
   lines.push(`## VOTRE BIEN`);
   lines.push(`**${type}** de **${surface} m²** — ${address ? address + ", " : ""}${city}`);
   if (irisDisplayLabelGammaC) lines.push(`Secteur IRIS : ${irisDisplayLabelGammaC}`);
+  if (pluDisplayLabelGammaC) lines.push(`Zonage urbanisme : ${pluDisplayLabelGammaC}`);
 
   const descParts: string[] = [];
   if (rooms) descParts.push(`${rooms} pièce${rooms > 1 ? "s" : ""}${bedrooms ? " dont " + bedrooms + " chambre" + (bedrooms > 1 ? "s" : "") : ""}`);
