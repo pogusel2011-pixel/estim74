@@ -83,7 +83,7 @@ export function GPTActionsPanel({ analysisId, initialOutputs, chatgptPrompt, add
           </CardHeader>
           <CardContent className="space-y-3">
             <p className="text-xs text-muted-foreground leading-relaxed">
-              Le dossier complet (bien, estimation, DVF, comparables, annonces) sera copié dans votre presse-papier.
+              Le dossier complet (bien, estimation, DVF, comparables, annonces, PLU, risques, servitudes, proximités, SWOT) sera copié dans votre presse-papier.
               Collez-le dans le GPT personnalisé pour générer un rapport structuré.
             </p>
             <ChatGPTButton

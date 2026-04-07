@@ -2,6 +2,9 @@ import { DVFStats, DVFComparable } from "@/types/dvf";
 import { Adjustment, ConfidenceFactors } from "@/types/valuation";
 import { ActiveListing } from "@/types/listing";
 import { PROPERTY_TYPE_LABELS, CONDITION_LABELS } from "@/lib/constants";
+import type { OsmPlace } from "@/lib/geo/osm";
+import type { ServitudeItem } from "@/lib/geo/sup";
+import type { SwotResult } from "@/lib/analysis/swot";
 
 const GPT_URL = "https://chatgpt.com/g/g-69914d0e2aa48191955454117055fdc6-dvf-immo-analyst";
 
@@ -55,6 +58,22 @@ export interface ChatGPTPromptData {
 
   // Annonces actives
   listings?: ActiveListing[];
+
+  // PLU
+  zonePLU?: string | null;
+  zonePLUType?: string | null;
+
+  // Risques naturels — undefined = non renseigné ; null = vérifié, aucun ; string[] = risques trouvés
+  risksSummary?: string[] | null;
+
+  // Servitudes SUP — undefined = non renseigné ; null = vérifié, aucune ; ServitudeItem[] = servitudes trouvées
+  servitudes?: ServitudeItem[] | null;
+
+  // Proximités OSM
+  proximities?: OsmPlace[];
+
+  // SWOT
+  swot?: SwotResult | null;
 }
 
 // ─── Formatters ──────────────────────────────────────────────────────────────
@@ -238,12 +257,100 @@ function sectionListings(d: ChatGPTPromptData): string {
   return lines.join("\n");
 }
 
+const PLU_TYPE_LABELS: Record<string, string> = {
+  U: "Zone urbaine",
+  AU: "Zone à urbaniser",
+  N: "Zone naturelle",
+  A: "Zone agricole",
+};
+
+function sectionPlu(d: ChatGPTPromptData): string | null {
+  if (!d.zonePLU) return null;
+  const typeLabel = d.zonePLUType ? (PLU_TYPE_LABELS[d.zonePLUType] ?? d.zonePLUType) : null;
+  return [
+    `URBANISME (PLU/PLUi)`,
+    `- Zone : ${d.zonePLU}${typeLabel ? ` — ${typeLabel}` : ""}`,
+  ].join("\n");
+}
+
+function sectionRisques(d: ChatGPTPromptData): string | null {
+  if (d.risksSummary === undefined) return null;
+  const lines = [`RISQUES NATURELS (Géorisques)`];
+  if (!d.risksSummary || d.risksSummary.length === 0) {
+    lines.push(`- Aucun risque naturel majeur recensé dans ce secteur`);
+  } else {
+    d.risksSummary.forEach(r => lines.push(`- ${r}`));
+  }
+  return lines.join("\n");
+}
+
+function sectionServitudes(d: ChatGPTPromptData): string | null {
+  if (d.servitudes === undefined) return null;
+  const lines = [`SERVITUDES D'UTILITÉ PUBLIQUE (GPU IGN)`];
+  if (!d.servitudes || d.servitudes.length === 0) {
+    lines.push(`- Aucune servitude SUP recensée`);
+  } else {
+    d.servitudes.slice(0, 6).forEach(s => {
+      lines.push(`- [${s.typeSup ?? "SUP"}] ${s.libelle ?? "Servitude"}`);
+    });
+  }
+  return lines.join("\n");
+}
+
+const OSM_CAT_LABELS: Record<string, string> = {
+  school: "Écoles / Éducation",
+  shop: "Commerces",
+  transport: "Transports",
+  health: "Santé",
+  park: "Espaces verts",
+};
+
+function sectionProximites(d: ChatGPTPromptData): string | null {
+  const places = d.proximities;
+  if (!places || places.length === 0) return null;
+  const lines = [`ÉQUIPEMENTS DE PROXIMITÉ (OSM — rayon 1 km)`];
+  for (const cat of ["school", "shop", "transport", "health", "park"] as const) {
+    const items = places
+      .filter(p => p.category === cat)
+      .sort((a, b) => a.distanceM - b.distanceM)
+      .slice(0, 3);
+    if (items.length === 0) continue;
+    lines.push(`${OSM_CAT_LABELS[cat]} :`);
+    items.forEach(p => {
+      const dist = p.distanceM < 1000 ? `${p.distanceM} m` : `${(p.distanceM / 1000).toFixed(1)} km`;
+      lines.push(`  - ${p.name} — ${dist}`);
+    });
+  }
+  return lines.join("\n");
+}
+
+function sectionSwot(d: ChatGPTPromptData): string | null {
+  const swot = d.swot;
+  if (!swot || (swot.strengths.length === 0 && swot.weaknesses.length === 0)) return null;
+  const lines = [`ANALYSE FORCES & FAIBLESSES (SWOT)`];
+  if (swot.strengths.length > 0) {
+    lines.push(`Points forts :`);
+    swot.strengths.forEach(s => lines.push(`  + ${s.label}${s.detail ? ` (${s.detail})` : ""}`));
+  }
+  if (swot.weaknesses.length > 0) {
+    lines.push(`Points de vigilance :`);
+    swot.weaknesses.forEach(s => lines.push(`  - ${s.label}${s.detail ? ` (${s.detail})` : ""}`));
+  }
+  return lines.join("\n");
+}
+
 // ─── Builder principal ────────────────────────────────────────────────────────
 
 export function buildChatGPTPrompt(data: ChatGPTPromptData): string {
   const today = new Date().toLocaleDateString("fr-FR", {
     day: "numeric", month: "long", year: "numeric",
   });
+
+  const plu         = sectionPlu(data);
+  const risques     = sectionRisques(data);
+  const servitudes  = sectionServitudes(data);
+  const proximites  = sectionProximites(data);
+  const swot        = sectionSwot(data);
 
   const sections = [
     `Dossier d'estimation ESTIM'74 — ${today}`,
@@ -257,10 +364,15 @@ export function buildChatGPTPrompt(data: ChatGPTPromptData): string {
     sectionComparables(data),
     ``,
     sectionListings(data),
+    plu        ? `\n${plu}`        : null,
+    risques    ? `\n${risques}`    : null,
+    servitudes ? `\n${servitudes}` : null,
+    proximites ? `\n${proximites}` : null,
+    swot       ? `\n${swot}`       : null,
     ``,
     `---`,
     `Merci d'analyser ce dossier complet et de produire le rapport d'estimation structuré selon les directives du GPT DVF Immo Analyst.`,
-  ];
+  ].filter(s => s !== null);
 
   return sections.join("\n");
 }

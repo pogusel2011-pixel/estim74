@@ -189,6 +189,40 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
     perimeterKm ?? undefined,
   );
 
+  // SWOT computation (must be before chatgptPrompt)
+  const swot = computeSwot({
+    propertyType: serialized.propertyType as string,
+    condition: serialized.condition as string | null,
+    dpeLetter: serialized.dpeLetter as string | null,
+    floor: serialized.floor as number | null,
+    totalFloors: serialized.totalFloors as number | null,
+    yearBuilt: serialized.yearBuilt as number | null,
+    hasParking: Boolean(serialized.hasParking),
+    hasGarage: Boolean(serialized.hasGarage),
+    hasBalcony: Boolean(serialized.hasBalcony),
+    hasTerrace: Boolean(serialized.hasTerrace),
+    hasCellar: Boolean(serialized.hasCellar),
+    hasPool: Boolean(serialized.hasPool),
+    hasElevator: Boolean(serialized.hasElevator),
+    landSurface: serialized.landSurface as number | null,
+    surface: serialized.surface as number,
+    rooms: serialized.rooms as number | null,
+    orientation: serialized.orientation as string | null,
+    view: serialized.view as string | null,
+    mitoyennete: serialized.mitoyennete as string | null,
+    zonePLU: serialized.zonePLU as string | null,
+    zonePLUType: serialized.zonePLUType as string | null,
+    riskFlood: serialized.riskFlood as string | null,
+    riskEarthquake: serialized.riskEarthquake as string | null,
+    riskClay: serialized.riskClay as string | null,
+    riskLandslide: serialized.riskLandslide as string | null,
+    risksSummary: safeRisksSummary.length > 0 ? safeRisksSummary : (serialized.risksSummary === null ? null : undefined as unknown as null),
+    servitudes: safeServitudes.length > 0 ? safeServitudes : null,
+    proximities: safeProximities.length > 0 ? safeProximities : (serialized.proximities === null ? null : undefined as unknown as null),
+    confidence: serialized.confidence as number | null,
+    dvfSampleSize: serialized.dvfSampleSize as number | null,
+  });
+
   const chatgptPrompt = buildChatGPTPrompt({
     propertyType: serialized.propertyType as string,
     address: serialized.address as string | null,
@@ -224,6 +258,12 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
     adjustments: safeAdjustments as Adjustment[],
     dvfComparables,
     listings: safeListings as ActiveListing[],
+    zonePLU: serialized.zonePLU as string | null,
+    zonePLUType: serialized.zonePLUType as string | null,
+    risksSummary: safeRisksSummary.length > 0 ? safeRisksSummary : (serialized.risksSummary === null ? null : undefined),
+    servitudes: safeServitudes.length > 0 ? safeServitudes : (serialized.servitudes === null ? null : undefined),
+    proximities: safeProximities.length > 0 ? safeProximities : undefined,
+    swot,
   });
 
   const gammaInput = {
@@ -250,40 +290,6 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
   const pappersMapUrl = (serialized.lat && serialized.lng)
     ? `https://immobilier.pappers.fr/?lat=${serialized.lat}&lon=${serialized.lng}&z=15`
     : null;
-
-  // SWOT computation
-  const swot = computeSwot({
-    propertyType: serialized.propertyType as string,
-    condition: serialized.condition as string | null,
-    dpeLetter: serialized.dpeLetter as string | null,
-    floor: serialized.floor as number | null,
-    totalFloors: serialized.totalFloors as number | null,
-    yearBuilt: serialized.yearBuilt as number | null,
-    hasParking: Boolean(serialized.hasParking),
-    hasGarage: Boolean(serialized.hasGarage),
-    hasBalcony: Boolean(serialized.hasBalcony),
-    hasTerrace: Boolean(serialized.hasTerrace),
-    hasCellar: Boolean(serialized.hasCellar),
-    hasPool: Boolean(serialized.hasPool),
-    hasElevator: Boolean(serialized.hasElevator),
-    landSurface: serialized.landSurface as number | null,
-    surface: serialized.surface as number,
-    rooms: serialized.rooms as number | null,
-    orientation: serialized.orientation as string | null,
-    view: serialized.view as string | null,
-    mitoyennete: serialized.mitoyennete as string | null,
-    zonePLU: serialized.zonePLU as string | null,
-    zonePLUType: serialized.zonePLUType as string | null,
-    riskFlood: serialized.riskFlood as string | null,
-    riskEarthquake: serialized.riskEarthquake as string | null,
-    riskClay: serialized.riskClay as string | null,
-    riskLandslide: serialized.riskLandslide as string | null,
-    risksSummary: safeRisksSummary.length > 0 ? safeRisksSummary : (serialized.risksSummary === null ? null : undefined as unknown as null),
-    servitudes: safeServitudes.length > 0 ? safeServitudes : null,
-    proximities: safeProximities.length > 0 ? safeProximities : (serialized.proximities === null ? null : undefined as unknown as null),
-    confidence: serialized.confidence as number | null,
-    dvfSampleSize: serialized.dvfSampleSize as number | null,
-  });
 
   // Property details helpers
   const propType = PROPERTY_TYPE_LABELS[serialized.propertyType as string] ?? (serialized.propertyType as string);
