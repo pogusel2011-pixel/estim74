@@ -68,7 +68,11 @@ export function computeAdjustments(property: PropertyInput, amenities?: AmenityR
     property.totalFloors != null &&
     property.totalFloors > 0
   ) {
-    const floorRatio = property.floor / property.totalFloors;
+    // F3 : si floor=1 et totalFloors=1 (immeuble mono-étage), ratio 0.5 neutre
+    const floorRatio =
+      property.floor === 1 && property.totalFloors === 1
+        ? 0.5
+        : property.floor / property.totalFloors;
     let floorFactor = 0;
     let floorLabel = "";
 
@@ -99,15 +103,19 @@ export function computeAdjustments(property: PropertyInput, amenities?: AmenityR
   }
 
   // ── 4. PARKING / GARAGE ──────────────────────────────────────────────────
-  // Parking : +2%
-  if (property.hasParking) {
-    adjustments.push({ label: "Parking", factor: 0.02, impact: 0.02, category: "features" });
-  }
-
-  // Garage : appartement +3-6% → +5% | maison +2-4% → +3%
-  if (property.hasGarage) {
-    const garageFactor = property.propertyType === "APARTMENT" ? 0.05 : 0.03;
-    adjustments.push({ label: "Garage", factor: garageFactor, impact: garageFactor, category: "features" });
+  // Parking : +2% | Garage : appartement +5% | maison +3%
+  // F2 : pour un appartement avec les deux, seul le plus avantageux est retenu
+  // (parking et garage désignent souvent le même emplacement — évite le double comptage).
+  if (property.propertyType === "APARTMENT" && property.hasParking && property.hasGarage) {
+    adjustments.push({ label: "Garage (inclut parking)", factor: 0.05, impact: 0.05, category: "features" });
+  } else {
+    if (property.hasParking) {
+      adjustments.push({ label: "Parking", factor: 0.02, impact: 0.02, category: "features" });
+    }
+    if (property.hasGarage) {
+      const garageFactor = property.propertyType === "APARTMENT" ? 0.05 : 0.03;
+      adjustments.push({ label: "Garage", factor: garageFactor, impact: garageFactor, category: "features" });
+    }
   }
 
   // ── 5. BALCON / TERRASSE ─────────────────────────────────────────────────
@@ -223,7 +231,16 @@ export function computeAdjustments(property: PropertyInput, amenities?: AmenityR
   // Shop ≤1km: +0.5%
   // Train ≤1km: +1% | 1km–3km: +0.5%
   if (amenities && amenities.length > 0) {
+    // F4 : dédoublonnage par catégorie — seul l'équipement le plus proche est retenu
+    // pour éviter l'empilement de bonus si Overpass retourne plusieurs POI du même type.
+    const closestByCategory = new Map<string, AmenityResult>();
     for (const am of amenities) {
+      const existing = closestByCategory.get(am.category);
+      if (!existing || am.distanceM < existing.distanceM) {
+        closestByCategory.set(am.category, am);
+      }
+    }
+    for (const am of Array.from(closestByCategory.values())) {
       const d = am.distanceM;
       let factor = 0;
       let label = "";

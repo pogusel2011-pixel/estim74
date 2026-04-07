@@ -110,7 +110,7 @@ export async function POST(req: Request) {
       property.city, property.postalCode,
     );
     let enrichedMutations = computePrixM2(mutations);
-    // Toujours marquer les outliers (IQR×2) — ils restent visibles dans le tableau avec badge
+    // Toujours marquer les outliers (IQR×1.5) — ils restent visibles dans le tableau avec badge
     enrichedMutations = markOutliers(enrichedMutations);
     const cleanMutations = excludeOutliers
       ? enrichedMutations.filter((m) => !m.outlier)

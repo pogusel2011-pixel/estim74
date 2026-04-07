@@ -33,8 +33,8 @@ export const propertySchema = z.object({
   surface: z.preprocess(
     nanToUndefined,
     z.number({ required_error: "Surface requise", invalid_type_error: "Surface requise" })
-      .min(1, "Surface requise")
-      .max(100000)
+      .min(9, "La surface doit être d'au moins 9 m²")
+      .max(2000, "La surface ne peut pas dépasser 2 000 m² — vérifiez la valeur saisie")
   ),
   rooms:      optionalInt(1, 50),
   bedrooms:   optionalInt(0, 30),

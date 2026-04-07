@@ -2,7 +2,7 @@ import { DVFMutation } from "@/types/dvf";
 import { percentile } from "@/lib/utils";
 import { BUSINESS_RULES } from "@/lib/rules/business-rules";
 
-/** Facteur IQR utilisé pour la détection des valeurs aberrantes (RULE_OUTLIER_IQR_FACTOR_V1 = 2.0) */
+/** Facteur IQR utilisé pour la détection des valeurs aberrantes (RULE_OUTLIER_IQR_FACTOR_V2 = 1.5) */
 const IQR_FACTOR = BUSINESS_RULES.OUTLIER_IQR_FACTOR.value;
 
 /** Seuil de déviation relative par rapport à la médiane (RULE_OUTLIER_MEDIAN_DEV_V1 = 0.40 soit ±40%) */
@@ -11,7 +11,7 @@ const MEDIAN_DEVIATION_THRESHOLD = BUSINESS_RULES.OUTLIER_MEDIAN_DEVIATION.value
 /**
  * Marque les mutations dont le prix/m² est aberrant selon deux critères cumulatifs :
  *
- * Passe 1 — IQR×2 : tout ce qui est hors [Q1 − 2×IQR, Q3 + 2×IQR] est marqué outlier.
+ * Passe 1 — IQR×1.5 : tout ce qui est hors [Q1 − 1.5×IQR, Q3 + 1.5×IQR] est marqué outlier.
  * Passe 2 — Déviation médiane ±40% : calcul de la médiane sur le set propre (passe 1),
  *   puis marquage de toute transaction dont le prix/m² s'écarte de plus de 40% de cette médiane.
  *
