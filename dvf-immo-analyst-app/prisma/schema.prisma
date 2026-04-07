@@ -77,6 +77,19 @@ model Analysis {
   zonePLUType       String?  // ex: "U" (U=urbain, N=naturel, A=agricole, AU=à urbaniser)
   documentUrbanisme String?  // ex: "PLU", "PLUi", "POS", "CC"
 
+  // Risques naturels (Géorisques GASPAR)
+  riskFlood         String?  // libellé ou "Oui" si risque inondation
+  riskEarthquake    String?  // libellé ou "Oui" si risque séisme
+  riskClay          String?  // libellé ou "Oui" si retrait-gonflement argiles
+  riskLandslide     String?  // libellé ou "Oui" si mouvement de terrain
+  risksSummary      Json?    // liste complète des risques détectés
+
+  // Servitudes d'utilité publique (GPU API Carto IGN)
+  servitudes        Json?    // array of { typeSup, libelle, idSupRef }
+
+  // Proximités OSM (Overpass API)
+  proximities       Json?    // array of { id, name, category, lat, lng, distanceM }
+
   // Contexte marché
   dvfSampleSize      Int?
   dvfMedianPsm       Float?
