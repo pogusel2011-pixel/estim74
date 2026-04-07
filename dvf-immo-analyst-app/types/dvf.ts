@@ -19,8 +19,8 @@ export interface DVFMutation {
   lon?: number;
   distance_m?: number;
   prix_m2?: number;
-  /** Source de la donnée : "csv" = fichier local DGFiP, "live" = API cquest.org temps réel */
-  _source?: "csv" | "live";
+  /** Source de la donnée : "csv" = fichier local DGFiP, "live" = API Pappers temps réel, "dvf-live" = API DVF Live data.gouv.fr */
+  _source?: "csv" | "live" | "dvf-live";
   /** true si la transaction est détectée comme valeur aberrante (hors bornes IQR×2) */
   outlier?: boolean;
   /** Raison de l'exclusion : "prix_m2_aberrant" */
@@ -66,6 +66,8 @@ export interface DVFStats {
   fsd?: number;
   /** Chemin de recherche DVF utilisé : "IRIS [nom]", "Commune entière", "Rayon X km" */
   searchPath?: string;
+  /** Nombre de transactions issues de DVF Live (data.gouv.fr) incluses dans l'analyse */
+  dvfLiveCount?: number;
 }
 
 export interface DVFComparable {
@@ -87,8 +89,8 @@ export interface DVFComparable {
   score?: number;
   /** true si ce comparable fait partie du top 5-10 les plus pertinents */
   topComparable?: boolean;
-  /** Source : "csv" = données locales 2020-2025, "live" = API temps réel */
-  source?: "csv" | "live";
+  /** Source : "csv" = données locales 2020-2025, "live" = API Pappers, "dvf-live" = API DVF Live data.gouv.fr */
+  source?: "csv" | "live" | "dvf-live";
   /** true si la transaction est une valeur aberrante exclue du calcul de référence */
   outlier?: boolean;
   /** Latitude du bien (coordonnées WGS84, issues du CSV DVF ou de l'API) */

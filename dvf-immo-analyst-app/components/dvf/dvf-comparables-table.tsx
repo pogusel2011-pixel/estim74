@@ -12,11 +12,18 @@ interface Props {
   hasLiveData?: boolean;
 }
 
-function SourceBadge({ source }: { source?: "csv" | "live" }) {
+function SourceBadge({ source }: { source?: "csv" | "live" | "dvf-live" }) {
+  if (source === "dvf-live") {
+    return (
+      <span className="inline-flex items-center rounded-full border border-emerald-300 bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700 whitespace-nowrap">
+        DVF Live
+      </span>
+    );
+  }
   if (source === "live") {
     return (
       <span className="inline-flex items-center rounded-full border border-blue-300 bg-blue-50 px-1.5 py-0.5 text-[10px] font-semibold text-blue-700 whitespace-nowrap">
-        DVF Live
+        Pappers
       </span>
     );
   }
@@ -67,6 +74,7 @@ export function DVFComparablesTable({ comparables, hasLiveData }: Props) {
   const displayed = showAll ? allSorted : allSorted.slice(0, 10);
 
   const liveCount = comparables.filter((c) => c.source === "live").length;
+  const dvfLiveCount = comparables.filter((c) => c.source === "dvf-live").length;
   const outlierCount = outlierComparables.length;
   const retainedCount = comparables.length - outlierCount;
 
@@ -99,10 +107,15 @@ export function DVFComparablesTable({ comparables, hasLiveData }: Props) {
           )}
           {liveCount > 0 && (
             <Badge variant="outline" className="text-xs font-normal text-blue-600 border-blue-300 bg-blue-50">
-              {liveCount} DVF Live
+              {liveCount} Pappers
             </Badge>
           )}
-          {(hasLiveData || liveCount > 0) && (
+          {dvfLiveCount > 0 && (
+            <Badge variant="outline" className="text-xs font-normal text-emerald-700 border-emerald-300 bg-emerald-50">
+              {dvfLiveCount} DVF Live
+            </Badge>
+          )}
+          {(hasLiveData || liveCount > 0 || dvfLiveCount > 0) && (
             <span className="text-xs text-muted-foreground font-normal ml-auto">
               DVF 2020–2025 + données récentes
             </span>

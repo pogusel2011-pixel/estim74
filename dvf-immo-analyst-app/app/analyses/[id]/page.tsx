@@ -163,6 +163,7 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
         dvfStats.source = source;
         dvfStats.excludedCount = enriched.length - cleanEnriched.length;
         dvfStats.searchPath = dvfSearchPath;
+        dvfStats.dvfLiveCount = mutations.filter((m) => m._source === "dvf-live").length;
       }
       dvfComparables = toComparables(enriched, serialized.surface as number, serialized.rooms as number | undefined);
     } catch (err) {
@@ -256,6 +257,7 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
     dvfStats,
     perimeterKm: perimeterKm ?? null,
     adjustments: safeAdjustments as Adjustment[],
+    dvfLiveCount: dvfStats?.dvfLiveCount,
     dvfComparables,
     listings: safeListings as ActiveListing[],
     zonePLU: serialized.zonePLU as string | null,
@@ -608,6 +610,14 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
                       <div className="mt-2 flex items-center gap-1.5">
                         <span className="text-green-500 text-xs">✅</span>
                         <span className="text-xs text-slate-600">Prix indexés en valeur 2025</span>
+                      </div>
+                    )}
+                    {(dvfStats.dvfLiveCount ?? 0) > 0 && (
+                      <div className="mt-2 flex items-center gap-1.5">
+                        <span className="text-emerald-500 text-xs">🟢</span>
+                        <span className="text-xs text-slate-600">
+                          Données DVF Live incluses ({dvfStats.dvfLiveCount} transaction{(dvfStats.dvfLiveCount ?? 0) > 1 ? "s" : ""} récente{(dvfStats.dvfLiveCount ?? 0) > 1 ? "s" : ""})
+                        </span>
                       </div>
                     )}
                   </CardContent>

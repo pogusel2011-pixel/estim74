@@ -52,6 +52,7 @@ export interface ChatGPTPromptData {
   dvfStats?: DVFStats | null;
   perimeterKm?: number | null;
   adjustments?: Adjustment[] | null;
+  dvfLiveCount?: number;
 
   // Comparables
   dvfComparables?: DVFComparable[];
@@ -197,6 +198,9 @@ function sectionDvf(d: ChatGPTPromptData): string {
       : null,
     adjDetails ? `  Détail : ${adjDetails}` : null,
     `- Source données  : ${stats.source === "csv" ? "CSV DGFiP 2020-2025" : stats.source === "api" ? "API cquest.org (live)" : "CSV + API"}`,
+    (d.dvfLiveCount ?? 0) > 0
+      ? `- DVF Live (data.gouv.fr) : ${d.dvfLiveCount} transaction${(d.dvfLiveCount ?? 0) > 1 ? "s" : ""} récente${(d.dvfLiveCount ?? 0) > 1 ? "s" : ""} incluse${(d.dvfLiveCount ?? 0) > 1 ? "s" : ""}`
+      : null,
   ].filter(Boolean);
 
   return lines.join("\n");

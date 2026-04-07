@@ -1,6 +1,7 @@
 import { DVFMutation } from "@/types/dvf";
 import { loadCsvMutations, loadCsvMutationsByCommune } from "./csv-loader";
 import { fetchPappersSales } from "@/lib/pappers/client";
+import { fetchDvfLive } from "@/lib/dvf/dvf-live";
 import { BUSINESS_RULES } from "@/lib/rules/business-rules";
 import { getInseeCodesForCity } from "@/lib/geo/iris_utils";
 
@@ -15,8 +16,8 @@ const MAX_RADIUS_KM = BUSINESS_RULES.GEO_RADIUS_MAX.value;
  * B) Commune entière : toutes les mutations de la commune (par code INSEE)
  * C) Expansion radiale : rayon croissant jusqu'à MAX_RADIUS_KM
  *
- * La zone IRIS est utilisée uniquement pour l'affichage du badge,
- * elle n'influence PAS la sélection des transactions DVF.
+ * Après le résultat final des 3 étapes, les transactions DVF Live (data.gouv.fr,
+ * < 6 mois) sont fusionnées en complément — timeout 8 s, non-bloquant.
  */
 export async function getDVFMutations(
   lat: number,
@@ -38,6 +39,8 @@ export async function getDVFMutations(
     }
   }
 
+  let coreResult: { mutations: DVFMutation[]; source: "csv" | "api" | "mixed"; radiusKm: number; dvfSearchPath: string };
+
   // ── A) Rayon initial ─────────────────────────────────────────────────────
   {
     const csvRaw = await loadCsvMutations(
@@ -46,56 +49,63 @@ export async function getDVFMutations(
     const mutations: DVFMutation[] = csvRaw.map((m) => ({ ...m, _source: "csv" as const }));
 
     if (mutations.length >= MIN_SAMPLES) {
-      const dvfSearchPath = `Rayon ${initialRadiusKm} km`;
-      return { mutations, source: "csv", radiusKm: initialRadiusKm, dvfSearchPath };
+      coreResult = { mutations, source: "csv", radiusKm: initialRadiusKm, dvfSearchPath: `Rayon ${initialRadiusKm} km` };
+    } else {
+      console.log(`[DVF] Étape A (rayon ${initialRadiusKm} km) : ${mutations.length} tx — passage étape B`);
+      coreResult = await _runStepsBAndC({ lat, lng, initialRadiusKm, monthsBack, propertyTypes, city, postalCode, depcoms });
     }
-
-    console.log(
-      `[DVF] Étape A (rayon ${initialRadiusKm} km) : ${mutations.length} tx — passage étape B`,
-    );
   }
+
+  // ── DVF Live — fusion en complément (non-bloquant, timeout 8 s) ──────────
+  const finalRadius = coreResult.radiusKm > 0 ? coreResult.radiusKm : initialRadiusKm;
+  const liveRaw = await fetchDvfLive(lat, lng, finalRadius, propertyTypes);
+  if (liveRaw.length > 0) {
+    coreResult.mutations = deduplicateMutations([...coreResult.mutations, ...liveRaw]);
+    console.log(`[DVF Live] ${liveRaw.length} transactions récentes ajoutées (total : ${coreResult.mutations.length})`);
+  }
+
+  return coreResult;
+}
+
+async function _runStepsBAndC(opts: {
+  lat: number;
+  lng: number;
+  initialRadiusKm: number;
+  monthsBack: number;
+  propertyTypes?: string[];
+  city?: string;
+  postalCode?: string;
+  depcoms: string[];
+}): Promise<{ mutations: DVFMutation[]; source: "csv" | "api" | "mixed"; radiusKm: number; dvfSearchPath: string }> {
+  const { lat, lng, initialRadiusKm, monthsBack, propertyTypes, city, postalCode, depcoms } = opts;
 
   // ── B) Commune entière (par code INSEE) ──────────────────────────────────
   if (depcoms.length > 0) {
-    const csvRaw = await loadCsvMutationsByCommune(
-      depcoms, monthsBack, propertyTypes, lat, lng,
-    );
+    const csvRaw = await loadCsvMutationsByCommune(depcoms, monthsBack, propertyTypes, lat, lng);
     const mutations: DVFMutation[] = csvRaw.map((m) => ({ ...m, _source: "csv" as const }));
 
     if (mutations.length >= MIN_SAMPLES) {
       const communeLabel = city ?? depcoms[0];
-      const dvfSearchPath = `Commune ${communeLabel}`;
       console.log(`[DVF] Étape B (commune entière) : ${mutations.length} tx`);
-      return { mutations, source: "csv", radiusKm: 0, dvfSearchPath };
+      return { mutations, source: "csv", radiusKm: 0, dvfSearchPath: `Commune ${communeLabel}` };
     }
 
-    console.log(
-      `[DVF] Étape B (commune ${depcoms.join(", ")}) : ${csvRaw.length} tx — passage étape C`,
-    );
+    console.log(`[DVF] Étape B (commune ${depcoms.join(", ")}) : ${csvRaw.length} tx — passage étape C`);
   }
 
-  // ── C) Expansion radiale (peut franchir les limites communales) ──────────
+  // ── C) Expansion radiale ──────────────────────────────────────────────────
   let radiusKm = initialRadiusKm;
-
   while (true) {
-    const result = await _fetchAtRadius(
-      lat, lng, radiusKm, monthsBack, propertyTypes, city, postalCode,
-    );
+    const result = await _fetchAtRadius(lat, lng, radiusKm, monthsBack, propertyTypes, city, postalCode);
 
     if (result.mutations.length >= MIN_SAMPLES) {
       const communeLabel = city ?? "";
-      const communePrefix = depcoms.length > 0 && communeLabel
-        ? `Commune ${communeLabel} → `
-        : "";
+      const communePrefix = depcoms.length > 0 && communeLabel ? `Commune ${communeLabel} → ` : "";
       const dvfSearchPath = radiusKm !== initialRadiusKm
         ? `${communePrefix}${radiusKm} km (élargi depuis ${initialRadiusKm} km)`
         : `${communePrefix}${radiusKm} km`;
-
       if (radiusKm !== initialRadiusKm) {
-        console.log(
-          `[DVF] Rayon élargi de ${initialRadiusKm} km à ${radiusKm} km ` +
-          `(${result.mutations.length} transactions)`,
-        );
+        console.log(`[DVF] Rayon élargi de ${initialRadiusKm} km à ${radiusKm} km (${result.mutations.length} transactions)`);
       }
       return { ...result, radiusKm, dvfSearchPath };
     }
@@ -103,12 +113,9 @@ export async function getDVFMutations(
     const nextRadius = Math.round((radiusKm + EXPANSION_STEP_KM) * 10) / 10;
     if (nextRadius > MAX_RADIUS_KM) {
       const dvfSearchPath = `Rayon max ${radiusKm} km`;
-      console.warn(
-        `[DVF] Rayon max (${MAX_RADIUS_KM} km) atteint avec ${result.mutations.length} transactions`,
-      );
+      console.warn(`[DVF] Rayon max (${MAX_RADIUS_KM} km) atteint avec ${result.mutations.length} transactions`);
       return { ...result, radiusKm, dvfSearchPath };
     }
-
     radiusKm = nextRadius;
   }
 }

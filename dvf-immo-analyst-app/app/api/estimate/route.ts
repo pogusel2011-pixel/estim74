@@ -122,6 +122,7 @@ export async function POST(req: Request) {
       dvfStats.source = source;
       dvfStats.excludedCount = excludedCount;
       dvfStats.searchPath = dvfSearchPath;
+      dvfStats.dvfLiveCount = mutations.filter((m) => m._source === "dvf-live").length;
     }
 
     // Comparables : inclure TOUTES les mutations (outliers inclus, badgés dans le tableau)

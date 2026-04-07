@@ -130,6 +130,7 @@ export async function POST(
       dvfStats.source = source;
       dvfStats.excludedCount = excludedCount;
       dvfStats.searchPath = dvfSearchPath;
+      dvfStats.dvfLiveCount = mutations.filter((m) => m._source === "dvf-live").length;
     }
     // Comparables : toutes les mutations (outliers inclus, badgés dans le tableau expert)
     const dvfComparables = toComparables(enrichedMutations, property.surface as number, property.rooms as number | undefined);
