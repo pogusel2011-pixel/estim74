@@ -98,10 +98,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: true, upserted: 0, total: 0 });
     }
 
-    const { upserted, skipped } = await processItems(items);
-    console.log(`[Webhook/Apify] Done | upserted=${upserted} skipped=${skipped} total=${items.length}`);
+    const { upserted, skipped, failed } = await processItems(items);
+    console.log(`[Webhook/Apify] Done | upserted=${upserted} skipped=${skipped} failed=${failed} total=${items.length}`);
 
-    return NextResponse.json({ ok: true, upserted, skipped, total: items.length });
+    return NextResponse.json({ ok: true, upserted, skipped, failed, total: items.length });
   } catch (err) {
     console.error("[Webhook/Apify] Unhandled error:", err);
     return NextResponse.json({ ok: true, error: "handler_error" });
@@ -148,9 +148,10 @@ async function fetchApifyDataset(datasetId: string): Promise<unknown[]> {
 
 async function processItems(
   items: unknown[]
-): Promise<{ upserted: number; skipped: number }> {
+): Promise<{ upserted: number; skipped: number; failed: number }> {
   let upserted = 0;
   let skipped = 0;
+  let failed = 0;
 
   for (const raw of items) {
     if (!raw || typeof raw !== "object") { skipped++; continue; }
@@ -222,48 +223,53 @@ async function processItems(
     // ── URL ───────────────────────────────────────────────────────────────────
     const url = coerceStr(item.url ?? item.link ?? item.adUrl);
 
-    await prisma.activeListing.upsert({
-      where: { uniqueId },
-      create: {
-        uniqueId,
-        title,
-        city,
-        postalCode,
-        price,
-        pricePsm,
-        surface,
-        rooms: rooms !== null ? Math.round(rooms) : null,
-        category,
-        lat,
-        lng,
-        url,
-        pictureUrl,
-        energyGrade,
-        options: Prisma.JsonNull,
-        isActive: true,
-      },
-      update: {
-        ...(title != null && { title }),
-        ...(city != null && { city }),
-        ...(postalCode != null && { postalCode }),
-        ...(price != null && { price }),
-        ...(pricePsm != null && { pricePsm }),
-        ...(surface != null && { surface }),
-        ...(rooms != null && { rooms: Math.round(rooms) }),
-        ...(category != null && { category }),
-        ...(lat != null && { lat }),
-        ...(lng != null && { lng }),
-        ...(url != null && { url }),
-        ...(pictureUrl != null && { pictureUrl }),
-        ...(energyGrade != null && { energyGrade }),
-        isActive: true,
-        deletedAt: null,
-      },
-    });
-    upserted++;
+    try {
+      await prisma.activeListing.upsert({
+        where: { uniqueId },
+        create: {
+          uniqueId,
+          title,
+          city,
+          postalCode,
+          price,
+          pricePsm,
+          surface,
+          rooms: rooms !== null ? Math.round(rooms) : null,
+          category,
+          lat,
+          lng,
+          url,
+          pictureUrl,
+          energyGrade,
+          options: Prisma.JsonNull,
+          isActive: true,
+        },
+        update: {
+          ...(title != null && { title }),
+          ...(city != null && { city }),
+          ...(postalCode != null && { postalCode }),
+          ...(price != null && { price }),
+          ...(pricePsm != null && { pricePsm }),
+          ...(surface != null && { surface }),
+          ...(rooms != null && { rooms: Math.round(rooms) }),
+          ...(category != null && { category }),
+          ...(lat != null && { lat }),
+          ...(lng != null && { lng }),
+          ...(url != null && { url }),
+          ...(pictureUrl != null && { pictureUrl }),
+          ...(energyGrade != null && { energyGrade }),
+          isActive: true,
+          deletedAt: null,
+        },
+      });
+      upserted++;
+    } catch (err) {
+      console.error(`[Webhook/Apify] Upsert failed for uniqueId="${uniqueId}":`, err);
+      failed++;
+    }
   }
 
-  return { upserted, skipped };
+  return { upserted, skipped, failed };
 }
 
 // ─── Coercion helpers ─────────────────────────────────────────────────────────

@@ -20,6 +20,10 @@ const SCORE_MIN = 0.3;
 const IGN_BASE  = "https://data.geopf.fr/geocodage";
 const BAN_BASE  = "https://api-adresse.data.gouv.fr";
 
+// ── Cache géocodage en mémoire (TTL 24h, scope processus) ─────────────────
+const GEO_CACHE = new Map<string, { result: GeoResult | GeoError | null; ts: number }>();
+const GEO_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+
 // ── Types publics ──────────────────────────────────────────────────────────
 export type GeoQuality = "good" | "warning" | "error";
 
@@ -142,7 +146,7 @@ async function fetchBAN(
 
 // ── API publique : geocodeAddress ──────────────────────────────────────────
 
-export async function geocodeAddress(
+async function geocodeAddressImpl(
   address: string,
   postalCode?: string
 ): Promise<GeoResult | GeoError | null> {
@@ -222,6 +226,18 @@ export async function geocodeAddress(
   if (result.warning) {
     console.warn(`[BAN] ⚠️ Score faible (${score.toFixed(3)}) — ${result.warning}`);
   }
+  return result;
+}
+
+export async function geocodeAddress(
+  address: string,
+  postalCode?: string
+): Promise<GeoResult | GeoError | null> {
+  const key = `${address.trim().toLowerCase()}|${postalCode?.trim() ?? ""}`;
+  const hit = GEO_CACHE.get(key);
+  if (hit && Date.now() - hit.ts < GEO_CACHE_TTL_MS) return hit.result;
+  const result = await geocodeAddressImpl(address, postalCode);
+  GEO_CACHE.set(key, { result, ts: Date.now() });
   return result;
 }
 

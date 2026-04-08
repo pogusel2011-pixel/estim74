@@ -47,6 +47,7 @@ export async function POST(req: Request) {
 
 async function handleNewAds(ads: unknown[]) {
   let saved = 0;
+  let failed = 0;
   for (const raw of ads) {
     const ad = raw as Record<string, unknown>;
     const uniqueId = String(ad.uniqueId ?? ad.id ?? "");
@@ -64,59 +65,65 @@ async function handleNewAds(ads: unknown[]) {
       ? Number(ad.pricePerSquareMeter)
       : (price && surface ? Math.round(price / surface) : null);
 
-    await prisma.activeListing.upsert({
-      where: { uniqueId },
-      create: {
-        uniqueId,
-        title: ad.title != null ? String(ad.title) : null,
-        city: (location.city as string | undefined) ?? null,
-        postalCode: (location.postalCode as string | undefined) ?? null,
-        price,
-        pricePsm,
-        surface,
-        rooms: ad.rooms != null ? Number(ad.rooms) : null,
-        category: ad.category != null ? String(ad.category) : null,
-        lat,
-        lng,
-        url: ad.url != null ? String(ad.url) : null,
-        pictureUrl: (() => {
-          const urls = ad.pictureUrls;
-          if (Array.isArray(urls) && urls.length > 0) return String(urls[0]);
-          if (ad.pictureUrl != null) return String(ad.pictureUrl);
-          return null;
-        })(),
-        energyGrade: ad.energyGrade != null ? String(ad.energyGrade) : null,
-        options: Array.isArray(ad.options) ? ad.options : Prisma.JsonNull,
-        isActive: true,
-      },
-      update: {
-        title: ad.title != null ? String(ad.title) : undefined,
-        price,
-        pricePsm,
-        surface,
-        rooms: ad.rooms != null ? Number(ad.rooms) : undefined,
-        lat,
-        lng,
-        url: ad.url != null ? String(ad.url) : undefined,
-        pictureUrl: (() => {
-          const urls = ad.pictureUrls;
-          if (Array.isArray(urls) && urls.length > 0) return String(urls[0]);
-          if (ad.pictureUrl != null) return String(ad.pictureUrl);
-          return undefined;
-        })(),
-        energyGrade: ad.energyGrade != null ? String(ad.energyGrade) : undefined,
-        options: Array.isArray(ad.options) ? ad.options : undefined,
-        isActive: true,
-        deletedAt: null,
-      },
-    });
-    saved++;
+    try {
+      await prisma.activeListing.upsert({
+        where: { uniqueId },
+        create: {
+          uniqueId,
+          title: ad.title != null ? String(ad.title) : null,
+          city: (location.city as string | undefined) ?? null,
+          postalCode: (location.postalCode as string | undefined) ?? null,
+          price,
+          pricePsm,
+          surface,
+          rooms: ad.rooms != null ? Number(ad.rooms) : null,
+          category: ad.category != null ? String(ad.category) : null,
+          lat,
+          lng,
+          url: ad.url != null ? String(ad.url) : null,
+          pictureUrl: (() => {
+            const urls = ad.pictureUrls;
+            if (Array.isArray(urls) && urls.length > 0) return String(urls[0]);
+            if (ad.pictureUrl != null) return String(ad.pictureUrl);
+            return null;
+          })(),
+          energyGrade: ad.energyGrade != null ? String(ad.energyGrade) : null,
+          options: Array.isArray(ad.options) ? ad.options : Prisma.JsonNull,
+          isActive: true,
+        },
+        update: {
+          title: ad.title != null ? String(ad.title) : undefined,
+          price,
+          pricePsm,
+          surface,
+          rooms: ad.rooms != null ? Number(ad.rooms) : undefined,
+          lat,
+          lng,
+          url: ad.url != null ? String(ad.url) : undefined,
+          pictureUrl: (() => {
+            const urls = ad.pictureUrls;
+            if (Array.isArray(urls) && urls.length > 0) return String(urls[0]);
+            if (ad.pictureUrl != null) return String(ad.pictureUrl);
+            return undefined;
+          })(),
+          energyGrade: ad.energyGrade != null ? String(ad.energyGrade) : undefined,
+          options: Array.isArray(ad.options) ? ad.options : undefined,
+          isActive: true,
+          deletedAt: null,
+        },
+      });
+      saved++;
+    } catch (err) {
+      console.error(`[Webhook/MoteurImmo] Upsert failed for uniqueId="${uniqueId}":`, err);
+      failed++;
+    }
   }
-  console.log(`[Webhook/MoteurImmo] newAds: ${saved}/${ads.length} upserted`);
+  console.log(`[Webhook/MoteurImmo] newAds: ${saved}/${ads.length} upserted, ${failed} failed`);
 }
 
 async function handlePriceChanged(ads: unknown[]) {
   let updated = 0;
+  let failed = 0;
   for (const raw of ads) {
     const ad = raw as Record<string, unknown>;
     const uniqueId = String(ad.uniqueId ?? ad.id ?? "");
@@ -127,30 +134,41 @@ async function handlePriceChanged(ads: unknown[]) {
       ? Number(ad.pricePerSquareMeter)
       : undefined;
 
-    await prisma.activeListing.updateMany({
-      where: { uniqueId },
-      data: {
-        ...(price != null && { price }),
-        ...(pricePsm != null && { pricePsm }),
-      },
-    });
-    updated++;
+    try {
+      await prisma.activeListing.updateMany({
+        where: { uniqueId },
+        data: {
+          ...(price != null && { price }),
+          ...(pricePsm != null && { pricePsm }),
+        },
+      });
+      updated++;
+    } catch (err) {
+      console.error(`[Webhook/MoteurImmo] Price update failed for uniqueId="${uniqueId}":`, err);
+      failed++;
+    }
   }
-  console.log(`[Webhook/MoteurImmo] priceChanged: ${updated} updated`);
+  console.log(`[Webhook/MoteurImmo] priceChanged: ${updated} updated, ${failed} failed`);
 }
 
 async function handleDeleted(ads: unknown[]) {
   let deleted = 0;
+  let failed = 0;
   for (const raw of ads) {
     const ad = raw as Record<string, unknown>;
     const uniqueId = String(ad.uniqueId ?? ad.id ?? "");
     if (!uniqueId) continue;
 
-    await prisma.activeListing.updateMany({
-      where: { uniqueId },
-      data: { isActive: false, deletedAt: new Date() },
-    });
-    deleted++;
+    try {
+      await prisma.activeListing.updateMany({
+        where: { uniqueId },
+        data: { isActive: false, deletedAt: new Date() },
+      });
+      deleted++;
+    } catch (err) {
+      console.error(`[Webhook/MoteurImmo] Soft-delete failed for uniqueId="${uniqueId}":`, err);
+      failed++;
+    }
   }
-  console.log(`[Webhook/MoteurImmo] deleted: ${deleted} soft-deleted`);
+  console.log(`[Webhook/MoteurImmo] deleted: ${deleted} soft-deleted, ${failed} failed`);
 }
