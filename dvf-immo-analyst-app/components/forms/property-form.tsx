@@ -28,6 +28,7 @@ export function PropertyForm({ onSubmit, loading, defaultValues }: PropertyFormP
       condition: "AVERAGE",
       hasParking: false, hasGarage: false, hasBalcony: false,
       hasTerrace: false, hasCellar: false, hasPool: false, hasElevator: false,
+      hasBruit: false, hasCopropDegradee: false, hasExpositionNord: false, hasRDCSansExterieur: false,
       ...defaultValues,
     },
   });
@@ -49,6 +50,7 @@ export function PropertyForm({ onSubmit, loading, defaultValues }: PropertyFormP
         condition: "AVERAGE",
         hasParking: false, hasGarage: false, hasBalcony: false,
         hasTerrace: false, hasCellar: false, hasPool: false, hasElevator: false,
+        hasBruit: false, hasCopropDegradee: false, hasExpositionNord: false, hasRDCSansExterieur: false,
         ...defaultValues,
       });
     }

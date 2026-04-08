@@ -40,4 +40,10 @@ export interface PropertyInput {
   orientation?: Orientation;
   view?: string;
   mitoyennete?: Mitoyennete;
+
+  // Contraintes du bien (malus qualitatifs)
+  hasBruit?: boolean;
+  hasCopropDegradee?: boolean;
+  hasExpositionNord?: boolean;
+  hasRDCSansExterieur?: boolean;
 }

@@ -38,6 +38,10 @@ export interface ChatGPTPromptData {
   hasElevator?: boolean;
   orientation?: string | null;
   view?: string | null;
+  hasBruit?: boolean;
+  hasCopropDegradee?: boolean;
+  hasExpositionNord?: boolean;
+  hasRDCSansExterieur?: boolean;
 
   // Estimation
   valuationLow?: number | null;
@@ -145,6 +149,15 @@ function sectionBien(d: ChatGPTPromptData): string {
     equip.length > 0 ? `- Équipements : ${equip.join(", ")}` : null,
     d.orientation ? `- Orientation : ${d.orientation}` : null,
     d.view ? `- Vue : ${d.view}` : null,
+    (() => {
+      const contraintes = [
+        d.hasBruit && "nuisances sonores",
+        d.hasCopropDegradee && "copropriété dégradée",
+        d.hasExpositionNord && "exposition Nord",
+        d.hasRDCSansExterieur && "RDC sans extérieur",
+      ].filter(Boolean) as string[];
+      return contraintes.length > 0 ? `- Contraintes : ${contraintes.join(", ")}` : null;
+    })(),
   ].filter(Boolean);
 
   return lines.join("\n");

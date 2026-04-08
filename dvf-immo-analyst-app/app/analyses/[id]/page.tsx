@@ -211,6 +211,10 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
     orientation: serialized.orientation as string | null,
     view: serialized.view as string | null,
     mitoyennete: serialized.mitoyennete as string | null,
+    hasBruit: Boolean(serialized.hasBruit),
+    hasCopropDegradee: Boolean(serialized.hasCopropDegradee),
+    hasExpositionNord: Boolean(serialized.hasExpositionNord),
+    hasRDCSansExterieur: Boolean(serialized.hasRDCSansExterieur),
     zonePLU: serialized.zonePLU as string | null,
     zonePLUType: serialized.zonePLUType as string | null,
     riskFlood: serialized.riskFlood as string | null,
@@ -247,6 +251,10 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
     hasElevator: Boolean(serialized.hasElevator),
     orientation: serialized.orientation as string | null,
     view: serialized.view as string | null,
+    hasBruit: Boolean(serialized.hasBruit),
+    hasCopropDegradee: Boolean(serialized.hasCopropDegradee),
+    hasExpositionNord: Boolean(serialized.hasExpositionNord),
+    hasRDCSansExterieur: Boolean(serialized.hasRDCSansExterieur),
     valuationLow: serialized.valuationLow as number | null,
     valuationMid: serialized.valuationMid as number | null,
     valuationHigh: serialized.valuationHigh as number | null,
@@ -833,7 +841,23 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
                 <InfoRow label="DPE" value={serialized.dpeLetter ? `Classe ${serialized.dpeLetter}` : null} />
                 <InfoRow label="Terrain" value={serialized.landSurface ? `${(serialized.landSurface as number).toLocaleString("fr-FR")} m²` : null} />
                 <InfoRow label="Orientation" value={serialized.orientation as string | null} />
-                <InfoRow label="Vue" value={serialized.view as string | null} />
+                <InfoRow label="Vue" value={(() => {
+                  const vueLabels: Record<string, string> = {
+                    lac: "Vue lac / mer",
+                    panoramique: "Vue panoramique / montagne",
+                    degagee: "Vue dégagée",
+                    standard: "Vue standard",
+                    vis_a_vis: "Vue sur vis-à-vis",
+                    route_parking: "Vue sur route / parking",
+                    voie_ferree: "Vue sur voie ferrée",
+                    montagne: "Vue montagne",
+                    jardin: "Vue sur jardin",
+                    cour: "Vue sur cour",
+                    rue: "Vue sur rue",
+                  };
+                  const v = serialized.view as string | null;
+                  return v ? (vueLabels[v] ?? v) : null;
+                })()} />
                 <InfoRow label="Mitoyenneté" value={
                   serialized.mitoyennete === "individuelle" ? "Individuelle"
                   : serialized.mitoyennete === "mitoyenne_un_cote" ? "Mitoyenne d'un côté"
@@ -849,6 +873,26 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
                     ))}
                   </div>
                 )}
+                {(() => {
+                  const contraintes = [
+                    Boolean(serialized.hasBruit) && "Nuisances sonores",
+                    Boolean(serialized.hasCopropDegradee) && "Copropriété dégradée",
+                    Boolean(serialized.hasExpositionNord) && "Exposition Nord",
+                    Boolean(serialized.hasRDCSansExterieur) && "RDC sans extérieur",
+                  ].filter(Boolean) as string[];
+                  return contraintes.length > 0 ? (
+                    <div className="mt-3">
+                      <p className="text-xs text-orange-600 font-medium mb-1.5">Contraintes</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {contraintes.map((c) => (
+                          <span key={c} className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-orange-50 text-orange-700 border border-orange-200">
+                            {c}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null;
+                })()}
               </CardContent>
             </Card>
 

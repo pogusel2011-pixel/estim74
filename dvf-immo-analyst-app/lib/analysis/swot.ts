@@ -33,6 +33,11 @@ interface SwotInput {
   orientation: string | null;
   view: string | null;
   mitoyennete: string | null;
+  // Contraintes du bien
+  hasBruit?: boolean;
+  hasCopropDegradee?: boolean;
+  hasExpositionNord?: boolean;
+  hasRDCSansExterieur?: boolean;
   // Context
   zonePLU: string | null;
   zonePLUType: string | null;
@@ -220,6 +225,31 @@ export function computeSwot(input: SwotInput): SwotResult {
   // ── MITOYENNETÉ ──────────────────────────────────────────────────────────
   if (input.mitoyennete === "mitoyenne_deux_cotes" && input.propertyType === "HOUSE") {
     weaknesses.push({ label: "Maison mitoyenne des deux côtés", type: "weakness", category: "localisation" });
+  }
+
+  // ── VUE (mauvaises vues comme faiblesses) ─────────────────────────────────
+  if (input.view === "vis_a_vis") {
+    weaknesses.push({ label: "Vue sur vis-à-vis — luminosité et intimité réduites", type: "weakness", category: "localisation" });
+  } else if (input.view === "route_parking") {
+    weaknesses.push({ label: "Vue sur route / parking — nuisances visuelles", type: "weakness", category: "localisation" });
+  } else if (input.view === "voie_ferree") {
+    weaknesses.push({ label: "Vue sur voie ferrée — nuisances sonores et visuelles", type: "weakness", category: "localisation" });
+  } else if (input.view === "lac" || input.view === "panoramique") {
+    strengths.push({ label: `Vue ${input.view === "lac" ? "lac / mer" : "panoramique / montagne"} — fort atout en Haute-Savoie`, type: "strength", category: "localisation" });
+  }
+
+  // ── CONTRAINTES DU BIEN (nouveaux malus) ─────────────────────────────────
+  if (input.hasBruit) {
+    weaknesses.push({ label: "Nuisances sonores (route / voie ferrée)", type: "weakness", category: "localisation" });
+  }
+  if (input.hasCopropDegradee) {
+    weaknesses.push({ label: "Copropriété dégradée — risque de charges et dépréciation", type: "weakness", category: "etat" });
+  }
+  if (input.hasExpositionNord) {
+    weaknesses.push({ label: "Exposition Nord — luminosité naturelle limitée", type: "weakness", category: "localisation" });
+  }
+  if (input.hasRDCSansExterieur) {
+    weaknesses.push({ label: "RDC sans extérieur privatif — absence de jardin ou terrasse", type: "weakness", category: "localisation" });
   }
 
   return { strengths, weaknesses };

@@ -8,15 +8,17 @@ import { BUSINESS_RULES } from "@/lib/rules/business-rules";
 /**
  * Calcule les ajustements qualitatifs selon la grille spec Estim74.
  *
- * État :       Refait neuf +5% | Bon état 0% | Rafraîchissement -4% | Travaux lourds -10%
- * DPE :        A/B +2% | C/D 0% | E -3% | F -6% | G -7%
- * Garage :     Appartement +5% | Maison +3%
- * Balcon :     +2% | Terrasse +3%
- * Jardin :     Maison — plafonné à +3% selon surface terrain
- * Piscine :    +2.5%
- * Vue :        lac/montagne +2%, dégagée +1.5%, jardin +1%, cour -1%
- * Étage appt : RDC -4% | Élevé sans ascenseur -6.5% | Élevé avec ascenseur +1%
- * Plafond :    ±20% (dans applyAdjustments)
+ * État :            Refait neuf +5% | Bon état 0% | Rafraîchissement -4% | Travaux lourds -10%
+ * DPE :             A/B +2% | C/D 0% | E -3% | F -6% | G -7%
+ * Garage :          Appartement +5% | Maison +3%
+ * Balcon :          +2% | Terrasse +3%
+ * Jardin/Terrain :  Maison <100m² -3% | 100-500m² +1% | 500-1000m² +2% | 1000-2000m² +3% | 2000-5000m² +5% | >5000m² +7%
+ * Piscine :         +4%
+ * Vue :             lac +5% | panoramique/montagne +3% | dégagée +1.5% | standard 0% | vis-à-vis -2% | route/parking -2% | voie ferrée -3%
+ * Étage appt :      RDC -4% | Élevé sans ascenseur -6.5% | Élevé avec ascenseur +1%
+ * Bruit :           -3% | Copropriété dégradée -5% | Exposition Nord -2% | RDC sans extérieur -2%
+ * Autoroute :       ≤500m -3% | 500m-2km 0% (neutre)
+ * Plafond :         ±20% (dans applyAdjustments)
  */
 /** Formats a distance in meters as a human-readable French string. */
 function fDist(m: number): string {
@@ -128,25 +130,38 @@ export function computeAdjustments(property: PropertyInput, amenities?: AmenityR
   }
 
   // ── 6. JARDIN / TERRAIN ──────────────────────────────────────────────────
-  // Maison surtout — bonus plafonné à +3% selon surface
-  if (property.landSurface && property.landSurface > 0) {
+  // 6 paliers selon surface (maison : décote si < 100 m²)
+  if (property.landSurface != null && property.landSurface > 0) {
     let jardinFactor = 0;
-    if (property.landSurface < 300) jardinFactor = 0.01;
-    else if (property.landSurface < 1000) jardinFactor = 0.02;
-    else jardinFactor = 0.03;
+    const s = property.landSurface;
+    if (property.propertyType === "HOUSE" && s < 100) {
+      jardinFactor = -0.03;
+    } else if (s < 500) {
+      jardinFactor = 0.01;
+    } else if (s < 1000) {
+      jardinFactor = 0.02;
+    } else if (s < 2000) {
+      jardinFactor = 0.03;
+    } else if (s < 5000) {
+      jardinFactor = 0.05;
+    } else {
+      jardinFactor = 0.07;
+    }
 
     const jardinLabel =
       property.propertyType === "HOUSE"
-        ? `Jardin/terrain (${Math.round(property.landSurface)} m²)`
-        : `Terrain (${Math.round(property.landSurface)} m²)`;
+        ? `Jardin/terrain (${Math.round(s)} m²)`
+        : `Terrain (${Math.round(s)} m²)`;
 
-    adjustments.push({ label: jardinLabel, factor: jardinFactor, impact: jardinFactor, category: "features" });
+    if (jardinFactor !== 0) {
+      adjustments.push({ label: jardinLabel, factor: jardinFactor, impact: jardinFactor, category: "features" });
+    }
   }
 
   // ── 7. PISCINE ───────────────────────────────────────────────────────────
-  // +2-3% → +2.5%
+  // +4%
   if (property.hasPool) {
-    adjustments.push({ label: "Piscine", factor: 0.025, impact: 0.025, category: "features" });
+    adjustments.push({ label: "Piscine", factor: 0.04, impact: 0.04, category: "features" });
   }
 
   // ── 8. CAVE ──────────────────────────────────────────────────────────────
@@ -193,24 +208,49 @@ export function computeAdjustments(property: PropertyInput, amenities?: AmenityR
     }
   }
 
+  // ── 11bis. CONTRAINTES DU BIEN (nouveaux malus qualitatifs) ──────────────
+  if (property.hasBruit) {
+    adjustments.push({ label: "Nuisances sonores (route / voie ferrée)", factor: -0.03, impact: -0.03, category: "contrainte" });
+  }
+  if (property.hasCopropDegradee) {
+    adjustments.push({ label: "Copropriété dégradée", factor: -0.05, impact: -0.05, category: "contrainte" });
+  }
+  if (property.hasExpositionNord) {
+    adjustments.push({ label: "Exposition Nord défavorable", factor: -0.02, impact: -0.02, category: "contrainte" });
+  }
+  if (property.hasRDCSansExterieur) {
+    adjustments.push({ label: "RDC sans extérieur privatif", factor: -0.02, impact: -0.02, category: "contrainte" });
+  }
+
   // ── 11 (ancien 10). VUE ───────────────────────────────────────────────────
-  // Spec : +1-2% | Pour Haute-Savoie, lac/montagne restent dans le plafond global ±20%
-  // lac/montagne → +2% | dégagée → +1.5% | jardin → +1% | cour → -1%
+  // 7 types : lac +5% | panoramique/montagne +3% | dégagée +1.5% | standard 0%
+  //           vis-à-vis -2% | route/parking -2% | voie ferrée -3%
   const viewFactors: Record<string, number> = {
-    lac: 0.02,
-    montagne: 0.02,
-    degagee: 0.015,
-    jardin: 0.01,
-    cour: -0.01,
-    rue: 0,
+    lac:           0.05,
+    panoramique:   0.03,
+    degagee:       0.015,
+    standard:      0,
+    vis_a_vis:    -0.02,
+    route_parking: -0.02,
+    voie_ferree:  -0.03,
+    // rétrocompat anciennes valeurs
+    montagne:      0.03,
+    jardin:        0.01,
+    cour:         -0.01,
+    rue:           0,
   };
   const viewLabels: Record<string, string> = {
-    lac: "Vue lac / mer",
-    montagne: "Vue montagne",
-    degagee: "Vue dégagée",
-    jardin: "Vue sur jardin privatif",
-    cour: "Vue sur cour",
-    rue: "Vue sur rue",
+    lac:           "Vue lac / mer",
+    panoramique:   "Vue panoramique / montagne",
+    degagee:       "Vue dégagée",
+    standard:      "Vue standard",
+    vis_a_vis:    "Vue sur vis-à-vis",
+    route_parking: "Vue sur route / parking",
+    voie_ferree:  "Vue sur voie ferrée",
+    montagne:      "Vue montagne",
+    jardin:        "Vue sur jardin",
+    cour:          "Vue sur cour",
+    rue:           "Vue sur rue",
   };
   const viewFactor =
     property.view && viewFactors[property.view] != null ? viewFactors[property.view] : 0;
@@ -271,10 +311,8 @@ export function computeAdjustments(property: PropertyInput, amenities?: AmenityR
         if (d <= 500) {
           factor = -0.03;
           label = `Autoroute à ${fDist(d)} (nuisance sonore)`;
-        } else if (d <= 2000) {
-          factor = 0.02;
-          label = `Accès autoroute à ${fDist(d)}`;
         }
+        // ≤2km : neutre (0%) — accès pratique mais sans bonus valorisant
       } else if (am.category === "school") {
         if (d <= 500) {
           factor = 0.015;

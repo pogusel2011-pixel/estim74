@@ -58,6 +58,12 @@ export const propertySchema = z.object({
   view: z.string().optional(),
   mitoyennete: z.enum(["individuelle", "mitoyenne_un_cote", "mitoyenne_deux_cotes"]).optional(),
 
+  // Contraintes du bien (malus qualitatifs)
+  hasBruit:             z.boolean().default(false),
+  hasCopropDegradee:    z.boolean().default(false),
+  hasExpositionNord:    z.boolean().default(false),
+  hasRDCSansExterieur:  z.boolean().default(false),
+
   // Destinataire de l'avis de valeur (optionnel)
   clientFirstName: z.string().optional().or(z.literal("")).transform((v) => v === "" ? undefined : v),
   clientLastName:  z.string().optional().or(z.literal("")).transform((v) => v === "" ? undefined : v),

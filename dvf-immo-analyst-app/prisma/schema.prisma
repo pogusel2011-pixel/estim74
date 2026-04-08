@@ -48,6 +48,12 @@ model Analysis {
   view         String?
   mitoyennete  String?
 
+  // Contraintes du bien (malus qualitatifs)
+  hasBruit              Boolean @default(false)
+  hasCopropDegradee     Boolean @default(false)
+  hasExpositionNord     Boolean @default(false)
+  hasRDCSansExterieur   Boolean @default(false)
+
   // Valuation result
   valuationLow    Float?
   valuationMid    Float?

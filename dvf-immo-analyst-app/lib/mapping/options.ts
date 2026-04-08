@@ -24,10 +24,11 @@ export const ORIENTATION_OPTIONS = [
 ];
 
 export const VIEW_OPTIONS = [
-  { value: "degagee", label: "Vue dégagée" },
-  { value: "lac", label: "Vue lac / mer" },
-  { value: "montagne", label: "Vue montagne" },
-  { value: "jardin", label: "Vue jardin" },
-  { value: "rue", label: "Vue sur rue" },
-  { value: "cour", label: "Vue sur cour" },
+  { value: "lac",          label: "Vue lac / mer (+5%)" },
+  { value: "panoramique",  label: "Vue panoramique / montagne (+3%)" },
+  { value: "degagee",      label: "Vue dégagée (+1,5%)" },
+  { value: "standard",     label: "Vue standard (0%)" },
+  { value: "vis_a_vis",    label: "Vue sur vis-à-vis (-2%)" },
+  { value: "route_parking", label: "Vue sur route / parking (-2%)" },
+  { value: "voie_ferree",  label: "Vue sur voie ferrée (-3%)" },
 ];

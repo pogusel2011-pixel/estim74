@@ -61,6 +61,156 @@ export const BUSINESS_RULES = {
     version: "V1",
   },
 
+  // ── Terrain / Jardin (6 paliers) ──────────────────────────────────────────
+  TERRAIN_MAISON_PETIT: {
+    id: "RULE_TERRAIN_MAISON_PETIT_V1",
+    value: -0.03,
+    unit: "%",
+    description: "Terrain maison < 100 m² : décote -3% (jardin insuffisant pour le type)",
+    version: "V1",
+  },
+  TERRAIN_100_500: {
+    id: "RULE_TERRAIN_100_500_V1",
+    value: 0.01,
+    unit: "%",
+    description: "Terrain 100-500 m² : bonus +1%",
+    version: "V1",
+  },
+  TERRAIN_500_1000: {
+    id: "RULE_TERRAIN_500_1000_V1",
+    value: 0.02,
+    unit: "%",
+    description: "Terrain 500-1000 m² : bonus +2%",
+    version: "V1",
+  },
+  TERRAIN_1000_2000: {
+    id: "RULE_TERRAIN_1000_2000_V1",
+    value: 0.03,
+    unit: "%",
+    description: "Terrain 1000-2000 m² : bonus +3%",
+    version: "V1",
+  },
+  TERRAIN_2000_5000: {
+    id: "RULE_TERRAIN_2000_5000_V1",
+    value: 0.05,
+    unit: "%",
+    description: "Terrain 2000-5000 m² : bonus +5%",
+    version: "V1",
+  },
+  TERRAIN_GRAND: {
+    id: "RULE_TERRAIN_GRAND_V1",
+    value: 0.07,
+    unit: "%",
+    description: "Terrain > 5000 m² : bonus +7%",
+    version: "V1",
+  },
+
+  // ── Vue (7 types) ──────────────────────────────────────────────────────────
+  VUE_LAC: {
+    id: "RULE_VUE_LAC_V1",
+    value: 0.05,
+    unit: "%",
+    description: "Vue lac / mer : bonus +5%",
+    version: "V1",
+  },
+  VUE_PANORAMIQUE: {
+    id: "RULE_VUE_PANORAMIQUE_V1",
+    value: 0.03,
+    unit: "%",
+    description: "Vue panoramique / montagne : bonus +3%",
+    version: "V1",
+  },
+  VUE_DEGAGEE: {
+    id: "RULE_VUE_DEGAGEE_V1",
+    value: 0.015,
+    unit: "%",
+    description: "Vue dégagée : bonus +1.5%",
+    version: "V1",
+  },
+  VUE_STANDARD: {
+    id: "RULE_VUE_STANDARD_V1",
+    value: 0,
+    unit: "%",
+    description: "Vue standard : neutre 0%",
+    version: "V1",
+  },
+  VUE_VIS_A_VIS: {
+    id: "RULE_VUE_VIS_A_VIS_V1",
+    value: -0.02,
+    unit: "%",
+    description: "Vue sur vis-à-vis : malus -2%",
+    version: "V1",
+  },
+  VUE_ROUTE_PARKING: {
+    id: "RULE_VUE_ROUTE_PARKING_V1",
+    value: -0.02,
+    unit: "%",
+    description: "Vue sur route / parking : malus -2%",
+    version: "V1",
+  },
+  VUE_VOIE_FERREE: {
+    id: "RULE_VUE_VOIE_FERREE_V1",
+    value: -0.03,
+    unit: "%",
+    description: "Vue sur voie ferrée : malus -3%",
+    version: "V1",
+  },
+
+  // ── Piscine ───────────────────────────────────────────────────────────────
+  PISCINE: {
+    id: "RULE_PISCINE_V2",
+    value: 0.04,
+    unit: "%",
+    description: "Piscine privative : bonus +4% (V2 : ancienne valeur +2.5%)",
+    version: "V2",
+  },
+
+  // ── Autoroute ─────────────────────────────────────────────────────────────
+  AUTOROUTE_MALUS: {
+    id: "RULE_AUTOROUTE_MALUS_V1",
+    value: -0.03,
+    unit: "%",
+    description: "Autoroute ≤ 500 m : malus -3% (nuisances sonores)",
+    version: "V1",
+  },
+  AUTOROUTE_BONUS: {
+    id: "RULE_AUTOROUTE_BONUS_V2",
+    value: 0,
+    unit: "%",
+    description: "Autoroute 500 m-2 km : neutre 0% (V2 : ancienne valeur +2% supprimée — accès autoroutier valorisé autrement)",
+    version: "V2",
+  },
+
+  // ── Contraintes du bien (nouveaux malus) ──────────────────────────────────
+  MALUS_BRUIT: {
+    id: "RULE_MALUS_BRUIT_V1",
+    value: -0.03,
+    unit: "%",
+    description: "Nuisances sonores (route / voie ferrée) : malus -3%",
+    version: "V1",
+  },
+  MALUS_COPROP_DEGRADEE: {
+    id: "RULE_MALUS_COPROP_DEGRADEE_V1",
+    value: -0.05,
+    unit: "%",
+    description: "Copropriété dégradée : malus -5%",
+    version: "V1",
+  },
+  MALUS_EXPOSITION_NORD: {
+    id: "RULE_MALUS_EXPOSITION_NORD_V1",
+    value: -0.02,
+    unit: "%",
+    description: "Exposition Nord défavorable : malus -2%",
+    version: "V1",
+  },
+  MALUS_RDC_SANS_EXTERIEUR: {
+    id: "RULE_MALUS_RDC_SANS_EXTERIEUR_V1",
+    value: -0.02,
+    unit: "%",
+    description: "RDC sans extérieur privatif (ni terrasse, ni jardin) : malus -2%",
+    version: "V1",
+  },
+
   // ── Score de qualité — seuils (0-100 pts) ─────────────────────────────────
   CONFIDENCE_DENSITY_HIGH: {
     id: "RULE_CONFIDENCE_DENSITY_HIGH_V1",
