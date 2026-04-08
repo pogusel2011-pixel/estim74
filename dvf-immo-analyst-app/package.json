@@ -14,7 +14,9 @@
     "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio",
     "dvf:update": "tsx scripts/update-dvf.ts",
-    "dvf:update:dry": "tsx scripts/update-dvf.ts --dry-run"
+    "dvf:update:dry": "tsx scripts/update-dvf.ts --dry-run",
+    "dvf:update-neon": "tsx scripts/update-dvf-neon.ts",
+    "dvf:update-neon:dry": "tsx scripts/update-dvf-neon.ts --dry-run"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.6.0",
@@ -32,6 +34,7 @@
     "@radix-ui/react-toast": "^1.2.1",
     "@radix-ui/react-tooltip": "^1.1.2",
     "@types/leaflet": "^1.9.21",
+    "@vercel/analytics": "^2.0.1",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "csv-parse": "^5.5.6",
