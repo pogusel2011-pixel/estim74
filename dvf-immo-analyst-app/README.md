@@ -1,18 +1,19 @@
 # DVF Immo Analyst
 
 Outil d'estimation immobilière pour le marché alpin (Haute-Savoie 74), basé sur :
-- **DVF** : transactions réelles 2014–2024 (CSV local + API data.gouv.fr)
+- **DVF** : transactions réelles 2020–2025 (Neon PostgreSQL + API data.gouv.fr)
 - **MoteurImmo** : annonces actives comparables
 - **Notaires de France** : tendances de marché
 - **GPT-4o** (optionnel) : analyses qualitatives
 
 ## Stack
 
-- **Next.js 14** (App Router)
-- **Prisma** (PostgreSQL en prod, SQLite en dev)
+- **Next.js 14.2.35** (App Router)
+- **Prisma + Neon** (PostgreSQL serverless)
 - **TypeScript** strict
 - **Tailwind CSS** + shadcn/ui
 - **Recharts** pour les graphiques
+- **Vercel Analytics** (monitoring)
 
 ## Setup
 

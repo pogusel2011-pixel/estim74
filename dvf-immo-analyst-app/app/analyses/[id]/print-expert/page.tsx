@@ -137,7 +137,12 @@ export default async function PrintExpertPage({
     { critere: "Piscine", adj: findAdj([], "piscine") },
     { critere: "Orientation", adj: findAdj(["orientation"]) },
     { critere: "Vue", adj: findAdj(["view"]) },
-    { critere: "Jardin / terrain", adj: findAdj([], "jardin") ?? findAdj([], "terrain") },
+    { critere: "Jardin / terrain",      adj: findAdj([], "jardin") ?? findAdj([], "terrain") },
+    { critere: "Mitoyenneté",           adj: findAdj(["mitoyennete"]) ?? findAdj([], "mitoyenne") },
+    { critere: "Nuisances sonores",     adj: findAdj([], "nuisances sonores") },
+    { critere: "Copropriété dégradée",  adj: findAdj([], "copropriété dégradée") },
+    { critere: "Exposition Nord",       adj: findAdj([], "exposition nord") },
+    { critere: "RDC sans extérieur",    adj: findAdj([], "rdc sans extérieur") },
   ];
   const totalAdjFactor = adjustments.reduce((s, a) => s + a.factor, 0);
   const retainedComparables = dvfComparables.filter((c) => !c.outlier);
