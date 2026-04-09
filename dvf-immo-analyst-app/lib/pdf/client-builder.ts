@@ -9,6 +9,7 @@ import { PDFDocument } from "pdf-lib";
   import type { OsmPlace } from "@/lib/geo/osm";
   import type { ServitudeItem } from "@/lib/geo/sup";
   import { Writer, loadFonts, drawTable, san, fPrice, fPsm, fDateShort, wrapText, C, FS, ML, MR, CW, PAGE_W, PAGE_H, numFr, normalizeAddr } from "./helpers";
+  import { NOTAIRES_INDEX_74 } from "@/lib/dvf/temporal-index";
   import { getIrisDisplayLabel } from "@/lib/geo/iris-loader";
 
   async function getTrend(lat: number, lng: number, km: number, type?: string) {
@@ -76,7 +77,7 @@ import { PDFDocument } from "pdf-lib";
     // ═══════════ COVER ═══════════════════════════════════════════════════
     const cp = w.addPage();
     cp.drawRectangle({ x: 0, y: 0, width: PAGE_W, height: PAGE_H, color: C.coverBg });
-    cp.drawRectangle({ x: 0, y: PAGE_H - 190, width: PAGE_W, height: 190, color: C.blue });
+    cp.drawRectangle({ x: 0, y: PAGE_H - 190, width: PAGE_W, height: 190, color: C.coverHeader });
     cp.drawText("ESTIM’74", { x: ML, y: PAGE_H - 58, font: fonts.bold, size: 34, color: C.white });
     cp.drawText("Avis de Valeur — Haute-Savoie (74)", { x: ML, y: PAGE_H - 76, font: fonts.regular, size: FS.small, color: C.darkBlue });
     cp.drawLine({ start: { x: ML, y: PAGE_H - 93 }, end: { x: PAGE_W - MR, y: PAGE_H - 93 }, color: C.borderBlue, thickness: 0.5 });
@@ -126,9 +127,9 @@ import { PDFDocument } from "pdf-lib";
       if (a.clientPhone)   { cp.drawText(san(a.clientPhone as string),   { x: cx, y: cLineY, font: fonts.regular, size: FS.micro, color: C.gray }); }
     }
 
-    // ═══════════ PAGE 2: ESTIMATION + POINTS FORTS/VIGILANCES ════════════
+    // ═══════════ PAGE 2+: ESTIMATION + POINTS FORTS/VIGILANCES ══════════
+    w.autoFooter = () => w.footer(refId, today);
     w.addPage();
-    w.footer(refId, today);
     w.sectionTitle("1. Estimation de valeur");
     w.gap(8);
 
@@ -207,9 +208,7 @@ import { PDFDocument } from "pdf-lib";
       w.gap(20);
     }
 
-    w.gap(8);
-    w.addPage();
-    w.footer(refId, today);
+    w.gap(24);
 
     // ─── Points forts / Vigilances ──────────────────────────────────────
     if (adjustments.length > 0) {
@@ -280,10 +279,9 @@ import { PDFDocument } from "pdf-lib";
       w.gap(14);
     }
 
-    // ═══════════ PAGE 3: TOP 5 COMPARABLES ═══════════════════════════════
+    // ═══════════ SECTION 3: TOP 5 COMPARABLES ════════════════════════════
     if (top5.length > 0) {
-      w.addPage();
-      w.footer(refId, today);
+      w.gap(24);
       w.sectionTitle(`3. Les ${top5.length} ventes comparables les plus pertinentes`);
       w.gap(8);
       const irisDisplayLabelC = a.irisCode ? getIrisDisplayLabel(a.irisCode as string) : null;
@@ -370,8 +368,7 @@ import { PDFDocument } from "pdf-lib";
       });
 
       if (swot.strengths.length > 0 || swot.weaknesses.length > 0 || risksSummary.length > 0) {
-        w.addPage();
-        w.footer(refId, today);
+        w.gap(24);
         w.sectionTitle("4. Points forts, vigilances & risques du bien");
         w.gap(8);
 
@@ -426,10 +423,9 @@ import { PDFDocument } from "pdf-lib";
       }
     }
 
-    // ═══════════ PAGE 5: CONTEXTE MARCHE ═════════════════════════════════
-    w.addPage();
-    w.footer(refId, today);
-    w.sectionTitle("5. Contexte du marché immobilier local");
+    // ═══════════ SECTION 5: CONTEXTE MARCHE ═════════════════════════════
+    w.gap(24);
+    w.sectionTitle("5. Contexte du marche immobilier local");
     w.gap(8);
 
     if (trend && trendStats.length >= 2) {
@@ -453,8 +449,42 @@ import { PDFDocument } from "pdf-lib";
       const diffPct = Math.round((diff / prev.medianPsm) * 1000) / 10;
       w.kv(`Prix médian ${prev.year}`, fPsm(prev.medianPsm));
       w.kv(`Prix médian ${last.year}`, fPsm(last.medianPsm));
-      w.kv("Évolution annuelle", (diff >= 0 ? "+" : "") + diffPct + "%");
+      w.kv("Evolution annuelle", (diff >= 0 ? "+" : "") + diffPct + "%");
       w.gap(12);
+
+      // ── Indice notarial Haute-Savoie 74 ──────────────────────────────
+      {
+        const idxYears = [2020, 2021, 2022, 2023, 2024, 2025];
+        const idxRows: string[][] = idxYears.map((yr, i) => {
+          const idx = NOTAIRES_INDEX_74[yr] ?? 126;
+          const prevIdx = i > 0 ? (NOTAIRES_INDEX_74[idxYears[i - 1]] ?? idx) : 114;
+          const evolNum = (idx - prevIdx) / prevIdx * 100;
+          const evolStr = (evolNum >= 0 ? "+" : "") + evolNum.toFixed(1) + "%";
+          const note = yr === 2022 ? san("Pic de marche") : yr === 2025 ? san("Annee en cours") : "";
+          return [String(yr), String(idx), evolStr, note];
+        });
+        w.rect(ML, w.y - 14, CW, 16, C.headerBg);
+        w.rect(ML, w.y - 14, 3, 16, C.blue);
+        w.page.drawText(san("EVOLUTION DES PRIX — INDICE NOTARIAL HAUTE-SAVOIE 74 (base 100 = 2014)"), { x: ML + 10, y: w.y - 10, font: fonts.bold, size: FS.micro, color: C.blue });
+        w.gap(22);
+        drawTable(w, {
+          cols: [
+            { header: "Annee", width: 60, align: "center" as const },
+            { header: "Indice 74", width: 75, align: "center" as const },
+            { header: "Evolution", width: 90, align: "right" as const, color: (row) => {
+              const v = parseFloat(row[2]);
+              return isNaN(v) ? C.gray : v > 0 ? C.green : v < 0 ? C.red : C.gray;
+            }},
+            { header: "Note", width: 290, align: "left" as const },
+          ],
+          rows: idxRows,
+          rowHeight: 14,
+          stripedRows: true,
+        });
+        w.gap(6);
+        w.text(san("Source : Chambre des Notaires de Haute-Savoie. Appartements et maisons confondus."), ML, w.y, fonts.italic, FS.micro, C.lightGray);
+        w.gap(14);
+      }
 
       // Commentary
       const commentaries = {

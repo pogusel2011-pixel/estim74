@@ -61,7 +61,34 @@ function OutlierBadge() {
   );
 }
 
-const HEADERS = ["", "Date", "Distance", "Nature du bien", "Surface", "Pièces", "Prix DVF", "€/m² (2025)", "Adresse/parcelle", "Source"];
+function ScoreIndicator({ score }: { score: number }) {
+  const pct = Math.round(score * 100);
+  const colorClass =
+    score >= 0.7
+      ? "bg-green-100 border-green-400 text-green-700"
+      : score >= 0.4
+      ? "bg-amber-100 border-amber-400 text-amber-700"
+      : "bg-gray-100 border-gray-300 text-gray-500";
+
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span
+            className={`inline-flex items-center justify-center w-8 h-8 rounded-full border ${colorClass} text-[10px] font-bold cursor-default`}
+          >
+            {pct}
+          </span>
+        </TooltipTrigger>
+        <TooltipContent side="top" className="max-w-xs text-xs">
+          Score de pertinence : distance (40%), surface (30%), récence (20%), pièces (10%)
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+}
+
+const HEADERS = ["", "Score", "Date", "Distance", "Nature du bien", "Surface", "Pièces", "Prix DVF", "€/m² (2025)", "Adresse/parcelle", "Source"];
 const PAGE_SIZE = 10;
 
 export function DVFComparablesTable({ comparables, hasLiveData }: Props) {
@@ -82,6 +109,23 @@ export function DVFComparablesTable({ comparables, hasLiveData }: Props) {
   const dvfLiveCount = comparables.filter((c) => c.source === "dvf-live").length;
   const outlierCount = outlierComparables.length;
   const retainedCount = comparables.length - outlierCount;
+
+  // Compute date range dynamically from all comparables
+  const dates = comparables
+    .map((c) => c.date)
+    .filter(Boolean)
+    .map((d) => new Date(d as string))
+    .filter((d) => !isNaN(d.getTime()));
+
+  const newestDate = dates.length > 0 ? new Date(Math.max(...dates.map((d) => d.getTime()))) : null;
+  const oldestDate = dates.length > 0 ? new Date(Math.min(...dates.map((d) => d.getTime()))) : null;
+
+  const newestYear = newestDate ? newestDate.getFullYear() : null;
+  const oldestYear = oldestDate ? oldestDate.getFullYear() : null;
+
+  const twelveMonthsAgo = new Date();
+  twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
+  const dataStale = newestDate != null && newestDate < twelveMonthsAgo;
 
   if (!comparables.length) {
     return (
@@ -121,8 +165,22 @@ export function DVFComparablesTable({ comparables, hasLiveData }: Props) {
             </Badge>
           )}
           {(hasLiveData || liveCount > 0 || dvfLiveCount > 0) && (
-            <span className="text-xs text-muted-foreground font-normal ml-auto">
-              DVF 2020–2025 + données récentes
+            <span className="text-xs text-muted-foreground font-normal ml-auto flex items-center gap-1">
+              {oldestYear != null && newestYear != null
+                ? `Données ${oldestYear}–${newestYear}`
+                : "Données DVF"}
+              {dataStale && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <AlertTriangle className="h-3.5 w-3.5 text-amber-500 cursor-default shrink-0" />
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="max-w-xs text-xs">
+                      Données peut-être incomplètes
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
             </span>
           )}
         </CardTitle>
@@ -158,6 +216,10 @@ export function DVFComparablesTable({ comparables, hasLiveData }: Props) {
                   {/* Badge colonne */}
                   <td className="px-2 py-2 whitespace-nowrap">
                     {c.outlier ? <OutlierBadge /> : c.topComparable ? <TopBadge /> : null}
+                  </td>
+                  {/* Score */}
+                  <td className="px-2 py-2 whitespace-nowrap">
+                    {c.score != null ? <ScoreIndicator score={c.score} /> : <span className="text-muted-foreground text-xs">—</span>}
                   </td>
                   {/* Date */}
                   <td className="px-3 py-2 whitespace-nowrap text-muted-foreground">
