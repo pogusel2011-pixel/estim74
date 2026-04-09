@@ -112,9 +112,7 @@ export async function POST(req: Request) {
     let enrichedMutations = computePrixM2(mutations);
     // Toujours marquer les outliers (IQR×1.5) — ils restent visibles dans le tableau avec badge
     enrichedMutations = markOutliers(enrichedMutations);
-    const cleanMutations = excludeOutliers
-      ? enrichedMutations.filter((m) => !m.outlier)
-      : enrichedMutations.filter((m) => !m.outlier); // stats toujours sur clean
+    const cleanMutations = enrichedMutations.filter((m) => !m.outlier);
     const excludedCount = enrichedMutations.length - cleanMutations.length;
 
     const dvfStats = computeDVFStats(cleanMutations, property.surface);
@@ -356,7 +354,7 @@ export async function POST(req: Request) {
           adjustments: valuation.adjustments as never,
           marketReading: marketReading as never,
           gptPayload,
-          status: "DRAFT",
+          status: "COMPLETE",
         },
       });
       analysisId = saved.id;
