@@ -1,0 +1,254 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "ESTIM'74 — GPT Action",
+    "description": "Endpoint public pour récupérer le dossier complet d'une analyse immobilière ESTIM'74.",
+    "version": "2.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://estim74.vercel.app"
+    }
+  ],
+  "paths": {
+    "/api/gpt-action/analysis/{id}": {
+      "get": {
+        "operationId": "getAnalysis",
+        "summary": "Récupérer le dossier complet d'une analyse ESTIM'74",
+        "description": "Retourne le dossier JSON complet d'une analyse : bien, estimation, socle DVF, comparables top 10, annonces actives, tendance marché, urbanisme PLU, risques naturels, servitudes SUP, équipements OSM et SWOT.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Identifiant unique de l'analyse ESTIM'74 (cuid)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Dossier complet de l'analyse",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": { "type": "string" },
+                    "createdAt": { "type": "string", "format": "date-time" },
+                    "status": { "type": "string" },
+                    "property": {
+                      "type": "object",
+                      "description": "Caractéristiques du bien estimé",
+                      "properties": {
+                        "address": { "type": "string", "nullable": true },
+                        "postalCode": { "type": "string", "nullable": true },
+                        "city": { "type": "string", "nullable": true },
+                        "lat": { "type": "number", "nullable": true },
+                        "lng": { "type": "number", "nullable": true },
+                        "type": { "type": "string", "enum": ["APARTMENT", "HOUSE", "LAND", "COMMERCIAL"] },
+                        "surfaceM2": { "type": "number" },
+                        "rooms": { "type": "integer", "nullable": true },
+                        "bedrooms": { "type": "integer", "nullable": true },
+                        "floor": { "type": "integer", "nullable": true },
+                        "totalFloors": { "type": "integer", "nullable": true },
+                        "landSurfaceM2": { "type": "number", "nullable": true },
+                        "yearBuilt": { "type": "integer", "nullable": true },
+                        "condition": { "type": "string", "enum": ["TO_RENOVATE", "AVERAGE", "GOOD", "EXCELLENT"] },
+                        "dpe": { "type": "string", "nullable": true },
+                        "ghg": { "type": "string", "nullable": true },
+                        "mitoyennete": { "type": "string", "nullable": true },
+                        "orientation": { "type": "string", "nullable": true },
+                        "view": { "type": "string", "nullable": true },
+                        "amenities": {
+                          "type": "object",
+                          "properties": {
+                            "parking": { "type": "boolean" },
+                            "garage": { "type": "boolean" },
+                            "balcony": { "type": "boolean" },
+                            "terrace": { "type": "boolean" },
+                            "cellar": { "type": "boolean" },
+                            "pool": { "type": "boolean" },
+                            "elevator": { "type": "boolean" }
+                          }
+                        },
+                        "constraints": {
+                          "type": "object",
+                          "properties": {
+                            "bruit": { "type": "boolean" },
+                            "copropDegradee": { "type": "boolean" },
+                            "expositionNord": { "type": "boolean" },
+                            "rdcSansExterieur": { "type": "boolean" }
+                          }
+                        }
+                      }
+                    },
+                    "valuation": {
+                      "type": "object",
+                      "description": "Estimation ESTIM'74 — à contrôler et challenger",
+                      "properties": {
+                        "low": { "type": "number", "nullable": true },
+                        "mid": { "type": "number", "nullable": true },
+                        "high": { "type": "number", "nullable": true },
+                        "listingPriceLow": { "type": "number", "nullable": true },
+                        "listingPriceHigh": { "type": "number", "nullable": true },
+                        "pricePsmEur": { "type": "number", "nullable": true },
+                        "confidence": { "type": "integer", "nullable": true, "description": "Score de fiabilité 0-100" },
+                        "confidenceLabel": { "type": "string", "nullable": true },
+                        "adjustments": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "label": { "type": "string" },
+                              "category": { "type": "string" },
+                              "impactPct": { "type": "number" }
+                            }
+                          }
+                        },
+                        "proximityAdjustments": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "label": { "type": "string" },
+                              "impactPct": { "type": "number" }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "dvfStats": {
+                      "type": "object",
+                      "description": "Socle statistique DVF",
+                      "properties": {
+                        "sampleSize": { "type": "integer", "nullable": true },
+                        "medianPsmEur": { "type": "number", "nullable": true },
+                        "p25PsmEur": { "type": "number", "nullable": true },
+                        "p75PsmEur": { "type": "number", "nullable": true },
+                        "periodMonths": { "type": "integer", "nullable": true },
+                        "oldestDate": { "type": "string", "nullable": true },
+                        "newestDate": { "type": "string", "nullable": true },
+                        "perimeterKm": { "type": "number", "nullable": true },
+                        "source": { "type": "string" },
+                        "dvfLiveCount": { "type": "integer", "nullable": true }
+                      }
+                    },
+                    "comparables": {
+                      "type": "array",
+                      "description": "Top 10 transactions DVF retenues, triées par score de pertinence",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "date": { "type": "string", "nullable": true },
+                          "distanceM": { "type": "integer", "nullable": true },
+                          "type": { "type": "string", "nullable": true },
+                          "surfaceM2": { "type": "number", "nullable": true },
+                          "rooms": { "type": "integer", "nullable": true },
+                          "priceEur": { "type": "number", "nullable": true },
+                          "pricePsmEur": { "type": "integer", "nullable": true },
+                          "indexedPricePsmEur": { "type": "integer", "nullable": true, "description": "Prix/m² indexé 2025 (indice notaires 74)" },
+                          "address": { "type": "string", "nullable": true },
+                          "city": { "type": "string", "nullable": true },
+                          "score": { "type": "integer", "nullable": true, "description": "Score de pertinence 0-100 (distance 40%, surface 30%, récence 20%, pièces 10%)" },
+                          "isTopComparable": { "type": "boolean" },
+                          "source": { "type": "string", "description": "dvf, dvf-live ou live" }
+                        }
+                      }
+                    },
+                    "activeListings": {
+                      "type": "array",
+                      "nullable": true,
+                      "description": "Annonces actives comparables (top 8 par €/m²)",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "priceEur": { "type": "number", "nullable": true },
+                          "surfaceM2": { "type": "number", "nullable": true },
+                          "pricePsmEur": { "type": "integer", "nullable": true },
+                          "rooms": { "type": "integer", "nullable": true },
+                          "city": { "type": "string", "nullable": true },
+                          "title": { "type": "string", "nullable": true }
+                        }
+                      }
+                    },
+                    "marketTrend": {
+                      "type": "object",
+                      "nullable": true,
+                      "properties": {
+                        "trend": { "type": "string", "nullable": true },
+                        "trendPercent": { "type": "number", "nullable": true },
+                        "supplyDemand": { "type": "string", "nullable": true },
+                        "commentary": { "type": "string", "nullable": true },
+                        "source": { "type": "string" },
+                        "quarterlyChangePct": { "type": "number", "nullable": true }
+                      }
+                    },
+                    "urbanisme": {
+                      "type": "object",
+                      "nullable": true,
+                      "description": "Zone PLU/PLUi",
+                      "properties": {
+                        "zone": { "type": "string" },
+                        "type": { "type": "string", "nullable": true, "description": "U=urbain, AU=à urbaniser, N=naturel, A=agricole" },
+                        "document": { "type": "string", "nullable": true }
+                      }
+                    },
+                    "risks": {
+                      "type": "object",
+                      "nullable": true,
+                      "description": "Risques naturels Géorisques",
+                      "properties": {
+                        "flood": { "type": "string", "nullable": true },
+                        "earthquake": { "type": "string", "nullable": true },
+                        "clay": { "type": "string", "nullable": true },
+                        "landslide": { "type": "string", "nullable": true },
+                        "summary": { "type": "array", "nullable": true, "items": { "type": "string" } }
+                      }
+                    },
+                    "servitudes": {
+                      "type": "array",
+                      "nullable": true,
+                      "description": "Servitudes d'utilité publique SUP (top 6)",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "type": { "type": "string", "nullable": true },
+                          "label": { "type": "string", "nullable": true }
+                        }
+                      }
+                    },
+                    "proximities": {
+                      "type": "object",
+                      "nullable": true,
+                      "description": "Équipements OSM dans 1 km, top 3 par catégorie",
+                      "properties": {
+                        "school": { "type": "array", "items": { "type": "object", "properties": { "name": { "type": "string" }, "distanceM": { "type": "integer" } } } },
+                        "shop": { "type": "array", "items": { "type": "object", "properties": { "name": { "type": "string" }, "distanceM": { "type": "integer" } } } },
+                        "transport": { "type": "array", "items": { "type": "object", "properties": { "name": { "type": "string" }, "distanceM": { "type": "integer" } } } },
+                        "health": { "type": "array", "items": { "type": "object", "properties": { "name": { "type": "string" }, "distanceM": { "type": "integer" } } } },
+                        "park": { "type": "array", "items": { "type": "object", "properties": { "name": { "type": "string" }, "distanceM": { "type": "integer" } } } }
+                      }
+                    },
+                    "swot": {
+                      "type": "object",
+                      "description": "Forces et vigilances calculées",
+                      "properties": {
+                        "strengths": { "type": "array", "items": { "type": "string" } },
+                        "weaknesses": { "type": "array", "items": { "type": "string" } }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Analyse introuvable"
+          }
+        }
+      }
+    }
+  }
+}
