@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { formatPrice, formatPsm, formatDateShort } from "@/lib/utils";
 import { Table2, Star, AlertTriangle, TrendingUp } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface Props {
   comparables: DVFComparable[];
@@ -62,16 +62,21 @@ function OutlierBadge() {
 }
 
 const HEADERS = ["", "Date", "Distance", "Nature du bien", "Surface", "Pièces", "Prix DVF", "€/m² (2025)", "Adresse/parcelle", "Source"];
+const PAGE_SIZE = 10;
 
 export function DVFComparablesTable({ comparables, hasLiveData }: Props) {
-  const [showAll, setShowAll] = useState(false);
+  const [page, setPage] = useState(0);
 
   const topComparables = comparables.filter((c) => c.topComparable && !c.outlier);
   const normalComparables = comparables.filter((c) => !c.topComparable && !c.outlier);
   const outlierComparables = comparables.filter((c) => c.outlier);
 
   const allSorted = [...topComparables, ...normalComparables, ...outlierComparables];
-  const displayed = showAll ? allSorted : allSorted.slice(0, 10);
+  const totalPages = Math.max(1, Math.ceil(allSorted.length / PAGE_SIZE));
+  const displayed = allSorted.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+
+  // Reset to first page when comparables change (new analysis)
+  useEffect(() => { setPage(0); }, [comparables]);
 
   const liveCount = comparables.filter((c) => c.source === "live").length;
   const dvfLiveCount = comparables.filter((c) => c.source === "dvf-live").length;
@@ -204,13 +209,25 @@ export function DVFComparablesTable({ comparables, hasLiveData }: Props) {
             </tbody>
           </table>
         </div>
-        {comparables.length > 10 && (
-          <div className="px-4 py-3 border-t text-center">
+        {totalPages > 1 && (
+          <div className="px-4 py-3 border-t flex items-center justify-between gap-4 text-sm">
             <button
-              onClick={() => setShowAll(!showAll)}
-              className="text-sm text-primary hover:underline"
+              onClick={() => setPage((p) => Math.max(0, p - 1))}
+              disabled={page === 0}
+              className="px-3 py-1 rounded border text-sm disabled:opacity-40 disabled:cursor-not-allowed hover:bg-muted/50 transition-colors"
             >
-              {showAll ? "Réduire" : `Voir les ${comparables.length} transactions`}
+              ← Précédent
+            </button>
+            <span className="text-muted-foreground">
+              Page {page + 1} / {totalPages}
+              <span className="ml-1 text-xs">({allSorted.length} transactions)</span>
+            </span>
+            <button
+              onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+              disabled={page === totalPages - 1}
+              className="px-3 py-1 rounded border text-sm disabled:opacity-40 disabled:cursor-not-allowed hover:bg-muted/50 transition-colors"
+            >
+              Suivant →
             </button>
           </div>
         )}
