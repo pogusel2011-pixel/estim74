@@ -9,6 +9,8 @@ import { PDFDocument } from "pdf-lib";
   import type { OsmPlace } from "@/lib/geo/osm";
   import type { ServitudeItem } from "@/lib/geo/sup";
   import { Writer, loadFonts, drawTable, san, fPrice, fPsm, fPct, fDateShort, wrapText, C, FS, ML, MR, CW, PAGE_W, PAGE_H, numFr, normalizeAddr } from "./helpers";
+  import type { GPTOutput } from "@/types/gpt";
+  import { NOTAIRES_INDEX_74, INDEX_REFERENCE_YEAR } from "@/lib/dvf/temporal-index";
 
   export async function buildExpertPdf(a: Record<string, unknown>, refId: string): Promise<Uint8Array> {
     const dvfStats: DVFStats | null = (a.dvfStats as DVFStats) ?? null;
@@ -47,7 +49,7 @@ import { PDFDocument } from "pdf-lib";
     // ═══════════ COVER ═══════════════════════════════════════════════════
     const cp = w.addPage();
     cp.drawRectangle({ x: 0, y: 0, width: PAGE_W, height: PAGE_H, color: C.coverBg });
-    cp.drawRectangle({ x: 0, y: PAGE_H - 120, width: PAGE_W, height: 120, color: C.blue });
+    cp.drawRectangle({ x: 0, y: PAGE_H - 120, width: PAGE_W, height: 120, color: C.coverHeader });
     cp.drawText("ESTIM’74 - HAUTE-SAVOIE (74) - DONNÉES DVF DGFiP 2020-2025", { x: ML, y: PAGE_H - 48, font: fonts.regular, size: FS.micro, color: C.white, opacity: 0.6 });
     cp.drawText("AVIS DE VALEUR — RAPPORT D’EXPERTISE", { x: ML, y: PAGE_H - 86, font: fonts.bold, size: 20, color: C.white });
     cp.drawLine({ start: { x: ML, y: PAGE_H - 108 }, end: { x: PAGE_W - MR, y: PAGE_H - 108 }, color: C.white, thickness: 0.5, opacity: 0.3 });
@@ -90,9 +92,9 @@ import { PDFDocument } from "pdf-lib";
       if (a.clientPhone)   { cp.drawText(san(a.clientPhone as string),   { x: cx, y: cLineY, font: fonts.regular, size: FS.micro, color: C.gray }); }
     }
 
-    // ═══════════ PAGE 2: ESTIMATION + AJUSTEMENTS ════════════════════════
+    // ═══════════ PAGE 2+: ESTIMATION + AJUSTEMENTS ══════════════════════
+    w.autoFooter = () => w.footer(refId, today);
     w.addPage();
-    w.footer(refId, today);
     w.sectionTitle("1. Estimation de valeur");
     w.gap(4);
 
@@ -173,8 +175,7 @@ import { PDFDocument } from "pdf-lib";
       w.gap(16);
     }
 
-    w.addPage();
-    w.footer(refId, today);
+    w.gap(20);
     w.sectionTitle("2. Ajustements qualitatifs - grille Estim74");
     w.gap(4);
 
@@ -237,9 +238,8 @@ import { PDFDocument } from "pdf-lib";
       w.gap(12);
     }
 
-    // ═══════════ PAGE 3: METHODE & CALCUL ════════════════════════════════
-    w.addPage();
-    w.footer(refId, today);
+    // ═══════════ SECTION 3: METHODE & CALCUL ════════════════════════════
+    w.gap(20);
     w.sectionTitle("3. Méthode et calcul");
     w.gap(6);
 
@@ -425,8 +425,7 @@ import { PDFDocument } from "pdf-lib";
         dvfSampleSize: a.dvfSampleSize as number | null,
       });
 
-      w.addPage();
-      w.footer(refId, today);
+      w.gap(20);
       w.sectionTitle("4. Contexte — Risques, Urbanisme & Proximités");
       w.gap(4);
 
@@ -517,12 +516,50 @@ import { PDFDocument } from "pdf-lib";
       w.y = lowestY - 8;
     }
 
-    // ═══════════ PAGE 5+: DVF COMPARABLES ════════════════════════════════
+    // ═══════════ SECTION 5: ÉVOLUTION DES PRIX ═══════════════════════════
+    w.addPage();
+    w.sectionTitle("5. Evolution des prix — Indices notariaux Haute-Savoie 74");
+    w.gap(6);
+    w.text(san("Indices de prix immobiliers sur Haute-Savoie (base 100 = 2014). Source : Chambre des Notaires 74."), ML, w.y, fonts.italic, FS.small, C.gray);
+    w.gap(12);
+    {
+      const tableYears = [2019, 2020, 2021, 2022, 2023, 2024, 2025];
+      const refIdx = NOTAIRES_INDEX_74[INDEX_REFERENCE_YEAR] ?? 126;
+      const indexRows: string[][] = tableYears.map((yr, i) => {
+        const idx = NOTAIRES_INDEX_74[yr] ?? 126;
+        const prevIdx = i > 0 ? (NOTAIRES_INDEX_74[tableYears[i - 1]] ?? idx) : idx;
+        const evolNum = i === 0 ? 0 : (idx - prevIdx) / prevIdx * 100;
+        const evolStr = i === 0 ? "-" : (evolNum >= 0 ? "+" : "") + evolNum.toFixed(1) + "%";
+        const equivPsm = a.valuationPsm ? Math.round((a.valuationPsm as number) * idx / refIdx) : null;
+        return [String(yr), String(idx), evolStr, equivPsm ? fPsm(equivPsm) : "-"];
+      });
+      drawTable(w, {
+        cols: [
+          { header: "Annee", width: 55, align: "center" as const },
+          { header: "Indice 74", width: 75, align: "center" as const },
+          { header: "Evolution annuelle", width: 110, align: "right" as const, color: (row) => {
+            if (row[2] === "-") return C.gray;
+            const v = parseFloat(row[2]);
+            return isNaN(v) ? C.gray : v > 0 ? C.green : v < 0 ? C.red : C.gray;
+          }},
+          { header: a.valuationPsm ? "Equiv. EUR/m2 (rebased)" : "Reference", width: 275, align: "right" as const, bold: true, color: () => C.blue },
+        ],
+        rows: indexRows,
+        rowHeight: 14,
+        stripedRows: true,
+      });
+      w.gap(6);
+      if (a.valuationPsm) {
+        w.text(san("Equiv. : estimation actuelle rebasee sur l'indice de chaque annee — indicatif, hors ajustements specifiques."), ML, w.y, fonts.italic, FS.micro, C.lightGray);
+        w.gap(8);
+      }
+    }
+
+    // ═══════════ SECTION 6: DVF COMPARABLES ═════════════════════════════
     const retained = dvfComparables.filter((c) => !c.outlier);
     const excluded = dvfComparables.filter((c) => c.outlier);
     w.addPage();
-    w.footer(refId, today);
-    w.sectionTitle(`5. Transactions DVF retenues (${retained.length})`);
+    w.sectionTitle(`6. Transactions DVF retenues (${retained.length})`);
     w.gap(4);
 
     if (retained.length > 0) {
@@ -565,9 +602,8 @@ import { PDFDocument } from "pdf-lib";
     // ═══════════ ANNONCES ACTIVES ═════════════════════════════════════════
     if (listings.length > 0) {
       w.addPage();
-      w.footer(refId, today);
       const outlierC2 = listings.filter((l) => l.outlier).length;
-      w.sectionTitle(`6. Annonces actives - ${cleanListings.length} retenue(s) / ${outlierC2} exclue(s)`);
+      w.sectionTitle(`7. Annonces actives - ${cleanListings.length} retenue(s) / ${outlierC2} exclue(s)`);
       w.gap(4);
       drawTable(w, {
         cols: [
@@ -595,10 +631,67 @@ import { PDFDocument } from "pdf-lib";
       });
     }
 
+    // ═══════════ SECTION 8: ANALYSES IA (LIVRABLE) ══════════════════════
+    const gptOutputs: GPTOutput[] = Array.isArray(a.gptOutputs) ? (a.gptOutputs as GPTOutput[]) : [];
+    if (gptOutputs.length > 0) {
+      w.addPage();
+      w.sectionTitle("8. Analyses IA — Onglet Livrable");
+      w.gap(6);
+      const GPT_ACTION_LABELS: Record<string, string> = {
+        MARKET_ANALYSIS:      san("Analyse de marche"),
+        NEGOTIATION_ADVICE:   san("Conseils de negociation"),
+        INVESTMENT_POTENTIAL: san("Potentiel d'investissement"),
+        PROPERTY_DESCRIPTION: san("Description du bien"),
+        RISK_ASSESSMENT:      san("Evaluation des risques"),
+      };
+      for (const gpt of gptOutputs) {
+        const gptLabel = GPT_ACTION_LABELS[gpt.actionType] ?? san(gpt.actionType);
+        w.ensureSpace(40);
+        w.rect(ML, w.y - 14, CW, 16, C.lightBlueBg);
+        w.rect(ML, w.y - 14, 3, 16, C.blue);
+        w.page.drawText(san(gptLabel.toUpperCase()), { x: ML + 10, y: w.y - 10, font: fonts.bold, size: FS.micro, color: C.blue });
+        w.gap(22);
+        const contentLines = gpt.content.split("\n");
+        for (const rawLine of contentLines) {
+          const line = rawLine.trim();
+          if (!line) { w.gap(5); continue; }
+          const headingMatch = line.match(/^#{1,3}\s+(.+)/);
+          if (headingMatch) {
+            const ht = headingMatch[1].replace(/\*\*/g, "").replace(/\*/g, "");
+            w.ensureSpace(18);
+            w.text(san(ht), ML + 8, w.y, fonts.bold, FS.body, C.dark);
+            w.gap(FS.body * 1.6);
+            continue;
+          }
+          const bulletMatch = line.match(/^[-*•]\s+(.+)/);
+          if (bulletMatch) {
+            const bt = bulletMatch[1].replace(/\*\*/g, "").replace(/\*/g, "");
+            wrapText(fonts.regular, bt, FS.body, CW - 28).forEach((wl, li) => {
+              w.ensureSpace(FS.body * 1.5);
+              w.text(san((li === 0 ? "- " : "  ") + wl), li === 0 ? ML + 12 : ML + 22, w.y, fonts.regular, FS.body, C.dark);
+              w.gap(FS.body * 1.4);
+            });
+            continue;
+          }
+          const pt = line.replace(/\*\*/g, "").replace(/\*/g, "");
+          wrapText(fonts.regular, pt, FS.body, CW - 16).forEach((wl) => {
+            w.ensureSpace(FS.body * 1.5);
+            w.text(san(wl), ML + 8, w.y, fonts.regular, FS.body, C.dark);
+            w.gap(FS.body * 1.4);
+          });
+        }
+        w.gap(12);
+      }
+      w.ensureSpace(30);
+      w.rect(ML, w.y - 24, CW, 26, C.rowAlt);
+      w.rect(ML, w.y - 24, 3, 26, C.lightGray);
+      w.page.drawText(san("Analyses textuelles IA — Ne modifient pas l'estimation calculee. Les chiffres restent ceux issus des donnees DVF officielles."), { x: ML + 10, y: w.y - 14, font: fonts.italic, size: FS.micro, color: C.gray });
+      w.gap(32);
+    }
+
     // ═══════════ CONCLUSION ══════════════════════════════════════════════
     w.addPage();
-    w.footer(refId, today);
-    w.sectionTitle("7. Conclusion");
+    w.sectionTitle("9. Conclusion");
     w.gap(6);
     [
       `Bien : ${propertyLabel} de ${surface} m² - ${san([normalizeAddr(a.address as string), a.postalCode, a.city].filter(Boolean).join(", "))}`,

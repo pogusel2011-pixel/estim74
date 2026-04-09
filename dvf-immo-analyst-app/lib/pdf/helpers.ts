@@ -23,6 +23,7 @@ export const C = {
   borderBlue:  rgb(191 / 255, 219 / 255, 254 / 255), // #BFDBFE
   lightBlueBg: rgb(239 / 255, 246 / 255, 255 / 255), // #EFF6FF
   coverBg:     rgb(219 / 255, 234 / 255, 254 / 255), // #DBEAFE — light sky blue for cover
+  coverHeader: rgb(59 / 255, 130 / 255, 246 / 255),  // #3B82F6 — medium blue for cover header bar
   headerBg:    rgb(248 / 255, 250 / 255, 252 / 255), // #F8FAFC
   rowAlt:      rgb(249 / 255, 250 / 255, 251 / 255), // #F9FAFB
   green:       rgb(22 / 255, 163 / 255, 74 / 255),   // #16A34A
@@ -192,9 +193,13 @@ export class Writer {
     }
   }
 
+  /** Optional callback invoked automatically each time a new page is created (except the cover). */
+  autoFooter: (() => void) | null = null;
+
   addPage(): PDFPage {
     this.page = this.pdf.addPage([PAGE_W, PAGE_H]);
     this.y = PAGE_H - MT;
+    this.autoFooter?.();
     return this.page;
   }
 
@@ -254,7 +259,7 @@ export class Writer {
    * Returns the new y after the title.
    */
   sectionTitle(title: string): number {
-    this.ensureSpace(28);
+    this.ensureSpace(60);
     // Blue top rule
     this.hline(ML, this.y, CW, C.blue, 2);
     this.y -= 12;
