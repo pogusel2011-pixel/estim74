@@ -935,10 +935,10 @@ export default async function AnalysisPage({ params }: { params: { id: string } 
                     subjectLat={serialized.lat as number}
                     subjectLng={serialized.lng as number}
                   />
-                ) : serialized.proximities === null ? (
-                  <p className="text-xs text-slate-400 italic">Aucun équipement recensé dans un rayon de 1 km.</p>
-                ) : (
+                ) : serialized.proximities === undefined ? (
                   <p className="text-xs text-slate-400 italic">Données proximités non disponibles — re-simuler pour les obtenir.</p>
+                ) : (
+                  <p className="text-xs text-slate-400 italic">Aucun équipement recensé dans un rayon de 1 km.</p>
                 )}
               </CardContent>
             </Card>

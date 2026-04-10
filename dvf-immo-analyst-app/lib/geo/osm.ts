@@ -51,7 +51,10 @@ const CATEGORY_QUERIES: { category: OsmCategory; filters: string[] }[] = [
   },
 ];
 
-const OVERPASS_URL = "https://overpass-api.de/api/interpreter";
+const OVERPASS_URLS = [
+  "https://overpass-api.de/api/interpreter",
+  "https://overpass.kumi.systems/api/interpreter",
+];
 const RADIUS_M = 1000;
 
 function haversineM(lat1: number, lng1: number, lat2: number, lng2: number): number {
@@ -93,116 +96,88 @@ export async function lookupOsmProximities(
     cq.filters.map((f) => `${f}(around:${RADIUS_M},${lat},${lng});`)
   ).join("\n");
 
-  const query = `[out:json][timeout:15];\n(\n${allFilters}\n);\nout center body;`;
+  const query = `[out:json][timeout:20];\n(\n${allFilters}\n);\nout center body;`;
 
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 15000);
-  try {
-    const res = await fetch(OVERPASS_URL, {
-      method: "POST",
-      body: "data=" + encodeURIComponent(query),
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      signal: controller.signal,
-    });
-    if (!res.ok) {
-      console.warn(`[osm] Overpass returned ${res.status}`);
-      return null;
-    }
-    const data = await res.json();
-    const elements: Record<string, unknown>[] = Array.isArray(data?.elements)
-      ? (data.elements as Record<string, unknown>[])
-      : [];
-
-    const places: OsmPlace[] = [];
-    const seenNames = new Set<string>();
-
-    for (const el of elements) {
-      const tags = ((el.tags ?? {}) as Record<string, string>);
-      // Determine coordinates (nodes vs ways with center)
-      let eLat: number | undefined;
-      let eLng: number | undefined;
-      if (el.type === "node") {
-        eLat = el.lat as number;
-        eLng = el.lon as number;
-      } else if (el.center) {
-        const c = el.center as { lat: number; lon: number };
-        eLat = c.lat;
-        eLng = c.lon;
-      }
-      if (eLat == null || eLng == null) continue;
-
-      // Determine category
-      let category: OsmCategory | null = null;
-      for (const cq of CATEGORY_QUERIES) {
-        const amenity = tags.amenity ?? "";
-        const shop = tags.shop ?? "";
-        const leisure = tags.leisure ?? "";
-        const pt = tags.public_transport ?? "";
-        const railway = tags.railway ?? "";
-
-        if (
-          cq.category === "school" &&
-          (amenity.match(/school|college|university|kindergarten|nursery/))
-        ) { category = "school"; break; }
-        if (
-          cq.category === "health" &&
-          amenity.match(/hospital|clinic|pharmacy|doctors|dentist|health_centre/)
-        ) { category = "health"; break; }
-        if (
-          cq.category === "shop" &&
-          (shop.match(/supermarket|convenience|bakery|butcher|greengrocer|general|mini_supermarket/) ||
-            amenity === "marketplace")
-        ) { category = "shop"; break; }
-        if (
-          cq.category === "transport" &&
-          (pt.match(/station|stop_position|platform/) ||
-            amenity === "bus_stop" ||
-            railway.match(/station|halt|tram_stop/))
-        ) { category = "transport"; break; }
-        if (
-          cq.category === "park" &&
-          (leisure.match(/park|garden|playground|nature_reserve/))
-        ) { category = "park"; break; }
-      }
-      if (!category) continue;
-
-      const distanceM = Math.round(haversineM(lat, lng, eLat, eLng));
-      const name = bestName(tags, category);
-      const key = `${category}-${name}`;
-      if (seenNames.has(key)) continue;
-      seenNames.add(key);
-
-      places.push({
-        id: el.id as number,
-        name,
-        category,
-        lat: eLat,
-        lng: eLng,
-        distanceM,
-        tags,
+  for (const overpassUrl of OVERPASS_URLS) {
+    const controller = new AbortController();
+    const abortTimer = setTimeout(() => controller.abort(), 20000);
+    try {
+      const res = await fetch(overpassUrl, {
+        method: "POST",
+        body: "data=" + encodeURIComponent(query),
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        signal: controller.signal,
       });
-    }
+      if (!res.ok) {
+        console.warn(`[osm] Overpass ${overpassUrl} → ${res.status} — essai suivant`);
+        continue;
+      }
+      const data = await res.json();
+      const elements: Record<string, unknown>[] = Array.isArray(data?.elements)
+        ? (data.elements as Record<string, unknown>[])
+        : [];
 
-    // Sort by distance, keep top 10 per category
-    places.sort((a, b) => a.distanceM - b.distanceM);
-    const byCategory = new Map<OsmCategory, OsmPlace[]>();
-    for (const p of places) {
-      if (!byCategory.has(p.category)) byCategory.set(p.category, []);
-      const arr = byCategory.get(p.category)!;
-      if (arr.length < 10) arr.push(p);
-    }
-    const result = Array.from(byCategory.values()).flat().sort((a, b) => a.distanceM - b.distanceM);
+      const places: OsmPlace[] = [];
+      const seenNames = new Set<string>();
 
-    console.log(`[osm] ${result.length} lieux trouvés dans ${RADIUS_M}m`);
-    return result;
-  } catch (e) {
-    if ((e as Error).name === "AbortError") {
-      console.warn("[osm] Timeout 15s — non bloquant");
-    } else {
-      console.warn("[osm] Erreur non bloquante:", (e as Error).message);
+      for (const el of elements) {
+        const tags = ((el.tags ?? {}) as Record<string, string>);
+        let eLat: number | undefined;
+        let eLng: number | undefined;
+        if (el.type === "node") {
+          eLat = el.lat as number;
+          eLng = el.lon as number;
+        } else if (el.center) {
+          const c = el.center as { lat: number; lon: number };
+          eLat = c.lat;
+          eLng = c.lon;
+        }
+        if (eLat == null || eLng == null) continue;
+
+        let category: OsmCategory | null = null;
+        for (const cq of CATEGORY_QUERIES) {
+          const amenity = tags.amenity ?? "";
+          const shop = tags.shop ?? "";
+          const leisure = tags.leisure ?? "";
+          const pt = tags.public_transport ?? "";
+          const railway = tags.railway ?? "";
+
+          if (cq.category === "school" && amenity.match(/school|college|university|kindergarten|nursery/)) { category = "school"; break; }
+          if (cq.category === "health" && amenity.match(/hospital|clinic|pharmacy|doctors|dentist|health_centre/)) { category = "health"; break; }
+          if (cq.category === "shop" && (shop.match(/supermarket|convenience|bakery|butcher|greengrocer|general|mini_supermarket/) || amenity === "marketplace")) { category = "shop"; break; }
+          if (cq.category === "transport" && (pt.match(/station|stop_position|platform/) || amenity === "bus_stop" || railway.match(/station|halt|tram_stop/))) { category = "transport"; break; }
+          if (cq.category === "park" && leisure.match(/park|garden|playground|nature_reserve/)) { category = "park"; break; }
+        }
+        if (!category) continue;
+
+        const distanceM = Math.round(haversineM(lat, lng, eLat, eLng));
+        const name = bestName(tags, category);
+        const key = `${category}-${name}`;
+        if (seenNames.has(key)) continue;
+        seenNames.add(key);
+
+        places.push({ id: el.id as number, name, category, lat: eLat, lng: eLng, distanceM, tags });
+      }
+
+      places.sort((a, b) => a.distanceM - b.distanceM);
+      const byCategory = new Map<OsmCategory, OsmPlace[]>();
+      for (const p of places) {
+        if (!byCategory.has(p.category)) byCategory.set(p.category, []);
+        const arr = byCategory.get(p.category)!;
+        if (arr.length < 10) arr.push(p);
+      }
+      const result = Array.from(byCategory.values()).flat().sort((a, b) => a.distanceM - b.distanceM);
+      console.log(`[osm] ${result.length} lieux trouvés dans ${RADIUS_M}m (${overpassUrl})`);
+      return result;
+    } catch (e) {
+      const name = (e as Error).name;
+      const msg = (e as Error).message;
+      console.warn(`[osm] ${overpassUrl} — ${name === "AbortError" ? "timeout 20s" : msg} — essai suivant`);
+    } finally {
+      clearTimeout(abortTimer);
     }
-    return null;
-  } finally {
-    clearTimeout(timeout);
   }
+
+  console.warn("[osm] Tous les endpoints Overpass ont échoué");
+  return null;
 }
